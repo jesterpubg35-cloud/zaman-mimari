@@ -1138,6 +1138,128 @@ function PhoneSelector({ value, onChange, dark, t }) {
   );
 }
 
+// ─── ADMIN PANEL ──────────────────────────────────────────────────────────────
+function AdminPanel({ isDarkMode, onClose, supabase }) {
+  const [tab, setTab] = useState('users');
+  const [users, setUsers] = useState([]);
+  const [transactions, setTransactions] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+
+  const fetchData = async (type) => {
+    setLoading(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const url = type === 'transactions' ? '/api/admin/users?type=transactions' : '/api/admin/users';
+      const res = await fetch(url, { headers: { Authorization: `Bearer ${session?.access_token}` } });
+      const data = await res.json();
+      if (type === 'transactions') setTransactions(data.transactions || []);
+      else setUsers(data.users || []);
+    } catch {}
+    setLoading(false);
+  };
+
+  useEffect(() => { fetchData(tab); }, [tab]);
+
+  const handleBan = async (userId, isBanned) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    await fetch('/api/admin/users', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session?.access_token}` },
+      body: JSON.stringify({ action: isBanned ? 'unban' : 'ban', targetUserId: userId })
+    });
+    fetchData('users');
+  };
+
+  const filteredUsers = users.filter(u =>
+    (u.name || '').toLowerCase().includes(search.toLowerCase()) ||
+    (u.email || '').toLowerCase().includes(search.toLowerCase())
+  );
+
+  const bg = isDarkMode ? 'bg-[#0F0F0F]' : 'bg-zinc-100';
+  const text = isDarkMode ? 'text-white' : 'text-black';
+  const card = isDarkMode ? 'bg-white/5 border-white/10' : 'bg-white border-black/10';
+
+  return (
+    <div className={`fixed inset-0 z-[6000] flex flex-col ${bg}`}>
+      <div className={`flex items-center gap-4 p-6 pt-12 border-b ${isDarkMode ? 'border-white/10' : 'border-black/10'}`}>
+        <button onClick={onClose} className={`text-2xl ${text}`}>←</button>
+        <h2 className={`font-black text-xl uppercase ${text}`}>🛡 Admin Paneli</h2>
+        <div className="ml-auto flex gap-2">
+          {['users', 'transactions'].map(t => (
+            <button key={t} onClick={() => setTab(t)}
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${tab === t ? 'bg-red-500 text-white' : isDarkMode ? 'bg-white/10 text-white' : 'bg-black/10 text-black'}`}>
+              {t === 'users' ? 'Kullanıcılar' : 'İşlemler'}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {tab === 'users' && (
+        <div className="px-4 pt-4">
+          <input value={search} onChange={e => setSearch(e.target.value)}
+            placeholder="İsim veya email ara..."
+            className={`w-full p-3 rounded-xl text-sm outline-none border mb-4 ${isDarkMode ? 'bg-white/10 text-white border-white/10 placeholder-gray-500' : 'bg-white text-black border-black/20'}`} />
+        </div>
+      )}
+
+      <div className="flex-1 overflow-y-auto px-4 pb-10">
+        {loading ? (
+          <div className="flex items-center justify-center py-20">
+            <div className="animate-spin w-8 h-8 border-2 border-red-500 border-t-transparent rounded-full"></div>
+          </div>
+        ) : tab === 'users' ? (
+          <div className="space-y-3">
+            <p className={`text-xs opacity-50 mb-2 ${text}`}>Toplam: {filteredUsers.length} kullanıcı</p>
+            {filteredUsers.map(u => (
+              <div key={u.user_id} className={`rounded-2xl p-4 border ${card} ${u.is_banned ? 'border-red-500/30' : ''}`}>
+                <div className="flex items-center justify-between">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className={`font-bold text-sm ${text}`}>{u.name || 'İsimsiz'}</p>
+                      {u.is_admin && <span className="text-[10px] bg-red-500/20 text-red-400 px-2 py-0.5 rounded-full font-bold">ADMIN</span>}
+                      {u.is_banned && <span className="text-[10px] bg-red-500/20 text-red-500 px-2 py-0.5 rounded-full font-bold">BANLANDI</span>}
+                    </div>
+                    <p className="text-[11px] opacity-50 truncate">{u.email}</p>
+                    <p className="text-[10px] opacity-40">{u.phone || '-'} • {new Date(u.created_at).toLocaleDateString('tr-TR')}</p>
+                  </div>
+                  {!u.is_admin && (
+                    <button onClick={() => handleBan(u.user_id, u.is_banned)}
+                      className={`ml-3 px-3 py-2 rounded-xl text-xs font-bold flex-shrink-0 ${u.is_banned ? 'bg-[#2ECC71]/20 text-[#2ECC71]' : 'bg-red-500/20 text-red-400'}`}>
+                      {u.is_banned ? 'Banı Kaldır' : 'Banla'}
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="space-y-3">
+            <p className={`text-xs opacity-50 mb-2 ${text}`}>Son 200 işlem</p>
+            {transactions.map((tx, i) => (
+              <div key={i} className={`rounded-2xl p-4 border ${card}`}>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className={`text-lg ${tx.type === 'deposit' ? 'text-[#2ECC71]' : 'text-red-400'}`}>{tx.type === 'deposit' ? '↓' : '↑'}</span>
+                      <p className={`font-bold text-sm ${text}`}>{tx.profilkisi?.name || 'Kullanıcı'}</p>
+                    </div>
+                    <p className="text-[10px] opacity-50">{tx.description || '-'} • {new Date(tx.created_at).toLocaleDateString('tr-TR')}</p>
+                  </div>
+                  <p className={`font-black text-base ${tx.type === 'deposit' ? 'text-[#2ECC71]' : 'text-red-400'}`}>
+                    {tx.type === 'deposit' ? '+' : '-'}{tx.amount}₺
+                  </p>
+                </div>
+              </div>
+            ))}
+            {transactions.length === 0 && <p className={`text-sm opacity-50 text-center py-10 ${text}`}>Henüz işlem yok.</p>}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ─── MAIN COMPONENT ───────────────────────────────────────────────────────────
 function Home() {
   const [mounted] = useState(true);
@@ -3923,6 +4045,9 @@ function Home() {
             </div>
             <div className="flex-1 space-y-1">
               {['support', 'payment', 'history'].map(p => <button key={p} onClick={() => setAktifPage(p)} className={`w-full text-left py-3 px-2 font-semibold text-sm border-b transition-all hover:scale-[1.01] hover:bg-white/5 hover:shadow-[0_0_20px_rgba(255,255,255,0.06)] ${isDarkMode ? 'text-white border-white/10' : 'text-black border-black/10'}`}>{t[p]}</button>)}
+              {user?.is_admin && (
+                <button onClick={() => setAktifPage('admin')} className={`w-full text-left py-3 px-2 font-semibold text-sm border-b transition-all hover:scale-[1.01] hover:bg-red-500/10 ${isDarkMode ? 'text-red-400 border-white/10' : 'text-red-600 border-black/10'}`}>🛡 Admin Paneli</button>
+              )}
             </div>
             <div className="mt-6 space-y-3">
               <div className={`rounded-2xl border overflow-hidden ${isDarkMode ? 'bg-white/5 border-white/5' : 'bg-black/5 border-black/5'}`}>
@@ -4595,6 +4720,13 @@ function Home() {
               )}
             </div>
           </div>
+        )}
+        {aktifPage === 'admin' && user?.is_admin && (
+          <AdminPanel
+            isDarkMode={isDarkMode}
+            onClose={() => setAktifPage('menu')}
+            supabase={supabase}
+          />
         )}
         <div className={`fixed bottom-0 left-0 right-0 rounded-t-[40px] z-[3000] transition-transform duration-500 ${isDarkMode ? 'bg-[#121212]' : 'bg-slate-200/90 backdrop-blur-xl border border-black/10 shadow-2xl'}`} style={{ transform: (sheetYukseklik === 1 && !seciliKisi) ? 'translateY(80%)' : 'translateY(0)' }}>
           <div className="w-full py-4 flex justify-center cursor-pointer" onClick={() => setSheetYukseklik(sheetYukseklik === 0 ? 1 : 0)}><div className={`w-12 h-1.5 rounded-full ${isDarkMode ? 'bg-gray-500/30' : 'bg-black/15'}`}></div></div>
