@@ -1518,6 +1518,8 @@ function Home() {
   const [stripeConnected, setStripeConnected] = useState(false);
   const [providerEarnings, setProviderEarnings] = useState(0);
   const [providerLoading, setProviderLoading] = useState(false);
+  const [providerBalance, setProviderBalance] = useState({ available: 0, pending: 0, total: 0 });
+  const [balanceLoading, setBalanceLoading] = useState(false);
 
   const [langMenuAcik, setLangMenuAcik] = useState(false);
   const [toast, setToast] = useState(null);
@@ -1674,6 +1676,22 @@ function Home() {
     window.addEventListener('online', onOnline);
     return () => window.removeEventListener('online', onOnline);
   }, [flushOfflineQueue]);
+
+  useEffect(() => {
+    if (!stripeConnected || !user?.id) return;
+    (async () => {
+      setBalanceLoading(true);
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        const res = await fetch('/api/stripe/balance', {
+          headers: { Authorization: `Bearer ${session?.access_token}` }
+        });
+        const data = await res.json();
+        if (data && !data.error) setProviderBalance(data);
+      } catch {}
+      finally { setBalanceLoading(false); }
+    })();
+  }, [stripeConnected, user?.id]);
 
   const handleGoogleLogin = async () => {
     try {
@@ -1871,6 +1889,12 @@ function Home() {
         const userRoles = rolesForUser;
         setSelectedRoles(userRoles);
         setTempSelectedRoles(userRoles);
+
+        // Stripe provider durumunu set et
+        const hasStripe = Boolean(profile.stripe_account_id);
+        setStripeConnected(hasStripe);
+        setIsProvider(Boolean(profile.is_provider));
+
         // Tüm profil verilerini localStorage'a kaydet
         try {
           localStorage.setItem('radar_user', JSON.stringify(userData));
@@ -4684,27 +4708,72 @@ function Home() {
                 <div className="space-y-6">
                   {/* Bağlı Hesap Bilgisi */}
                   <div className={`rounded-3xl p-6 border ${isDarkMode ? 'bg-white/5 border-white/10' : 'bg-gray-100 border-black/10'}`}>
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className="w-3 h-3 bg-[#2ECC71] rounded-full animate-pulse"></div>
-                      <p className={`font-bold ${isDarkMode ? 'text-white' : 'text-black'}`}>Stripe Bağlı</p>
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-3">
+                        <div className="w-3 h-3 bg-[#2ECC71] rounded-full animate-pulse"></div>
+                        <p className={`font-bold ${isDarkMode ? 'text-white' : 'text-black'}`}>Stripe Bağlı ✓</p>
+                      </div>
+                      <button
+                        onClick={async () => {
+                          setBalanceLoading(true);
+                          try {
+                            const { data: { session } } = await supabase.auth.getSession();
+                            const res = await fetch('/api/stripe/balance', {
+                              headers: { Authorization: `Bearer ${session?.access_token}` }
+                            });
+                            const data = await res.json();
+                            if (data && !data.error) setProviderBalance(data);
+                          } catch (e) {
+                            showToast('Bakiye yüklenemedi');
+                          } finally {
+                            setBalanceLoading(false);
+                          }
+                        }}
+                        className="text-xs text-[#635BFF] font-bold"
+                      >
+                        {balanceLoading ? '⏳' : '↻ Yenile'}
+                      </button>
                     </div>
-                    <p className={`text-sm opacity-70 ${isDarkMode ? 'text-white' : 'text-black'}`}>
-                      Hesabın aktif. İş yaptığında para direkt Stripe hesabına gider.
+                    <p className={`text-xs opacity-50 ${isDarkMode ? 'text-white' : 'text-black'}`}>
+                      %20 platform komisyonu uygulanır
                     </p>
                   </div>
 
-                  {/* Kazanç Özeti */}
-                  <div className={`rounded-3xl p-6 border ${isDarkMode ? 'bg-white/5 border-white/10' : 'bg-gray-100 border-black/10'}`}>
-                    <h3 className={`font-bold text-sm uppercase mb-4 ${isDarkMode ? 'text-white' : 'text-black'}`}>Kazanç Özeti</h3>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className={`p-4 rounded-2xl ${isDarkMode ? 'bg-white/10' : 'bg-white'}`}>
-                        <p className="text-xs opacity-60">Bu Ay</p>
-                        <p className={`text-xl font-black ${isDarkMode ? 'text-white' : 'text-black'}`}>0₺</p>
+                  {/* Bakiye Kartları */}
+                  <div className="grid grid-cols-1 gap-3">
+                    <div className={`rounded-2xl p-5 border ${isDarkMode ? 'bg-[#2ECC71]/10 border-[#2ECC71]/20' : 'bg-[#2ECC71]/10 border-[#2ECC71]/30'}`}>
+                      <p className="text-xs font-bold text-[#2ECC71] uppercase mb-1">Kullanılabilir Bakiye</p>
+                      <p className={`text-3xl font-black ${isDarkMode ? 'text-white' : 'text-black'}`}>
+                        {balanceLoading ? '...' : `₺${providerBalance.available.toFixed(2)}`}
+                      </p>
+                      <p className="text-[10px] opacity-50 mt-1">Stripe hesabında çekilebilir</p>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className={`rounded-2xl p-4 border ${isDarkMode ? 'bg-white/5 border-white/10' : 'bg-gray-100 border-black/10'}`}>
+                        <p className="text-[10px] font-bold opacity-60 uppercase mb-1">Bekleyen</p>
+                        <p className={`text-xl font-black ${isDarkMode ? 'text-white' : 'text-black'}`}>
+                          {balanceLoading ? '...' : `₺${providerBalance.pending.toFixed(2)}`}
+                        </p>
+                        <p className="text-[9px] opacity-40 mt-1">Onay bekliyor</p>
                       </div>
-                      <div className={`p-4 rounded-2xl ${isDarkMode ? 'bg-white/10' : 'bg-white'}`}>
-                        <p className="text-xs opacity-60">Toplam</p>
-                        <p className={`text-xl font-black ${isDarkMode ? 'text-white' : 'text-black'}`}>{providerEarnings}₺</p>
+                      <div className={`rounded-2xl p-4 border ${isDarkMode ? 'bg-white/5 border-white/10' : 'bg-gray-100 border-black/10'}`}>
+                        <p className="text-[10px] font-bold opacity-60 uppercase mb-1">Toplam Kazanç</p>
+                        <p className={`text-xl font-black ${isDarkMode ? 'text-white' : 'text-black'}`}>
+                          {balanceLoading ? '...' : `₺${providerBalance.total.toFixed(2)}`}
+                        </p>
+                        <p className="text-[9px] opacity-40 mt-1">Tüm zamanlar</p>
                       </div>
+                    </div>
+                  </div>
+
+                  {/* Komisyon Bilgisi */}
+                  <div className={`rounded-2xl p-4 ${isDarkMode ? 'bg-white/5' : 'bg-gray-50'}`}>
+                    <p className={`text-xs font-bold mb-2 ${isDarkMode ? 'text-white' : 'text-black'}`}>Nasıl Çalışır?</p>
+                    <div className="space-y-1.5 text-[11px] opacity-60">
+                      <p>1️⃣ Müşteri işi başlattığında para Stripe'ta dondurulur</p>
+                      <p>2️⃣ İşi tamamla, kanıt fotoğrafı yükle</p>
+                      <p>3️⃣ Müşteri onayladığında %80'i hesabına geçer</p>
+                      <p>4️⃣ %20 platform komisyonu kesilir</p>
                     </div>
                   </div>
 
