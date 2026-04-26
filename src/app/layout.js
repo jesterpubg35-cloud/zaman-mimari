@@ -34,6 +34,7 @@ export default function RootLayout({ children }) {
     <html
       lang="tr"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased touch-manipulation`}
+      suppressHydrationWarning
     >
       <head>
         <meta name="mobile-web-app-capable" content="yes" />
@@ -45,7 +46,7 @@ export default function RootLayout({ children }) {
         <link rel="apple-touch-icon" href="/icon-192x192.png" />
         <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
       </head>
-      <body className="min-h-full flex flex-col overscroll-none">{children}</body>
+      <body className="min-h-full flex flex-col overscroll-none" suppressHydrationWarning>{children}</body>
     </html>
   );
 }
