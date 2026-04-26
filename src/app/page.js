@@ -6,6 +6,9 @@
 
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { createClient } from '@supabase/supabase-js';
+import dynamic from 'next/dynamic';
+
+const StripePaymentModal = dynamic(() => import('./components/StripePaymentModal'), { ssr: false });
 
 // SSR-safe dynamic imports
 let PigeonMap, Marker, ZoomControl;
@@ -1564,6 +1567,8 @@ function Home() {
   const [deliveryCode, setDeliveryCode] = useState(null);
   const [codeInput, setCodeInput] = useState('');
   const [codeVerified, setCodeVerified] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [paymentDone, setPaymentDone] = useState(false);
 
   const [currentStage, setCurrentStage] = useState('accepted');
   const [photoProofRequired, setPhotoProofRequired] = useState(false);
@@ -4816,6 +4821,21 @@ function Home() {
             supabase={supabase}
           />
         )}
+        {showPaymentModal && aktifIs?.price && (
+          <StripePaymentModal
+            amount={parseFloat(aktifIs.price)}
+            requestId={aktifIs.id}
+            isDarkMode={isDarkMode}
+            supabase={supabase}
+            onClose={() => setShowPaymentModal(false)}
+            onSuccess={() => {
+              setShowPaymentModal(false);
+              setPaymentDone(true);
+              setAktifIs(prev => prev ? { ...prev, payment_status: 'held' } : prev);
+              showToast('✅ Ödeme güvenceye alındı!');
+            }}
+          />
+        )}
         <div className={`fixed bottom-0 left-0 right-0 rounded-t-[40px] z-[3000] transition-transform duration-500 ${isDarkMode ? 'bg-[#121212]' : 'bg-slate-200/90 backdrop-blur-xl border border-black/10 shadow-2xl'}`} style={{ transform: (sheetYukseklik === 1 && !seciliKisi) ? 'translateY(80%)' : 'translateY(0)' }}>
           <div className="w-full py-4 flex justify-center cursor-pointer" onClick={() => setSheetYukseklik(sheetYukseklik === 0 ? 1 : 0)}><div className={`w-12 h-1.5 rounded-full ${isDarkMode ? 'bg-gray-500/30' : 'bg-black/15'}`}></div></div>
           <div className="px-6 pb-10">
@@ -4872,6 +4892,26 @@ function Home() {
                 Lütfen aldığınız veya teslim ettiğiniz paketlerin görsellerini hem iş başında hem de iş sonunda görsellerini atmayı unutmayınız.
               </p>
             </div>
+
+            {/* Ödeme Butonu - Sadece müşteri (sender) + fiyat var + ödeme yapılmamış */}
+            {isSender && aktifIs?.price && !paymentDone && aktifIs?.payment_status !== 'held' && aktifIs?.payment_status !== 'released' && (
+              <div className="mx-4 my-2">
+                <button
+                  onClick={() => setShowPaymentModal(true)}
+                  className="w-full py-3 bg-[#635BFF] text-white rounded-2xl font-black text-sm uppercase tracking-wide flex items-center justify-center gap-2 shadow-lg shadow-[#635BFF]/20"
+                >
+                  💳 Ödemeyi Güvenceye Al · {aktifIs.price}
+                </button>
+                <p className="text-[10px] text-center opacity-40 mt-1">
+                  Para iş onaylanana kadar güvende tutulur
+                </p>
+              </div>
+            )}
+            {(paymentDone || aktifIs?.payment_status === 'held') && (
+              <div className="mx-4 my-2 py-2 px-4 rounded-2xl bg-[#2ECC71]/10 border border-[#2ECC71]/30 text-center">
+                <p className="text-[#2ECC71] text-[11px] font-bold">✓ Ödeme güvencede — iş onaylandığında hizmet verene aktarılır</p>
+              </div>
+            )}
 
             {bothConfirmedFlag && (
               <div className="mx-auto mb-2 py-3 px-4 rounded-2xl bg-[#2ECC71]/10 border border-[#2ECC71]/30 flex flex-col items-center justify-center shadow-sm backdrop-blur-md max-w-[70%]">
