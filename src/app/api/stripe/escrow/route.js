@@ -33,7 +33,7 @@ export async function POST(request) {
     }
 
     const body = await request.json();
-    const { action, requestId, amount, paymentMethodId } = body;
+    const { action, requestId, amount, paymentMethodId, useWallet } = body;
 
     if (!action || !requestId) {
       return NextResponse.json({ error: 'action and requestId required' }, { status: 400 });
@@ -42,7 +42,58 @@ export async function POST(request) {
     const supabase = getSupabase();
     const stripe = getStripe();
 
-    // --- HOLD: Müşteri işi başlattığında ödemeyi dondur ---
+    // --- WALLET HOLD: Cüzdan bakiyesinden escrow ---
+    if (action === 'hold' && useWallet) {
+      if (!amount) return NextResponse.json({ error: 'amount required' }, { status: 400 });
+
+      const { data: jobReq } = await supabase
+        .from('requests')
+        .select('id, sender_id, receiver_id, status')
+        .eq('id', requestId)
+        .single();
+
+      if (!jobReq) return NextResponse.json({ error: 'Request not found' }, { status: 404 });
+      if (jobReq.sender_id !== user.id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+
+      const commission = Math.round(amount * PLATFORM_COMMISSION * 100) / 100;
+      const total = amount + commission;
+
+      // Cüzdan bakiyesi yeterli mi?
+      const { data: wallet } = await supabase
+        .from('wallet_balances')
+        .select('balance')
+        .eq('user_id', user.id)
+        .single();
+
+      const currentBalance = wallet?.balance || 0;
+      if (currentBalance < total) {
+        return NextResponse.json({ error: `Yetersiz bakiye. Gereken: ${total.toFixed(2)}, Mevcut: ${currentBalance.toFixed(2)}` }, { status: 400 });
+      }
+
+      // Bakiyeden düş
+      await supabase
+        .from('wallet_balances')
+        .update({ balance: currentBalance - total, updated_at: new Date().toISOString() })
+        .eq('user_id', user.id);
+
+      // Escrow kaydı oluştur (payment_intent_id = 'wallet' olarak işaretle)
+      await supabase.from('escrow_holds').insert({
+        request_id: requestId,
+        payer_id: user.id,
+        receiver_id: jobReq.receiver_id,
+        payment_intent_id: `wallet_${requestId}_${Date.now()}`,
+        amount: total,
+        commission: commission,
+        net_amount: amount,
+        status: 'held',
+      });
+
+      await supabase.from('requests').update({ status: 'in_progress', payment_status: 'held' }).eq('id', requestId);
+
+      return NextResponse.json({ success: true, method: 'wallet' });
+    }
+
+    // --- HOLD: Müşteri işi başlattığında ödemeyi dondur (kart ile) ---
     if (action === 'hold') {
       if (!amount || !paymentMethodId) {
         return NextResponse.json({ error: 'amount and paymentMethodId required' }, { status: 400 });

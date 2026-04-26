@@ -4811,6 +4811,7 @@ function Home() {
             requestId={aktifIs.id}
             isDarkMode={isDarkMode}
             supabase={supabase}
+            walletBalance={walletBalance}
             onClose={() => setShowPaymentModal(false)}
             onSuccess={() => {
               setShowPaymentModal(false);

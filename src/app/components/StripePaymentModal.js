@@ -16,53 +16,53 @@ const stripePromise = loadStripe(
 const PLATFORM_COMMISSION = 0.10; // %10
 
 // Gerçek kart formu (Elements içinde çalışır)
-function CheckoutForm({ amount, requestId, onSuccess, onClose, isDarkMode, supabase }) {
+function CheckoutForm({ amount, requestId, onSuccess, onClose, isDarkMode, supabase, walletBalance }) {
   const stripe = useStripe();
   const elements = useElements();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [payMethod, setPayMethod] = useState(walletBalance >= (amount + Math.round(amount * PLATFORM_COMMISSION * 100) / 100) ? 'wallet' : 'card');
 
   const commission = Math.round(amount * PLATFORM_COMMISSION * 100) / 100;
   const total = amount + commission;
+  const walletSufficient = walletBalance >= total;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!stripe || !elements) return;
     setLoading(true);
     setError(null);
 
     try {
-      // 1. PaymentMethod oluştur (kart bilgilerini Stripe'a gönder)
-      const cardElement = elements.getElement(CardElement);
-      const { error: pmError, paymentMethod } = await stripe.createPaymentMethod({
-        type: 'card',
-        card: cardElement,
-      });
-      if (pmError) throw new Error(pmError.message);
-
-      // 2. Escrow hold endpoint'ini çağır
       const { data: { session } } = await supabase.auth.getSession();
-      const res = await fetch('/api/stripe/escrow', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${session?.access_token}`,
-        },
-        body: JSON.stringify({
-          action: 'hold',
-          requestId,
-          amount: total, // Komisyon dahil toplam
-          paymentMethodId: paymentMethod.id,
-        }),
-      });
 
-      const data = await res.json();
-      if (!res.ok || !data.success) throw new Error(data.error || 'Ödeme başarısız');
+      if (payMethod === 'wallet') {
+        // Cüzdandan öde
+        const res = await fetch('/api/stripe/escrow', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session?.access_token}` },
+          body: JSON.stringify({ action: 'hold', requestId, amount, useWallet: true }),
+        });
+        const data = await res.json();
+        if (!res.ok || !data.success) throw new Error(data.error || 'Ödeme başarısız');
+      } else {
+        // Kart ile öde
+        if (!stripe || !elements) return;
+        const cardElement = elements.getElement(CardElement);
+        const { error: pmError, paymentMethod } = await stripe.createPaymentMethod({ type: 'card', card: cardElement });
+        if (pmError) throw new Error(pmError.message);
 
-      // 3. Stripe'ın 3DS/confirmation gerektirip gerektirmediğini kontrol et
-      if (data.requiresAction) {
-        const { error: confirmError } = await stripe.confirmCardPayment(data.clientSecret);
-        if (confirmError) throw new Error(confirmError.message);
+        const res = await fetch('/api/stripe/escrow', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session?.access_token}` },
+          body: JSON.stringify({ action: 'hold', requestId, amount: total, paymentMethodId: paymentMethod.id }),
+        });
+        const data = await res.json();
+        if (!res.ok || !data.success) throw new Error(data.error || 'Ödeme başarısız');
+
+        if (data.requiresAction) {
+          const { error: confirmError } = await stripe.confirmCardPayment(data.clientSecret);
+          if (confirmError) throw new Error(confirmError.message);
+        }
       }
 
       onSuccess();
@@ -101,14 +101,43 @@ function CheckoutForm({ amount, requestId, onSuccess, onClose, isDarkMode, supab
           <span className="font-bold">Toplam ödenecek</span>
           <span className={`font-black text-lg ${isDarkMode ? 'text-white' : 'text-black'}`}>{total.toFixed(2)}</span>
         </div>
-        <p className="text-[10px] opacity-40">Hizmet veren {amount.toFixed(2)} alır. Para iş onaylanana kadar güvende tutulur.</p>
+        <p className="text-[10px] opacity-40">Para iş onaylanana kadar güvende tutulur.</p>
       </div>
 
-      {/* Stripe CardElement */}
-      <div className={`p-4 rounded-2xl border ${isDarkMode ? 'bg-white/5 border-white/10' : 'bg-white border-black/10'}`}>
-        <p className={`text-xs opacity-60 mb-3 ${isDarkMode ? 'text-white' : 'text-black'}`}>Kart Bilgileri</p>
-        <CardElement options={cardStyle} />
+      {/* Ödeme Yöntemi Seçimi */}
+      <div className="grid grid-cols-2 gap-2">
+        <button
+          type="button"
+          onClick={() => setPayMethod('wallet')}
+          className={`py-3 rounded-2xl text-xs font-black border transition-all ${payMethod === 'wallet' ? 'bg-[#2ECC71] text-black border-[#2ECC71]' : isDarkMode ? 'bg-white/5 text-white/60 border-white/10' : 'bg-gray-100 text-black/60 border-black/10'}`}
+        >
+          💰 Cüzdan
+          <p className={`text-[9px] font-normal mt-0.5 ${payMethod === 'wallet' ? 'text-black/60' : 'opacity-40'}`}>
+            Bakiye: {walletBalance.toFixed(2)}
+            {!walletSufficient && ' (yetersiz)'}
+          </p>
+        </button>
+        <button
+          type="button"
+          onClick={() => setPayMethod('card')}
+          className={`py-3 rounded-2xl text-xs font-black border transition-all ${payMethod === 'card' ? 'bg-[#635BFF] text-white border-[#635BFF]' : isDarkMode ? 'bg-white/5 text-white/60 border-white/10' : 'bg-gray-100 text-black/60 border-black/10'}`}
+        >
+          💳 Kart
+          <p className={`text-[9px] font-normal mt-0.5 ${payMethod === 'card' ? 'text-white/60' : 'opacity-40'}`}>Kredi/Banka kartı</p>
+        </button>
       </div>
+
+      {/* Kart formu - sadece kart seçiliyse */}
+      {payMethod === 'card' && (
+        <div className={`p-4 rounded-2xl border ${isDarkMode ? 'bg-white/5 border-white/10' : 'bg-white border-black/10'}`}>
+          <p className={`text-xs opacity-60 mb-3 ${isDarkMode ? 'text-white' : 'text-black'}`}>Kart Bilgileri</p>
+          <CardElement options={cardStyle} />
+        </div>
+      )}
+
+      {payMethod === 'wallet' && !walletSufficient && (
+        <p className="text-red-400 text-xs text-center">Cüzdan bakiyeniz yetersiz. Lütfen önce para yatırın veya kart ile ödeyin.</p>
+      )}
 
       {error && (
         <p className="text-red-400 text-xs text-center">{error}</p>
@@ -116,21 +145,21 @@ function CheckoutForm({ amount, requestId, onSuccess, onClose, isDarkMode, supab
 
       <button
         type="submit"
-        disabled={loading || !stripe}
-        className="w-full py-4 bg-[#635BFF] text-white rounded-2xl font-black text-sm uppercase tracking-wide disabled:opacity-50 hover:scale-[1.02] transition-transform"
+        disabled={loading || (payMethod === 'card' && !stripe) || (payMethod === 'wallet' && !walletSufficient)}
+        className={`w-full py-4 text-white rounded-2xl font-black text-sm uppercase tracking-wide disabled:opacity-50 active:scale-95 transition-transform ${payMethod === 'wallet' ? 'bg-[#2ECC71] text-black' : 'bg-[#635BFF]'}`}
       >
-        {loading ? '⏳ İşleniyor...' : `Güvenli Öde · ${total.toFixed(2)}`}
+        {loading ? '⏳ İşleniyor...' : payMethod === 'wallet' ? `💰 Cüzdandan Öde · ${total.toFixed(2)}` : `💳 Kart ile Öde · ${total.toFixed(2)}`}
       </button>
 
       <p className="text-[10px] text-center opacity-30">
-        🔒 Stripe tarafından şifrelenerek korunur
+        🔒 Güvenli ödeme
       </p>
     </form>
   );
 }
 
 // Modal wrapper
-export default function StripePaymentModal({ amount, requestId, onSuccess, onClose, isDarkMode, supabase }) {
+export default function StripePaymentModal({ amount, requestId, onSuccess, onClose, isDarkMode, supabase, walletBalance = 0 }) {
   if (!amount || !requestId) return null;
 
   return (
@@ -152,6 +181,7 @@ export default function StripePaymentModal({ amount, requestId, onSuccess, onClo
             onClose={onClose}
             isDarkMode={isDarkMode}
             supabase={supabase}
+            walletBalance={walletBalance}
           />
         </Elements>
       </div>
