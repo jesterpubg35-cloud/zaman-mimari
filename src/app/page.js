@@ -6,8 +6,6 @@
 
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { createClient } from '@supabase/supabase-js';
-import { motion } from 'framer-motion';
-import { Globe } from 'lucide-react';
 
 // SSR-safe dynamic imports
 let PigeonMap, Marker, ZoomControl;
@@ -1910,21 +1908,10 @@ function Home() {
       }
     };
 
-    // Auth hydration: login ekranina "flash" olmadan karar verebilmek icin
-    // once session kontrol et, sonra authInitialized=true yap.
-    // 5 saniye timeout eklendi - Supabase yavas kalirsa bile yuklenir
-    const AUTH_TIMEOUT_MS = 4000; // 4 saniye - localStorage cache varsa zaten hizli
+    // Auth hydration: session kontrol et, sonra authInitialized=true yap.
     (async () => {
-      let timeoutId;
-      const timeoutPromise = new Promise((_, reject) => {
-        timeoutId = setTimeout(() => reject(new Error('Auth timeout')), AUTH_TIMEOUT_MS);
-      });
       try {
-        const { data } = await Promise.race([
-          supabase.auth.getSession(),
-          timeoutPromise
-        ]);
-        clearTimeout(timeoutId);
+        const { data } = await supabase.auth.getSession();
         const session = data?.session || null;
         const uid = session?.user?.id || null;
         setAuthUid(uid);
@@ -1936,7 +1923,6 @@ function Home() {
         }
       } catch (e) {
         console.error('Auth getSession failed:', e);
-        clearTimeout(timeoutId);
         setAuthUid(null);
         setAuthSessionOk(false);
         setUser(null);
@@ -2610,13 +2596,11 @@ function Home() {
   const handleLogin = useCallback(async () => {
     if (!tempEmail.trim() || !tempPassword) return alert(t.noName);
     setAuthLoading(true);
-    
-    // 10 saniye timeout - Vercel'de yavas kalma sorununu coz
-    const timeoutPromise = new Promise((_, reject) => 
-      setTimeout(() => reject(new Error('Timeout')), 10000)
-    );
-    
-    try {
+
+    const attemptLogin = async () => {
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Timeout')), 15000)
+      );
       const { data: authData, error: authError } = await Promise.race([
         supabase.auth.signInWithPassword({
           email: tempEmail.trim(),
@@ -2625,7 +2609,24 @@ function Home() {
         timeoutPromise
       ]);
       if (authError) throw authError;
-      
+      return authData;
+    };
+
+    try {
+      let authData = null;
+      let lastErr = null;
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        try {
+          authData = await attemptLogin();
+          break;
+        } catch (err) {
+          lastErr = err;
+          if (err.message !== 'Timeout') throw err;
+          if (attempt < 3) await new Promise(r => setTimeout(r, attempt * 1000));
+        }
+      }
+      if (!authData) throw lastErr;
+
       const { data: profiles } = await supabase
         .from('profilkisi')
         .select('*')
@@ -2687,13 +2688,19 @@ function Home() {
       }
       
       // Email + şifre ile kayıt (doğrulama yok)
-      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-        email: tempEmail.trim(),
-        password: tempPassword,
-        options: {
-          data: { name: tempName.trim(), phone: phoneE164 }
-        }
-      });
+      const signUpTimeout = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Timeout')), 30000)
+      );
+      const { data: signUpData, error: signUpError } = await Promise.race([
+        supabase.auth.signUp({
+          email: tempEmail.trim(),
+          password: tempPassword,
+          options: {
+            data: { name: tempName.trim(), phone: phoneE164 }
+          }
+        }),
+        signUpTimeout
+      ]);
       
       if (signUpError) throw signUpError;
       if (!signUpData?.user?.id) throw new Error('Kullanıcı oluşturulamadı');
@@ -3715,16 +3722,13 @@ function Home() {
                 <div className="text-[10px] font-black uppercase tracking-widest text-white/30">veya</div>
                 <div className="h-px bg-white/10 flex-1" />
               </div>
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
+              <button
                 onClick={handleGoogleLogin}
                 disabled={authLoading}
-                className={`w-full py-4 rounded-[24px] border border-white/10 bg-white/5 text-white font-black uppercase tracking-widest text-[11px] flex items-center justify-center gap-3 shadow-sm hover:bg-white/10 transition ${authLoading ? 'opacity-50 cursor-wait' : ''}`}
+                className={`w-full py-4 rounded-[24px] border border-white/10 bg-white/5 text-white font-black uppercase tracking-widest text-[11px] flex items-center justify-center gap-3 shadow-sm hover:bg-white/10 transition active:scale-95 ${authLoading ? 'opacity-50 cursor-wait' : ''}`}
               >
-                <Globe className="h-4 w-4" />
-                Google ile Giriş Yap
-              </motion.button>
+                🌐 Google ile Giriş Yap
+              </button>
             </div>
           </div>
         </div>
