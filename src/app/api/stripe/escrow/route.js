@@ -3,7 +3,7 @@ import Stripe from 'stripe';
 import { createClient } from '@supabase/supabase-js';
 import { verifyAuth, limiter } from '../../_lib/auth';
 
-const PLATFORM_COMMISSION = 0.20; // %20
+const PLATFORM_COMMISSION = 0.10; // %10
 
 const getStripe = () => {
   const key = process.env.STRIPE_SECRET_KEY;

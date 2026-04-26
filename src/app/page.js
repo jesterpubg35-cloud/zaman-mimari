@@ -4735,7 +4735,7 @@ function Home() {
                       </button>
                     </div>
                     <p className={`text-xs opacity-50 ${isDarkMode ? 'text-white' : 'text-black'}`}>
-                      %20 platform komisyonu uygulanır
+                      %10 platform komisyonu uygulanır
                     </p>
                   </div>
 
@@ -4772,8 +4772,8 @@ function Home() {
                     <div className="space-y-1.5 text-[11px] opacity-60">
                       <p>1️⃣ Müşteri işi başlattığında para Stripe'ta dondurulur</p>
                       <p>2️⃣ İşi tamamla, kanıt fotoğrafı yükle</p>
-                      <p>3️⃣ Müşteri onayladığında %80'i hesabına geçer</p>
-                      <p>4️⃣ %20 platform komisyonu kesilir</p>
+                      <p>3️⃣ Müşteri onayladığında %90'ı hesabına geçer</p>
+                      <p>4️⃣ %10 platform komisyonu kesilir</p>
                     </div>
                   </div>
 
