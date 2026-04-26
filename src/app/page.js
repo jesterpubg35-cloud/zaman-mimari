@@ -1701,32 +1701,6 @@ function Home() {
     }));
   }, [isDev]);
 
-  useEffect(() => {
-    let cancelled = false;
-    const syncAuth = async () => {
-      try {
-        const { data } = await supabase.auth.getSession();
-        const uid = data?.session?.user?.id || null;
-        if (cancelled) return;
-        setAuthUid(uid);
-        setAuthSessionOk(Boolean(uid));
-      } catch (e) {
-        if (cancelled) return;
-        setAuthUid(null);
-        setAuthSessionOk(false);
-      }
-    };
-
-    syncAuth();
-    const { data: sub } = supabase.auth.onAuthStateChange(() => {
-      syncAuth();
-    });
-
-    return () => {
-      cancelled = true;
-      sub?.subscription?.unsubscribe?.();
-    };
-  }, []);
 
   const requestNotifications = useCallback(async () => {
     try {
