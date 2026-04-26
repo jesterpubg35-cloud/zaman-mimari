@@ -1936,6 +1936,9 @@ function Home() {
       setAuthUid(uid);
       setAuthSessionOk(Boolean(uid));
 
+      // Sadece gerçek değişikliklerde profil yükle, TOKEN_REFRESHED gibi eventleri atla
+      if (!['SIGNED_IN', 'SIGNED_OUT', 'USER_UPDATED', 'PASSWORD_RECOVERY'].includes(_e)) return;
+
       // Eğer kullanıcı giriş yaptıysa ve profil yoksa otomatik düzelt
       if ((_e === 'SIGNED_IN' || _e === 'USER_UPDATED') && session?.user?.id) {
         const { data: existingProfile } = await supabase
