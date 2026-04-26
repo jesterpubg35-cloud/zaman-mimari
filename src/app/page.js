@@ -1863,7 +1863,7 @@ function Home() {
         .from('profilkisi')
         .select('*')
         .eq('user_id', session.user.id)
-        .single();
+        .maybeSingle();
       if (profile) {
         const normalizedRoles = normalizeRolesValue(profile.roles);
         const existingRoles = normalizeRolesValue(userRef.current?.roles) || userRef.current?.roles;
@@ -1949,6 +1949,34 @@ function Home() {
       const uid = session?.user?.id || null;
       setAuthUid(uid);
       setAuthSessionOk(Boolean(uid));
+
+      // Eğer kullanıcı giriş yaptıysa ve profil yoksa otomatik düzelt
+      if ((_e === 'SIGNED_IN' || _e === 'USER_UPDATED') && session?.user?.id) {
+        const { data: existingProfile } = await supabase
+          .from('profilkisi')
+          .select('user_id')
+          .eq('user_id', session.user.id)
+          .maybeSingle();
+
+        // Profil yok ama email ile kayıt var → user_id'yi güncelle
+        if (!existingProfile) {
+          const email = session.user.email;
+          if (email) {
+            const { data: wrongProfile } = await supabase
+              .from('profilkisi')
+              .select('user_id')
+              .eq('email', email)
+              .maybeSingle();
+            if (wrongProfile?.user_id && wrongProfile.user_id !== session.user.id) {
+              await supabase
+                .from('profilkisi')
+                .update({ user_id: session.user.id })
+                .eq('email', email);
+            }
+          }
+        }
+      }
+
       await loadUserFromSession(session);
       setAuthInitialized(true);
       flushOfflineQueue();
@@ -2598,13 +2626,15 @@ function Home() {
       ]);
       if (authError) throw authError;
       
-      const { data: profile, error: profileError } = await supabase
+      const { data: profiles } = await supabase
         .from('profilkisi')
         .select('*')
         .eq('user_id', authData.user.id)
-        .single();
-      
-      if (profileError) throw profileError;
+        .order('created_at', { ascending: true })
+        .limit(1);
+
+      const profile = profiles?.[0] || null;
+      if (!profile) throw new Error('Profil bulunamadı');
 
       const normalizedRoles = normalizeRolesValue(profile?.roles);
       const rolesForUser = normalizedRoles || (profile?.role ? [profile.role] : ['musteri']);
