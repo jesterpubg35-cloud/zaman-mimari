@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { createClient } from '@supabase/supabase-js';
+import { verifyAuth, limiter } from '../_lib/auth';
 
 // Lazy Stripe initialization - env var yoksa null
 const stripe = process.env.STRIPE_SECRET_KEY 
@@ -21,6 +22,16 @@ const getSupabase = () => {
 
 export async function POST(request) {
   try {
+    const ip = request.headers.get('x-forwarded-for') || 'unknown';
+    if (limiter(ip, 10, 60000)) {
+      return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
+    }
+
+    const { user, error: authError } = await verifyAuth(request);
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     if (!stripe) {
       return NextResponse.json({ error: 'Stripe not configured' }, { status: 500 });
     }
@@ -30,6 +41,11 @@ export async function POST(request) {
 
     if (!amount || !userId) {
       return NextResponse.json({ error: 'Amount and userId required' }, { status: 400 });
+    }
+
+    // Sadece kendi adına ödeme yapabilir
+    if (user.id !== userId) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
     // Stripe Payment Intent oluştur
@@ -53,8 +69,17 @@ export async function POST(request) {
 // Ödeme başarılı olduktan sonra kayıt için endpoint
 export async function PUT(request) {
   try {
+    const { user, error: authError } = await verifyAuth(request);
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const body = await request.json();
     const { userId, amount, commission, netAmount, paymentIntentId, status = 'completed' } = body;
+
+    if (user.id !== userId) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
 
     if (!userId || !amount) {
       return NextResponse.json({ error: 'Required fields missing' }, { status: 400 });

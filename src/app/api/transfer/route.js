@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { verifyAuth, limiter } from '../_lib/auth';
 
 // Lazy Supabase client
 let supabase;
@@ -17,11 +18,31 @@ const getSupabase = () => {
 
 export async function POST(request) {
   try {
+    const ip = request.headers.get('x-forwarded-for') || 'unknown';
+    if (limiter(ip, 5, 60000)) {
+      return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
+    }
+
+    const { user, error: authError } = await verifyAuth(request);
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const body = await request.json();
     const { fromUserId, toUserId, phone, amount, description, commission = 0 } = body;
 
     if (!fromUserId || (!toUserId && !phone) || !amount) {
       return NextResponse.json({ error: 'Required fields missing' }, { status: 400 });
+    }
+
+    // Sadece kendi adına transfer yapabilir
+    if (user.id !== fromUserId) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
+    // Miktar sınırı - negatif veya sıfır engelle
+    if (amount <= 0 || amount > 100000) {
+      return NextResponse.json({ error: 'Invalid amount' }, { status: 400 });
     }
 
     // Alıcıyı bul (telefon veya userId ile)

@@ -4259,9 +4259,10 @@ function Home() {
                     if (!paymentAmount || paymentAmount <= 0) return;
                     setPaymentLoading(true);
                     try {
+                      const { data: { session: sess } } = await supabase.auth.getSession();
                       const res = await fetch('/api/payment', {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
+                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${sess?.access_token}` },
                         body: JSON.stringify({ amount: paymentAmount, userId: user.id })
                       });
                       const data = await res.json();
@@ -4321,9 +4322,10 @@ function Home() {
                         
                         // API'ye kayıt gönder
                         try {
+                          const { data: { session: sessPut } } = await supabase.auth.getSession();
                           await fetch('/api/payment', {
                             method: 'PUT',
-                            headers: { 'Content-Type': 'application/json' },
+                            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${sessPut?.access_token}` },
                             body: JSON.stringify({
                               userId: user.id,
                               amount: amt,
@@ -4407,9 +4409,10 @@ function Home() {
                     }
                     setTransferLoading(true);
                     try {
+                      const { data: { session: sessTr } } = await supabase.auth.getSession();
                       const res = await fetch('/api/transfer', {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
+                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${sessTr?.access_token}` },
                         body: JSON.stringify({
                           fromUserId: user.id,
                           phone: transferPhone,
@@ -4491,9 +4494,10 @@ function Home() {
                       showToast('🔗 Stripe bağlantısı başlatılıyor...');
                       
                       try {
+                        const { data: { session: sessStr } } = await supabase.auth.getSession();
                         const res = await fetch('/api/stripe/connect', {
                           method: 'POST',
-                          headers: { 'Content-Type': 'application/json' },
+                          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${sessStr?.access_token}` },
                           body: JSON.stringify({ userId: user.id })
                         });
                         

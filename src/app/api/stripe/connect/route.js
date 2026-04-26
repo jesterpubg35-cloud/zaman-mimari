@@ -1,12 +1,27 @@
 import { NextResponse } from 'next/server';
+import { verifyAuth, limiter } from '../../_lib/auth';
 
 export async function POST(request) {
   try {
+    const ip = request.headers.get('x-forwarded-for') || 'unknown';
+    if (limiter(ip, 5, 60000)) {
+      return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
+    }
+
+    const { user, error: authError } = await verifyAuth(request);
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const body = await request.json();
     const { userId } = body;
 
     if (!userId) {
       return NextResponse.json({ error: 'User ID required' }, { status: 400 });
+    }
+
+    if (user.id !== userId) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
     const clientId = process.env.STRIPE_CONNECT_CLIENT_ID;
