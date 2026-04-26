@@ -2385,7 +2385,7 @@ function Home() {
       clearInterval(pollInterval);
       document.removeEventListener('visibilitychange', handleVisibility);
     };
-  }, [user]);
+  }, [user?.id]);
 
   // History sayfası açıldığında verileri çek
   useEffect(() => {
