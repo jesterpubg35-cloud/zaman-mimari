@@ -4386,7 +4386,7 @@ function Home() {
               {/* Bakiye Kartı */}
               <div className={`rounded-3xl p-6 mb-6 border ${isDarkMode ? 'bg-white/5 border-white/10' : 'bg-zinc-100 border-black/10'}`}>
                 <p className={`text-sm opacity-60 mb-1 ${isDarkMode ? 'text-white' : 'text-black'}`}>Mevcut Bakiye</p>
-                <p className={`text-4xl font-black ${isDarkMode ? 'text-white' : 'text-black'}`}>{walletBalance}₺</p>
+                <p className={`text-4xl font-black ${isDarkMode ? 'text-white' : 'text-black'}`}>{walletBalance}</p>
               </div>
 
               {/* Para Yatırma */}
@@ -4395,23 +4395,26 @@ function Home() {
                 
                 {/* Komisyon bilgisi */}
                 <div className={`mb-4 p-3 rounded-lg text-xs ${isDarkMode ? 'bg-white/5 text-white/70' : 'bg-zinc-200 text-black/70'}`}>
-                  <p>Komisyon: min 10₺ veya %3.5</p>
-                  {paymentAmount > 0 && (
-                    <p className="mt-1 text-[#2ECC71]">
-                      {(() => {
-                        const amt = parseFloat(paymentAmount) || 0;
-                        const commission = Math.max(10, amt * 0.035);
-                        return `Yatırılan: ${amt}₺ | Komisyon: ${commission.toFixed(2)}₺ | Net: ${(amt - commission).toFixed(2)}₺`;
-                      })()}
-                    </p>
-                  )}
+                  <p>İşlem ücreti: min 25 veya %5 (üstüne eklenir)</p>
+                  {paymentAmount > 0 && (() => {
+                    const amt = parseFloat(paymentAmount) || 0;
+                    const commission = Math.max(25, amt * 0.05);
+                    const total = amt + commission;
+                    return (
+                      <div className="mt-2 space-y-1">
+                        <p>İşlem ücreti: <span className="text-yellow-400">{commission.toFixed(2)}</span></p>
+                        <p>Toplam ödenecek: <span className="text-white font-bold">{total.toFixed(2)}</span></p>
+                        <p>Cüzdanınıza gelecek: <span className="text-[#2ECC71] font-bold">{amt.toFixed(2)}</span></p>
+                      </div>
+                    );
+                  })()}
                 </div>
 
                 <input
                   type="number"
                   value={paymentAmount}
                   onChange={(e) => setPaymentAmount(e.target.value)}
-                  placeholder="Miktar (₺)"
+                  placeholder="Miktar"
                   className={`w-full p-4 rounded-xl text-lg mb-4 outline-none border ${isDarkMode ? 'bg-white/10 text-white placeholder-gray-500 border-white/10' : 'bg-zinc-200 text-black border-black/20'}`}
                 />
                 <button
@@ -4464,21 +4467,23 @@ function Home() {
                         className={`flex-1 p-3 rounded-lg border text-sm outline-none ${isDarkMode ? 'bg-white/10 border-white/20 text-white placeholder-gray-500' : 'bg-white border-black/20 text-black'}`}
                       />
                     </div>
-                    {paymentAmount > 0 && (
-                      <p className={`text-xs ${isDarkMode ? 'text-white/70' : 'text-black/70'}`}>
-                        {(() => {
-                          const amt = parseFloat(paymentAmount) || 0;
-                          const commission = Math.max(10, amt * 0.035);
-                          const net = amt - commission;
-                          return `Kartınızdan çekilecek: ${amt}₺ | Bakiyenize geçecek: ${net.toFixed(2)}₺ | Komisyon: ${commission.toFixed(2)}₺`;
-                        })()}
-                      </p>
-                    )}
+                    {paymentAmount > 0 && (() => {
+                      const amt = parseFloat(paymentAmount) || 0;
+                      const commission = Math.max(25, amt * 0.05);
+                      const total = amt + commission;
+                      return (
+                        <div className={`text-xs space-y-1 ${isDarkMode ? 'text-white/70' : 'text-black/70'}`}>
+                          <p>İşlem ücreti: <span className="text-yellow-400">{commission.toFixed(2)}</span></p>
+                          <p>Toplam ödenecek: <span className={`font-bold ${isDarkMode ? 'text-white' : 'text-black'}`}>{total.toFixed(2)}</span></p>
+                          <p>Cüzdanınıza gelecek: <span className="text-[#2ECC71] font-bold">{amt.toFixed(2)}</span></p>
+                        </div>
+                      );
+                    })()}
                     <button
                       onClick={async () => {
                         const amt = parseFloat(paymentAmount) || 0;
-                        const commission = Math.max(10, amt * 0.035);
-                        const net = amt - commission;
+                        const commission = Math.max(25, amt * 0.05);
+                        const net = amt;
                         
                         // API'ye kayıt gönder
                         try {
@@ -4531,16 +4536,19 @@ function Home() {
 
                 {/* Komisyon bilgisi */}
                 <div className={`mb-4 p-3 rounded-lg text-xs ${isDarkMode ? 'bg-white/5 text-white/70' : 'bg-zinc-200 text-black/70'}`}>
-                  <p>Transfer komisyonu: min 5₺ veya %1.5</p>
-                  {transferAmount > 0 && (
-                    <p className="mt-1 text-[#2ECC71]">
-                      {(() => {
-                        const amt = parseFloat(transferAmount) || 0;
-                        const commission = Math.max(5, amt * 0.015);
-                        return `Gönderilen: ${amt}₺ | Komisyon: ${commission.toFixed(2)}₺ | Alıcıya geçecek: ${(amt - commission).toFixed(2)}₺`;
-                      })()}
-                    </p>
-                  )}
+                  <p>Transfer ücreti: min 20 veya %4 (üstüne eklenir)</p>
+                  {transferAmount > 0 && (() => {
+                    const amt = parseFloat(transferAmount) || 0;
+                    const commission = Math.max(20, amt * 0.04);
+                    const total = amt + commission;
+                    return (
+                      <div className="mt-2 space-y-1">
+                        <p>Transfer ücreti: <span className="text-yellow-400">{commission.toFixed(2)}</span></p>
+                        <p>Toplam ödenecek: <span className="text-white font-bold">{total.toFixed(2)}</span></p>
+                        <p>Alıcıya gelecek: <span className="text-[#2ECC71] font-bold">{amt.toFixed(2)}</span></p>
+                      </div>
+                    );
+                  })()}
                 </div>
 
                 <input
@@ -4561,8 +4569,8 @@ function Home() {
                   onClick={async () => {
                     if (!transferPhone || !transferAmount) return;
                     const amt = parseFloat(transferAmount) || 0;
-                    const commission = Math.max(5, amt * 0.015);
-                    const totalNeeded = amt; // Gönderen komisyonlu öder
+                    const commission = Math.max(20, amt * 0.04);
+                    const totalNeeded = amt + commission;
                     if (totalNeeded > walletBalance) {
                       showToast('Yetersiz bakiye! (Komisyon dahil: ' + totalNeeded.toFixed(2) + '₺)');
                       return;
