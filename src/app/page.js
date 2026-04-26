@@ -4423,30 +4423,14 @@ function Home() {
                   className={`w-full p-4 rounded-xl text-lg mb-4 outline-none border ${isDarkMode ? 'bg-white/10 text-white placeholder-gray-500 border-white/10' : 'bg-zinc-200 text-black border-black/20'}`}
                 />
                 <button
-                  onClick={async () => {
-                    if (!paymentAmount || paymentAmount <= 0) return;
-                    setPaymentLoading(true);
-                    try {
-                      const { data: { session: sess } } = await supabase.auth.getSession();
-                      const res = await fetch('/api/payment', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${sess?.access_token}` },
-                        body: JSON.stringify({ amount: paymentAmount, userId: user.id })
-                      });
-                      const data = await res.json();
-                      if (data.clientSecret) {
-                        setClientSecret(data.clientSecret);
-                      }
-                    } catch (e) {
-                      showToast('Ödeme başlatılamadı');
-                    } finally {
-                      setPaymentLoading(false);
-                    }
+                  onClick={() => {
+                    if (!paymentAmount || parseFloat(paymentAmount) <= 0) return;
+                    setClientSecret('show');
                   }}
-                  disabled={paymentLoading || !paymentAmount}
-                  className="w-full py-4 bg-[#2ECC71] text-black rounded-2xl font-bold text-sm disabled:opacity-50"
+                  disabled={!paymentAmount || parseFloat(paymentAmount) <= 0}
+                  className="w-full py-4 bg-[#2ECC71] text-black rounded-2xl font-bold text-sm disabled:opacity-50 active:scale-95 transition-transform"
                 >
-                  {paymentLoading ? 'Yükleniyor...' : 'Kart ile Öde'}
+                  Kart ile Öde
                 </button>
 
                 {clientSecret && (
@@ -4527,7 +4511,7 @@ function Home() {
                         setPaymentAmount('');
                         setWalletBalance(prev => prev + net);
                       }}
-                      className="w-full py-3 bg-[#2ECC71] text-black rounded-xl font-bold text-sm"
+                      className="w-full py-3 bg-[#2ECC71] text-black rounded-xl font-bold text-sm active:scale-95 transition-transform"
                     >
                       Ödemeyi Tamamla
                     </button>
@@ -4624,7 +4608,7 @@ function Home() {
                     }
                   }}
                   disabled={transferLoading || !transferPhone || !transferAmount}
-                  className="w-full py-4 bg-[#2ECC71] text-black rounded-2xl font-bold text-sm disabled:opacity-50"
+                  className="w-full py-4 bg-[#2ECC71] text-black rounded-2xl font-bold text-sm disabled:opacity-50 active:scale-95 transition-transform"
                 >
                   {transferLoading ? 'Gönderiliyor...' : 'Para Gönder'}
                 </button>
