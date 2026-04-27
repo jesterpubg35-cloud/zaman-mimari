@@ -5,8 +5,8 @@ const config: CapacitorConfig = {
   appName: 'Zaman Mimari',
   webDir: 'public',
   server: {
-    url: 'http://192.168.1.152:3000',
-    cleartext: true,
+    url: 'https://zaman-mimari.vercel.app',
+    cleartext: false,
   },
 };
 

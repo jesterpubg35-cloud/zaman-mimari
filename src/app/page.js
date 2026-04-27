@@ -4036,17 +4036,6 @@ function Home() {
           </div>
         )}
 
-        <button
-          onClick={konumaGit}
-          className="fixed bottom-24 right-5 z-[2900] w-12 h-12 rounded-2xl bg-black/60 border border-white/10 backdrop-blur-md flex items-center justify-center shadow-lg active:scale-95 transition-transform"
-          title="Konumuma Git"
-        >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2ECC71" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="12" cy="12" r="3"/>
-            <path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>
-            <path d="M12 8a4 4 0 100 8 4 4 0 000-8z" strokeOpacity="0.3"/>
-          </svg>
-        </button>
 
         <div className="absolute inset-0 z-0 h-[100dvh] w-screen" onClick={() => setSeciliKisi(null)}>
           <MapView
@@ -4985,7 +4974,19 @@ function Home() {
           />
         )}
         <div className={`fixed bottom-0 left-0 right-0 rounded-t-[40px] z-[3000] transition-transform duration-500 ${isDarkMode ? 'bg-[#121212]' : 'bg-slate-200/90 backdrop-blur-xl border border-black/10 shadow-2xl'}`} style={{ transform: (sheetYukseklik === 1 && !seciliKisi) ? 'translateY(80%)' : 'translateY(0)' }}>
-          <div className="w-full py-4 flex justify-center cursor-pointer" onClick={() => setSheetYukseklik(sheetYukseklik === 0 ? 1 : 0)}><div className={`w-12 h-1.5 rounded-full ${isDarkMode ? 'bg-gray-500/30' : 'bg-black/15'}`}></div></div>
+          <div className="w-full py-4 flex items-center justify-center relative cursor-pointer" onClick={() => setSheetYukseklik(sheetYukseklik === 0 ? 1 : 0)}>
+            <div className={`w-12 h-1.5 rounded-full ${isDarkMode ? 'bg-gray-500/30' : 'bg-black/15'}`}></div>
+            <button
+              onClick={(e) => { e.stopPropagation(); konumaGit(); }}
+              className={`absolute right-4 w-9 h-9 rounded-xl flex items-center justify-center shadow active:scale-95 transition-transform ${isDarkMode ? 'bg-white/10 border border-white/10' : 'bg-white border border-black/10'}`}
+              title="Konumuma Git"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2ECC71" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="3"/>
+                <path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>
+              </svg>
+            </button>
+          </div>
           <div className="px-6 pb-10">
             {seciliKisi ? (
               <div className="animate-in fade-in slide-in-from-bottom-4">
@@ -5000,29 +5001,31 @@ function Home() {
               </div>
             ) : (
               <div className="animate-in fade-in zoom-in-95">
-                <div className="grid grid-cols-4 gap-3">
+                <div className="grid grid-cols-2 gap-3">
                   {[
-                    { key: 'kurye', emoji: '📦', label: t.fastCourier, desc: t.courierDesc, color: '#fbbf24' },
-                    { key: 'emanetci', emoji: '💼', label: t.custodian, desc: t.custodianDesc, color: '#3b82f6' },
-                    { key: 'siraci', emoji: '⏳', label: t.waitInLine, desc: t.waitDesc, color: '#22c55e' },
-                    { key: 'hepsi', emoji: '🌍', label: t.all, desc: t.allDesc, color: '#9333ea' }
-                  ].map(({ key, emoji, label, desc, color }) => (
-                    <div 
-                      key={key} 
+                    { key: 'kurye', emoji: '🚗', label: t.fastCourier, desc: t.courierDesc },
+                    { key: 'emanetci', emoji: '💼', label: t.custodian, desc: t.custodianDesc },
+                    { key: 'siraci', emoji: '⏱', label: t.waitInLine, desc: t.waitDesc },
+                    { key: 'hepsi', emoji: '🌍', label: t.all, desc: t.allDesc }
+                  ].map(({ key, emoji, label, desc }) => (
+                    <div
+                      key={key}
                       onClick={() => setAktifFiltre(key)}
-                      className={`p-3 rounded-[20px] border-2 flex flex-col justify-between transition-all cursor-pointer ${
-                        aktifFiltre === key 
-                          ? 'border-[#2ECC71] bg-[#2ECC71]/5' 
-                          : `border-transparent ${isDarkMode ? 'bg-gray-500/5' : 'bg-white border border-black/10'}`
+                      className={`px-4 py-3 rounded-2xl flex items-center gap-3 transition-all cursor-pointer border ${
+                        aktifFiltre === key
+                          ? `border-[#2ECC71] ${isDarkMode ? 'bg-[#2ECC71]/10' : 'bg-[#2ECC71]/10'}`
+                          : `border-transparent ${isDarkMode ? 'bg-white/5' : 'bg-white border-black/8'}`
                       }`}
                     >
-                      <span className="text-xl mb-1">{emoji}</span>
-                      <p className={`font-black text-[9px] uppercase italic ${isDarkMode ? 'text-white' : 'text-black'}`}>{label}</p>
-                      <p className={`text-[7px] font-bold uppercase mt-1 leading-tight ${isDarkMode ? 'opacity-40' : 'text-black/50'}`}>{desc}</p>
+                      <span className="text-2xl flex-shrink-0">{emoji}</span>
+                      <div className="min-w-0">
+                        <p className={`font-black text-[11px] uppercase ${isDarkMode ? 'text-white' : 'text-black'}`}>{label}</p>
+                        <p className={`text-[9px] font-medium mt-0.5 leading-tight truncate ${isDarkMode ? 'text-white/40' : 'text-black/40'}`}>{desc}</p>
+                      </div>
                     </div>
                   ))}
                 </div>
-                <p className={`mt-6 text-center text-[10px] font-bold opacity-20 uppercase italic tracking-widest ${isDarkMode ? 'text-white' : 'text-black'}`}>{t.tagline}</p>
+                <p className={`mt-4 text-center text-[10px] font-bold opacity-20 uppercase italic tracking-widest ${isDarkMode ? 'text-white' : 'text-black'}`}>{t.tagline}</p>
               </div>
             )}
           </div>

@@ -85,18 +85,18 @@ export default function LeafletMapView({
   const selfColor = getRoleColor(currentUserData.roles);
 
   const selfIconHtml = `
-    <div style="width:28px;height:28px;position:relative;display:flex;align-items:center;justify-content:center;">
+    <div style="width:28px;height:44px;position:relative;display:flex;align-items:flex-end;justify-content:center;">
       ${heading !== null && heading !== undefined ? `
         <div style="
           position:absolute;
+          top:0;left:50%;
+          transform:translateX(-50%) rotate(${heading}deg);
+          transform-origin:50% calc(100% + 8px);
           width:0;height:0;
           border-left:5px solid transparent;
           border-right:5px solid transparent;
-          border-bottom:12px solid ${selfColor};
-          top:-4px;left:50%;
-          transform:translateX(-50%) rotate(${heading}deg);
-          transform-origin:50% 200%;
-          opacity:0.85;
+          border-bottom:13px solid ${selfColor};
+          opacity:0.9;
         "></div>
       ` : ''}
       <div style="
@@ -104,7 +104,8 @@ export default function LeafletMapView({
         background-color:${selfColor};
         border:2px solid white;
         box-shadow:0 2px 8px rgba(0,0,0,0.5);
-        z-index:1;
+        position:relative;z-index:1;
+        flex-shrink:0;
       "></div>
     </div>
   `;
@@ -154,7 +155,7 @@ export default function LeafletMapView({
         {lat && lng && (
           <Marker
             position={[lat, lng]}
-            icon={createDivIcon(selfIconHtml, 28)}
+            icon={L.divIcon({ html: selfIconHtml, className: '', iconSize: [28, 44], iconAnchor: [14, 37] })}
             eventHandlers={{}}
           />
         )}
