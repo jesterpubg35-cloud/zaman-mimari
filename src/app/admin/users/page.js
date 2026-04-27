@@ -56,32 +56,70 @@ function safeStr(v) {
   return String(v);
 }
 
+const ADMIN_EMAIL = 'uguryigitkarakuzu@gmail.com';
+
 export default function AdminUsersPage() {
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState(null);
   const [users, setUsers] = useState([]);
   const [expanded, setExpanded] = useState(() => new Set());
   const [q, setQ] = useState('');
+  const [authChecked, setAuthChecked] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [loginEmail, setLoginEmail] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
+  const [loginLoading, setLoginLoading] = useState(false);
+  const [loginErr, setLoginErr] = useState('');
+
+  const getSupabase = useCallback(async () => {
+    const { createClient } = await import('@supabase/supabase-js');
+    return createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+      { auth: { autoRefreshToken: true, persistSession: true, detectSessionInUrl: true } }
+    );
+  }, []);
+
+  // İlk yüklemede oturum kontrolü
+  useEffect(() => {
+    (async () => {
+      const supabase = await getSupabase();
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user?.email === ADMIN_EMAIL) {
+        setIsAdmin(true);
+      }
+      setAuthChecked(true);
+    })();
+  }, [getSupabase]);
+
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setLoginLoading(true);
+    setLoginErr('');
+    try {
+      const supabase = await getSupabase();
+      const { data, error } = await supabase.auth.signInWithPassword({ email: loginEmail, password: loginPassword });
+      if (error) throw error;
+      if (data?.user?.email !== ADMIN_EMAIL) {
+        await supabase.auth.signOut();
+        throw new Error('Bu hesabın admin yetkisi yok.');
+      }
+      setIsAdmin(true);
+    } catch (e) {
+      setLoginErr(e?.message || 'Giriş başarısız');
+    } finally {
+      setLoginLoading(false);
+    }
+  };
 
   const load = useCallback(async () => {
     setLoading(true);
     setErr(null);
     try {
-      const { createClient } = await import('@supabase/supabase-js');
-      const supabase = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-        {
-          auth: {
-            autoRefreshToken: true,
-            persistSession: true,
-            detectSessionInUrl: true,
-          },
-        }
-      );
-
+      const supabase = await getSupabase();
       const { data: sessionData, error: sessionErr } = await supabase.auth.getSession();
       if (sessionErr) throw sessionErr;
+      if (sessionData?.session?.user?.email !== ADMIN_EMAIL) throw new Error('Unauthorized');
 
       const token = sessionData?.session?.access_token;
       if (!token) throw new Error('Unauthorized');
@@ -105,14 +143,13 @@ export default function AdminUsersPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [getSupabase]);
 
   useEffect(() => {
-    const id = setTimeout(() => {
-      load();
-    }, 0);
+    if (!isAdmin) return;
+    const id = setTimeout(() => load(), 0);
     return () => clearTimeout(id);
-  }, [load]);
+  }, [load, isAdmin]);
 
   const filtered = useMemo(() => {
     const qq = q.trim().toLowerCase();
@@ -232,6 +269,51 @@ export default function AdminUsersPage() {
 
     doc.save(`kullanicilar-${new Date().toISOString().slice(0, 10)}.pdf`);
   }, [filtered]);
+
+  if (!authChecked) {
+    return (
+      <main className="min-h-screen bg-zinc-950 flex items-center justify-center">
+        <div className="text-white/40 text-sm font-bold">Yükleniyor...</div>
+      </main>
+    );
+  }
+
+  if (!isAdmin) {
+    return (
+      <main className="min-h-screen bg-gradient-to-b from-zinc-950 to-zinc-900 flex items-center justify-center p-6">
+        <form onSubmit={handleLogin} className="w-full max-w-sm bg-white/5 border border-white/10 rounded-3xl p-8 flex flex-col gap-4">
+          <div className="text-center mb-2">
+            <div className="text-2xl font-black text-emerald-400 mb-1">TICK</div>
+            <div className="text-white/60 text-sm">Admin Paneli</div>
+          </div>
+          {loginErr && <div className="text-red-400 text-xs font-bold text-center bg-red-500/10 rounded-xl p-3">{loginErr}</div>}
+          <input
+            type="email"
+            value={loginEmail}
+            onChange={e => setLoginEmail(e.target.value)}
+            placeholder="E-posta"
+            required
+            className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white outline-none placeholder:text-white/30"
+          />
+          <input
+            type="password"
+            value={loginPassword}
+            onChange={e => setLoginPassword(e.target.value)}
+            placeholder="Şifre"
+            required
+            className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white outline-none placeholder:text-white/30"
+          />
+          <button
+            type="submit"
+            disabled={loginLoading}
+            className="py-3 bg-emerald-500 text-black font-black rounded-xl text-sm disabled:opacity-50"
+          >
+            {loginLoading ? 'Giriş yapılıyor...' : 'Giriş Yap'}
+          </button>
+        </form>
+      </main>
+    );
+  }
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-zinc-950 to-zinc-900 text-white">
