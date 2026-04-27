@@ -7,22 +7,55 @@ import 'leaflet/dist/leaflet.css';
 function SelfMarker({ lat, lng, color }) {
   const map = useMap();
   const markerRef = useRef(null);
+  const isZoomingRef = useRef(false);
+  const pendingLatLng = useRef(null);
 
-  const buildIcon = (c) => L.divIcon({
-    html: `<div style="width:14px;height:14px;border-radius:50%;background-color:${c};border:2px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.5);"></div>`,
+  const icon = L.divIcon({
+    html: `<div style="width:14px;height:14px;border-radius:50%;background-color:${color};border:2px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.5);"></div>`,
     className: '',
     iconSize: [14, 14],
     iconAnchor: [7, 7],
   });
 
+  // İlk oluşturma
   useEffect(() => {
     if (!lat || !lng) return;
     if (!markerRef.current) {
       markerRef.current = L.marker([lat, lng], {
-        icon: buildIcon(color),
+        icon,
         zIndexOffset: 1000,
         interactive: false,
       }).addTo(map);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Zoom event - zoom süresince konum güncelleme ve CSS transition engelle
+  useEffect(() => {
+    const onZoomStart = () => {
+      isZoomingRef.current = true;
+      const el = markerRef.current?.getElement();
+      if (el) el.style.transition = 'none';
+    };
+    const onZoomEnd = () => {
+      isZoomingRef.current = false;
+      const el = markerRef.current?.getElement();
+      if (el) el.style.transition = '';
+      if (pendingLatLng.current && markerRef.current) {
+        markerRef.current.setLatLng(pendingLatLng.current);
+        pendingLatLng.current = null;
+      }
+    };
+    map.on('zoomstart', onZoomStart);
+    map.on('zoomend', onZoomEnd);
+    return () => { map.off('zoomstart', onZoomStart); map.off('zoomend', onZoomEnd); };
+  }, [map]);
+
+  // Konum değişince - zoom yoksa uygula, varsa beklet
+  useEffect(() => {
+    if (!lat || !lng || !markerRef.current) return;
+    if (isZoomingRef.current) {
+      pendingLatLng.current = [lat, lng];
     } else {
       markerRef.current.setLatLng([lat, lng]);
     }

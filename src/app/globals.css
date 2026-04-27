@@ -106,6 +106,12 @@ button:active, a:active, [role="button"]:active {
   touch-action: manipulation;
 }
 
+/* Leaflet zoom sırasında marker kaymasını önle */
+.leaflet-zoom-anim .leaflet-marker-pane > * {
+  transition: none !important;
+  will-change: transform;
+}
+
 /* Leaflet Map düzeltmeleri */
 .leaflet-container {
   height: 100% !important;
