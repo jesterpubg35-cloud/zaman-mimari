@@ -3353,6 +3353,8 @@ function Home() {
 
   const filteredDigerleri = (() => {
     const result = digerleri.filter(u => {
+      // Kendini gösterme
+      if (user && u.user_id === user.id) return false;
       // Engelleme kontrolü
       if (myBlocks.has(u.user_id) || blockedByOthers.has(u.user_id)) return false;
       
