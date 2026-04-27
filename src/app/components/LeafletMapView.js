@@ -98,12 +98,25 @@ function createDivIcon(html, size = 28) {
 
 function GPSTracker({ lat, lng, isTracking, mapRef }) {
   const map = useMap();
+  const isZoomingRef = useRef(false);
+
   useEffect(() => {
     if (mapRef) mapRef.current = map;
   }, [map, mapRef]);
 
   useEffect(() => {
-    if (lat && lng && isTracking && map) {
+    const onZoomStart = () => { isZoomingRef.current = true; };
+    const onZoomEnd = () => { isZoomingRef.current = false; };
+    map.on('zoomstart', onZoomStart);
+    map.on('zoomend', onZoomEnd);
+    return () => {
+      map.off('zoomstart', onZoomStart);
+      map.off('zoomend', onZoomEnd);
+    };
+  }, [map]);
+
+  useEffect(() => {
+    if (lat && lng && isTracking && map && !isZoomingRef.current) {
       map.setView([lat, lng], map.getZoom(), { animate: true });
     }
   }, [lat, lng, isTracking, map]);
@@ -114,7 +127,6 @@ function GPSTracker({ lat, lng, isTracking, mapRef }) {
 function InteractionHandler({ onUserMove }) {
   useMapEvents({
     dragstart: () => onUserMove(),
-    zoomstart: () => onUserMove(),
   });
   return null;
 }
