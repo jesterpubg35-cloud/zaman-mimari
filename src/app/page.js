@@ -1612,8 +1612,9 @@ function Home() {
   const myBlocksRef = useRef(new Set());
   const blockedByOthersRef = useRef(new Set());
 
-  // Hydration kontrolü - butonlar SSR sonrası aktif olsun
-  const [isHydrated] = useState(true);
+  // Hydration kontrolü - client mount sonrası aktif olsun
+  const [isHydrated, setIsHydrated] = useState(false);
+  useEffect(() => { setIsHydrated(true); }, []);
 
   const mapRef = useRef(null);
   const sonKonumRef = useRef(null);
@@ -4048,7 +4049,7 @@ function Home() {
       className={`w-screen overflow-hidden ${isDarkMode ? 'bg-[#0F0F0F] text-white' : 'bg-white text-black'} h-[100dvh]`}
       suppressHydrationWarning
     >
-      <audio id="radar-remote-audio" autoPlay playsInline style={{ display: 'none' }} suppressHydrationWarning />
+      {isHydrated && <audio id="radar-remote-audio" autoPlay playsInline style={{ display: 'none' }} />}
       <div className="relative w-full h-[100dvh]">
         {showNotifPrompt && (
           <div className="fixed left-1/2 -translate-x-1/2 top-6 z-[4000] w-[92%] max-w-md">
