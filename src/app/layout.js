@@ -14,20 +14,23 @@ const geistMono = Geist_Mono({
 export const metadata = {
   title: "Tick - Yerel Hizmet Ağı",
   description: "Yakınınızdaki hizmet sağlayıcıları bulun",
-  viewport: {
-    width: 'device-width',
-    initialScale: 1,
-    maximumScale: 1,
-    userScalable: false,
-    viewportFit: 'cover',
-  },
-  themeColor: '#0F0F0F',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
     title: 'Tick',
   },
 };
+
+export function generateViewport() {
+  return {
+    width: 'device-width',
+    initialScale: 1,
+    maximumScale: 5,
+    userScalable: true,
+    viewportFit: 'cover',
+    themeColor: '#0F0F0F',
+  };
+}
 
 export default function RootLayout({ children }) {
   return (

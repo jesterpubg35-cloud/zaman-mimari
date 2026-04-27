@@ -4047,7 +4047,7 @@ function Home() {
     <main 
       className={`w-screen overflow-hidden ${isDarkMode ? 'bg-[#0F0F0F] text-white' : 'bg-white text-black'} h-[100dvh]`}
     >
-      <audio id="radar-remote-audio" autoPlay playsInline style={{ display: 'none' }} />
+      <audio id="radar-remote-audio" autoPlay playsInline style={{ display: 'none' }} suppressHydrationWarning />
       <div className="relative w-full h-[100dvh]">
         {showNotifPrompt && (
           <div className="fixed left-1/2 -translate-x-1/2 top-6 z-[4000] w-[92%] max-w-md">
