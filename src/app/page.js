@@ -149,7 +149,7 @@ function MapView({
           provider={dark ? darkTileProvider : lightTileProvider}
           center={effectiveCenter}
           zoom={zoom}
-          minZoom={typeof window !== 'undefined' && window.matchMedia('(pointer: coarse)').matches ? 1 : 2}
+          minZoom={1}
           maxZoom={22}
           animate={true}
           animateMaxScreens={5}
