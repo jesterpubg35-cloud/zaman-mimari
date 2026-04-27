@@ -114,7 +114,10 @@ function MapView({
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
-    el.style.touchAction = 'pan-x pan-y';
+    el.style.touchAction = 'none';
+    // Pigeon-maps'in kendi touch handler'ları çalışsın diye passive listener engelle
+    const noop = (e) => e.stopPropagation();
+    el.addEventListener('touchstart', noop, { passive: true });
   }, [libsReady]);
 
   // onResetRef: "Beni Bul" butonu ile manuel tetikleme
@@ -150,7 +153,7 @@ function MapView({
   }
 
   return (
-    <div ref={containerRef} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, width: '100%', height: '100%', overflow: 'hidden' }}>
+    <div ref={containerRef} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, width: '100%', height: '100%', overflow: 'hidden', touchAction: 'none' }}>
       <PigeonMap
           provider={dark ? darkTileProvider : lightTileProvider}
           center={center}
@@ -163,7 +166,7 @@ function MapView({
           touchEvents={true}
           twoFingerDrag={false}
           metaWheelZoom={true}
-          style={{ width: '100%', height: '100%', touchAction: 'pan-x pan-y' }}
+          style={{ width: '100%', height: '100%', touchAction: 'none' }}
           onBoundsChanged={({ center: newCenter, zoom: newZoom }) => {
             userInteracted.current = true;
             setZoom(newZoom);
@@ -4095,7 +4098,7 @@ function Home() {
           </div>
         )}
 
-        <div className="absolute inset-0 z-0 h-[100dvh] w-screen" onClick={() => setSeciliKisi(null)}>
+        <div className="absolute inset-0 z-0 h-[100dvh] w-screen" style={{ touchAction: 'none' }} onClick={() => setSeciliKisi(null)}>
           <MapView
             lat={konum?.lat}
             lng={konum?.lng}
