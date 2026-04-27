@@ -4,6 +4,50 @@ import { MapContainer, TileLayer, Marker, useMap, useMapEvents } from 'react-lea
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
+function SelfMarker({ lat, lng, heading, color }) {
+  const map = useMap();
+  const markerRef = useRef(null);
+
+  const buildIcon = (h, c) => {
+    const html = `
+      <div style="width:36px;height:36px;position:relative;display:flex;align-items:center;justify-content:center;">
+        ${h !== null && h !== undefined ? `
+          <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;transform:rotate(${h}deg);transform-origin:50% 50%;">
+            <div style="width:0;height:0;border-left:4px solid transparent;border-right:4px solid transparent;border-bottom:10px solid ${c};transform:translateY(-12px);opacity:0.95;"></div>
+          </div>` : ''}
+        <div style="width:14px;height:14px;border-radius:50%;background-color:${c};border:2px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.5);position:relative;z-index:1;"></div>
+      </div>`;
+    return L.divIcon({ html, className: '', iconSize: [36, 36], iconAnchor: [18, 18] });
+  };
+
+  useEffect(() => {
+    if (!lat || !lng) return;
+    if (!markerRef.current) {
+      markerRef.current = L.marker([lat, lng], {
+        icon: buildIcon(heading, color),
+        zIndexOffset: 1000,
+        interactive: false,
+      }).addTo(map);
+    } else {
+      markerRef.current.setLatLng([lat, lng]);
+      markerRef.current.setIcon(buildIcon(heading, color));
+    }
+    return () => {};
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lat, lng, heading, color]);
+
+  useEffect(() => {
+    return () => {
+      if (markerRef.current) {
+        markerRef.current.remove();
+        markerRef.current = null;
+      }
+    };
+  }, []);
+
+  return null;
+}
+
 // Leaflet default icon fix
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -84,38 +128,6 @@ export default function LeafletMapView({
   const currentUserData = currentUser || { roles: ['musteri'], user_role: 'musteri', user_id: 'self' };
   const selfColor = getRoleColor(currentUserData.roles);
 
-  const selfIconHtml = `
-    <div style="width:36px;height:36px;position:relative;display:flex;align-items:center;justify-content:center;">
-      ${heading !== null && heading !== undefined ? `
-        <div style="
-          position:absolute;
-          inset:0;
-          display:flex;
-          align-items:center;
-          justify-content:center;
-          transform:rotate(${heading}deg);
-          transform-origin:50% 50%;
-        ">
-          <div style="
-            width:0;height:0;
-            border-left:4px solid transparent;
-            border-right:4px solid transparent;
-            border-bottom:10px solid ${selfColor};
-            transform:translateY(-12px);
-            opacity:0.95;
-          "></div>
-        </div>
-      ` : ''}
-      <div style="
-        width:14px;height:14px;border-radius:50%;
-        background-color:${selfColor};
-        border:2px solid white;
-        box-shadow:0 2px 8px rgba(0,0,0,0.5);
-        position:relative;z-index:1;
-      "></div>
-    </div>
-  `;
-
   const tileUrl = dark
     ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
     : 'https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}';
@@ -157,14 +169,8 @@ export default function LeafletMapView({
         <GPSTracker lat={lat} lng={lng} isTracking={isTracking} mapRef={mapRef} />
         <InteractionHandler onUserMove={handleUserMove} />
 
-        {/* Kendi marker'ı */}
-        {lat && lng && (
-          <Marker
-            position={[lat, lng]}
-            icon={L.divIcon({ html: selfIconHtml, className: '', iconSize: [36, 36], iconAnchor: [18, 18] })}
-            eventHandlers={{}}
-          />
-        )}
+        {/* Kendi marker'ı - doğrudan Leaflet API ile, zoom/pan'de kaymasın */}
+        {lat && lng && <SelfMarker lat={lat} lng={lng} heading={heading} color={selfColor} />}
 
         {/* Diğer kullanıcı marker'ları */}
         {(others || []).map((u) => {
