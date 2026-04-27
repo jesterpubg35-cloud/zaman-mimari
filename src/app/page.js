@@ -149,14 +149,14 @@ function MapView({
           provider={dark ? darkTileProvider : lightTileProvider}
           center={effectiveCenter}
           zoom={zoom}
-          minZoom={1}
+          minZoom={typeof window !== 'undefined' && window.matchMedia('(pointer: coarse)').matches ? 1 : 2}
           maxZoom={22}
           animate={true}
           animateMaxScreens={5}
           mouseEvents={true}
           touchEvents={true}
           twoFingerDrag={false}
-          metaWheelZoom={false}
+          metaWheelZoom={true}
           style={{ width: '100%', height: '100%' }}
           onBoundsChanged={({ center: newCenter, zoom: newZoom }) => {
             if (!userModified) setUserModified(true);
