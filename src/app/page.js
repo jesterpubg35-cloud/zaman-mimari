@@ -4057,7 +4057,7 @@ function Home() {
             <div className="flex-1 space-y-1">
               {['support', 'payment', 'history'].map(p => <button key={p} onClick={() => setAktifPage(p)} className={`w-full text-left py-3 px-2 font-semibold text-sm border-b transition-all hover:scale-[1.01] hover:bg-white/5 hover:shadow-[0_0_20px_rgba(255,255,255,0.06)] ${isDarkMode ? 'text-white border-white/10' : 'text-black border-black/10'}`}>{t[p]}</button>)}
               {user?.is_admin && (
-                <button onClick={() => setAktifPage('admin')} className={`w-full text-left py-3 px-2 font-semibold text-sm border-b transition-all hover:scale-[1.01] hover:bg-red-500/10 ${isDarkMode ? 'text-red-400 border-white/10' : 'text-red-600 border-black/10'}`}>🛡 Admin Paneli</button>
+                <a href="/admin" target="_blank" rel="noopener noreferrer" className={`w-full text-left py-3 px-2 font-semibold text-sm border-b transition-all hover:scale-[1.01] hover:bg-red-500/10 flex items-center gap-2 ${isDarkMode ? 'text-red-400 border-white/10' : 'text-red-600 border-black/10'}`}>🛡 Admin Paneli <span className="text-[10px] opacity-50">↗</span></a>
               )}
             </div>
             <div className="mt-6 space-y-3">
