@@ -1377,6 +1377,10 @@ function Home() {
   const [reviewPuan, setReviewPuan] = useState(5);
   const [reviewYorum, setReviewYorum] = useState('');
   const [reviewHedef, setReviewHedef] = useState(null);
+  // Fotoğraf etiket modal
+  const [photoLabelModal, setPhotoLabelModal] = useState(false);
+  const [pendingPhotoFile, setPendingPhotoFile] = useState(null);
+  const [photoLabel, setPhotoLabel] = useState(null); // 'teslim_aldim' | 'teslim_ettim' | null
 
   const [profilKisi, setProfilKisi] = useState(null);
   const [profilReviews, setProfilReviews] = useState([]);
@@ -3173,21 +3177,43 @@ function Home() {
   const handleFotoGonder = async (e) => {
     const file = e.target.files?.[0];
     if (!file || !aktifIs || !user) return;
-    const fileName = `${aktifIs.id}/${Date.now()}_${file.name}`;
+    // Etiket seçimi için modal aç
+    setPendingPhotoFile(file);
+    setPhotoLabel(null);
+    setPhotoLabelModal(true);
+    e.target.value = '';
+  };
+
+  const handleFotoGonderWithLabel = async (label) => {
+    const file = pendingPhotoFile;
+    if (!file || !aktifIs || !user) return;
+    setPhotoLabelModal(false);
     const bucket = photoProofRequired ? PROOF_BUCKET : CHAT_BUCKET;
+    const fileName = `${aktifIs.id}/${Date.now()}_${file.name}`;
     const tempId = `temp-photo-${Date.now()}`;
     setMesajlar(prev => [...prev, { id: tempId, content: t.photoUploading, type: 'text', sender_id: user.id }]);
     const { error: upErr } = await supabase.storage.from(bucket).upload(fileName, file);
-    if (upErr) { 
-      setMesajlar(prev => prev.filter(m => m.id !== tempId)); 
+    if (upErr) {
+      setMesajlar(prev => prev.filter(m => m.id !== tempId));
       showToast(t.photoUploadError);
-      return; 
+      return;
     }
     const { data: urlData } = supabase.storage.from(bucket).getPublicUrl(fileName);
     setMesajlar(prev => prev.filter(m => m.id !== tempId));
-    await supabase.from('messages').insert([{ request_id: aktifIs.id, sender_id: user.id, content: urlData.publicUrl, type: 'image' }]);
+    // GPS + saat metadata
+    const now = new Date().toISOString();
+    const gpsLat = konum?.lat || null;
+    const gpsLng = konum?.lng || null;
+    await supabase.from('messages').insert([{
+      request_id: aktifIs.id,
+      sender_id: user.id,
+      content: urlData.publicUrl,
+      type: 'image',
+      metadata: { label, gps_lat: gpsLat, gps_lng: gpsLng, sent_at: now }
+    }]);
     if (photoProofRequired) handleAdvanceStage(currentStage === 'arrived' ? 'picked_up' : 'delivered');
     setPhotoProofRequired(false);
+    setPendingPhotoFile(null);
   };
 
   const handleVoiceMsgSend = async (blob) => {
@@ -3202,9 +3228,29 @@ function Home() {
     await supabase.from('messages').insert([{ request_id: aktifIs.id, sender_id: user.id, content: urlData.publicUrl, type: 'audio' }]);
   };
 
+  const updateProfileAfterReview = async (targetId, rating) => {
+    // Mevcut reviews ortalamasını hesapla
+    const { data: reviews } = await supabase.from('profilreviews').select('rating').eq('target_id', targetId);
+    const allRatings = [...(reviews || []).map(r => r.rating), rating];
+    const avg = allRatings.reduce((s, r) => s + r, 0) / allRatings.length;
+    // profiles tablosunu güncelle
+    await supabase.from('profiles').update({
+      average_rating: parseFloat(avg.toFixed(2)),
+      total_completed_jobs: supabase.rpc ? undefined : undefined, // rpc ile increment
+    }).eq('id', targetId);
+    // total_completed_jobs için RPC ile increment
+    await supabase.rpc('increment_completed_jobs', { user_id: targetId }).catch(() => {
+      // RPC yoksa direkt update
+      supabase.from('profiles').select('total_completed_jobs').eq('id', targetId).single().then(({ data }) => {
+        supabase.from('profiles').update({ total_completed_jobs: (data?.total_completed_jobs || 0) + 1 }).eq('id', targetId);
+      });
+    });
+  };
+
   const handleReviewGonder = async () => {
     if (!reviewHedef || !user) return;
     await supabase.from('profilreviews').insert([{ target_id: reviewHedef, reviewer_id: user.id, rating: reviewPuan, comment: reviewYorum }]);
+    await updateProfileAfterReview(reviewHedef, reviewPuan);
     setReviewAcik(false); setReviewPuan(5); setReviewYorum(''); showToast(t.reviewSent);
   };
 
@@ -4947,7 +4993,26 @@ function Home() {
                {mesajlar.map(m => (
                  <div key={m.id} className={`flex ${m.sender_id === user.id ? 'justify-end' : 'justify-start'}`}>
                    <div className={`max-w-[75%] rounded-2xl overflow-hidden shadow-sm ${m.sender_id === user.id ? 'bg-[#2ECC71] text-black rounded-br-sm' : isDarkMode ? 'bg-white/10 text-white rounded-bl-sm border border-white/5' : 'bg-gray-100 text-black rounded-bl-sm'}`}>
-                     {m.type === 'image' ? <img src={m.content} alt="img" className="max-w-full" style={{ maxHeight: 200 }} /> : m.type === 'audio' ? <div className="px-4 py-3"><audio controls src={m.content} style={{ height: 36 }} /></div> : <p className="px-4 py-3 text-sm font-medium">{m.content}</p>}
+                     {m.type === 'image' ? (
+                       <div>
+                         <img src={m.content} alt="img" className="max-w-full" style={{ maxHeight: 200 }} />
+                         {m.metadata && (
+                           <div className="px-3 py-2 border-t border-white/10 space-y-0.5">
+                             {m.metadata.label && (
+                               <p className="text-[10px] font-black uppercase tracking-wide">
+                                 {m.metadata.label === 'teslim_aldim' ? '📥 Teslim Aldım' : m.metadata.label === 'teslim_ettim' ? '📤 Teslim Ettim' : ''}
+                               </p>
+                             )}
+                             {m.metadata.sent_at && (
+                               <p className="text-[9px] opacity-50">{new Date(m.metadata.sent_at).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}</p>
+                             )}
+                             {m.metadata.gps_lat && m.metadata.gps_lng && (
+                               <p className="text-[9px] opacity-50">📍 {Number(m.metadata.gps_lat).toFixed(5)}, {Number(m.metadata.gps_lng).toFixed(5)}</p>
+                             )}
+                           </div>
+                         )}
+                       </div>
+                     ) : m.type === 'audio' ? <div className="px-4 py-3"><audio controls src={m.content} style={{ height: 36 }} /></div> : <p className="px-4 py-3 text-sm font-medium">{m.content}</p>}
                    </div>
                  </div>
                ))}
@@ -5296,6 +5361,42 @@ function Home() {
           </div>
         )}
         
+        {/* Fotoğraf Etiket Modalı */}
+        {photoLabelModal && (
+          <div className="fixed inset-0 z-[9600] flex items-end justify-center bg-black/70 backdrop-blur-md p-4">
+            <div className={`w-full max-w-sm rounded-3xl p-6 mb-4 ${isDarkMode ? 'bg-[#1a1a1a]' : 'bg-white'}`}>
+              <h3 className={`font-black text-lg text-center mb-1 ${isDarkMode ? 'text-white' : 'text-black'}`}>📸 Fotoğraf Etiketi</h3>
+              <p className={`text-center text-xs mb-5 opacity-50 ${isDarkMode ? 'text-white' : 'text-black'}`}>Bu fotoğraf için bir etiket seç</p>
+              <div className="flex flex-col gap-3">
+                <button
+                  onClick={() => handleFotoGonderWithLabel('teslim_aldim')}
+                  className="py-4 rounded-2xl bg-blue-500/20 border border-blue-500/40 text-blue-400 font-black text-sm"
+                >
+                  📥 Teslim Aldım
+                </button>
+                <button
+                  onClick={() => handleFotoGonderWithLabel('teslim_ettim')}
+                  className="py-4 rounded-2xl bg-[#2ECC71]/20 border border-[#2ECC71]/40 text-[#2ECC71] font-black text-sm"
+                >
+                  📤 Teslim Ettim
+                </button>
+                <button
+                  onClick={() => handleFotoGonderWithLabel(null)}
+                  className={`py-3 rounded-2xl font-bold text-sm ${isDarkMode ? 'bg-white/10 text-white/60' : 'bg-gray-100 text-gray-500'}`}
+                >
+                  Etiketsiz Gönder
+                </button>
+                <button
+                  onClick={() => { setPhotoLabelModal(false); setPendingPhotoFile(null); }}
+                  className="py-2 text-xs text-red-400 font-bold"
+                >
+                  İptal
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Değerlendirme Modalı */}
         {showReviewModal && aktifIs && (
           <div className="fixed inset-0 z-[9500] flex items-center justify-center p-6 bg-black/70 backdrop-blur-md">
@@ -5346,6 +5447,7 @@ function Home() {
                         rating: reviewRating,
                         comment: reviewComment
                       });
+                      await updateProfileAfterReview(targetId, reviewRating);
                       showToast(t.reviewSent);
                       setShowReviewModal(false);
                       setReviewComment('');
