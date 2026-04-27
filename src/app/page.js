@@ -4014,14 +4014,16 @@ function Home() {
           <button 
           onClick={() => setAktifPage('menu')} 
           suppressHydrationWarning
-          className={`fixed top-6 left-6 z-[3000] p-4 rounded-2xl backdrop-blur-xl shadow-[0_0_30px_rgba(255,255,255,0.06)] transition-transform hover:scale-105 ${isDarkMode ? 'bg-black/40 border border-white/10' : 'bg-white/75 border border-black/10'}`}
+          className={`fixed z-[3000] p-4 rounded-2xl backdrop-blur-xl shadow-[0_0_30px_rgba(255,255,255,0.06)] transition-transform hover:scale-105 ${isDarkMode ? 'bg-black/40 border border-white/10' : 'bg-white/75 border border-black/10'}`}
+          style={{ top: 'calc(env(safe-area-inset-top, 0px) + 16px)', left: '16px' }}
         >
           <div className={`w-6 h-0.5 mb-1.5 ${isDarkMode ? 'bg-white' : 'bg-black'}`}></div><div className={`w-6 h-0.5 mb-1.5 ${isDarkMode ? 'bg-white' : 'bg-black'}`}></div><div className={`w-4 h-0.5 ${isDarkMode ? 'bg-white' : 'bg-black'}`}></div>
         </button>
         {aktifIs && !chatAcik && (
           <button 
             onClick={() => setChatAcik(true)} 
-            className="fixed top-6 right-6 z-[3000] px-5 py-3 rounded-2xl bg-[#2ECC71] text-white text-xs font-black uppercase flex items-center gap-2 shadow-lg">
+            className="fixed right-6 z-[3000] px-5 py-3 rounded-2xl bg-[#2ECC71] text-white text-xs font-black uppercase flex items-center gap-2 shadow-lg"
+            style={{ top: 'calc(env(safe-area-inset-top, 0px) + 16px)' }}>
             <div className="relative">
               {t.activeJob}
               <div className="absolute -top-1 -right-1.5 w-2 h-2 bg-red-500 rounded-full border border-white"></div>
@@ -4976,7 +4978,7 @@ function Home() {
         <button
           onClick={konumaGit}
           className={`fixed z-[3100] w-10 h-10 rounded-xl flex items-center justify-center shadow-lg active:scale-95 transition-transform ${isDarkMode ? 'bg-white/10 border border-white/10 backdrop-blur-md' : 'bg-white border border-black/10 shadow'}`}
-          style={{ bottom: (sheetYukseklik === 0 || seciliKisi) ? 'calc(var(--sheet-open-h, 220px) + 12px)' : '80px', right: '16px', transition: 'bottom 0.5s cubic-bezier(0.25,0.46,0.45,0.94), transform 0.15s ease' }}
+          style={{ bottom: '260px', right: '16px' }}
           title="Konumuma Git"
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2ECC71" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
