@@ -94,15 +94,15 @@ function MapView({
   const [zoom, setZoom] = useState(15);
   const [center, setCenter] = useState(() => [lat || 38.411, lng || 27.158]);
   const [libsReady, setLibsReady] = useState(false);
-  // Kullanıcı manuel olarak haritaya dokunuyor mu?
-  const isManualInteracting = useRef(false);
+  // Kullanıcı manuel olarak haritayı hareket ettirdi mi?
+  const userInteracted = useRef(false);
   const initialCentered = useRef(false);
 
   useEffect(() => {
     loadLibraries().then(() => setLibsReady(true));
   }, []);
 
-  // Sadece ilk konumda bir kez ortala, sonra kullanıcı haritayı serbestçe kullanabilsin
+  // Sadece ilk konumda bir kez ortala; kullanıcı daha önce hareket ettirdiyse merkezleme
   useEffect(() => {
     if (lat && lng && !initialCentered.current) {
       setCenter([lat, lng]);
@@ -110,20 +110,18 @@ function MapView({
     }
   }, [lat, lng]);
 
-  // Konteyner: touch-action manipulation, scroll çakışmasını engelle
+  // Container: touch-action pan-x pan-y — sayfa scroll ile harita ayrışır, pointer-events korunur
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
-    el.style.touchAction = 'none';
-    const preventScroll = (e) => { if (e.touches.length >= 1) e.preventDefault(); };
-    el.addEventListener('touchmove', preventScroll, { passive: false });
-    return () => el.removeEventListener('touchmove', preventScroll);
+    el.style.touchAction = 'pan-x pan-y';
   }, [libsReady]);
 
+  // onResetRef: "Beni Bul" butonu ile manuel tetikleme
   useEffect(() => {
     if (onResetRef) {
       onResetRef.current = () => {
-        isManualInteracting.current = false;
+        userInteracted.current = false;
         if (lat && lng) setCenter([lat, lng]);
       };
     }
@@ -165,9 +163,9 @@ function MapView({
           touchEvents={true}
           twoFingerDrag={false}
           metaWheelZoom={true}
-          style={{ width: '100%', height: '100%', touchAction: 'none' }}
+          style={{ width: '100%', height: '100%', touchAction: 'pan-x pan-y' }}
           onBoundsChanged={({ center: newCenter, zoom: newZoom }) => {
-            isManualInteracting.current = true;
+            userInteracted.current = true;
             setZoom(newZoom);
             setCenter(newCenter);
           }}
