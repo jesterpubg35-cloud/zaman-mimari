@@ -51,12 +51,21 @@ const supabase = createClient(
 // Simple Pigeon Maps component (no dynamic import needed)
 const roleOrder = ['kurye', 'emanetci', 'siraci', 'hepsi'];
 const getRoleColor = (roles) => {
-  if (!roles || roles.length === 0) return '#9ca3af';
-  if (roles.includes('hepsi')) return '#9333ea';
-  if (roles.includes('kurye')) return '#fbbf24';
-  if (roles.includes('siraci')) return '#22c55e';
-  if (roles.includes('emanetci')) return '#3b82f6';
-  return '#9ca3af';
+  if (!roles || roles.length === 0) return '#6b7280';
+  if (roles.includes('hepsi')) return '#bf00ff';   // neon mor
+  if (roles.includes('kurye')) return '#00ff88';   // neon yeşil
+  if (roles.includes('siraci')) return '#ff6a00';  // neon turuncu
+  if (roles.includes('emanetci')) return '#00cfff'; // neon mavi
+  return '#6b7280';
+};
+
+const getRoleGlow = (roles) => {
+  if (!roles || roles.length === 0) return 'none';
+  if (roles.includes('hepsi')) return '0 0 10px #bf00ff, 0 0 20px #bf00ff88';
+  if (roles.includes('kurye')) return '0 0 10px #00ff88, 0 0 20px #00ff8888';
+  if (roles.includes('siraci')) return '0 0 10px #ff6a00, 0 0 20px #ff6a0088';
+  if (roles.includes('emanetci')) return '0 0 10px #00cfff, 0 0 20px #00cfff88';
+  return 'none';
 };
 
 const getPrimaryRole = (u) => {
@@ -77,6 +86,7 @@ function MapView({
   currentUser,
   onSelect,
   onProfileClick,
+  onMarkerSheet,
   heading,
   onResetRef,
 }) {
@@ -90,9 +100,15 @@ function MapView({
     loadLibraries().then(() => setLibsReady(true));
   }, []);
 
+  const prevLatLng = useRef({ lat: null, lng: null });
   useEffect(() => {
     if (!userModified && lat && lng) {
       setCenter([lat, lng]);
+      prevLatLng.current = { lat, lng };
+    } else if (lat && lng && prevLatLng.current.lat === null) {
+      // İlk konum gelince sadece bir kez odakla
+      setCenter([lat, lng]);
+      prevLatLng.current = { lat, lng };
     }
   }, [lat, lng, userModified]);
 
@@ -112,8 +128,10 @@ function MapView({
 
   const handleMarkerClick = useCallback((user) => (params) => {
     params?.event?.stopPropagation?.();
+    if (user.user_id === 'self') return;
+    if (onMarkerSheet) return onMarkerSheet(user);
     return onProfileClick ? onProfileClick(user) : onSelect(user);
-  }, [onProfileClick, onSelect]);
+  }, [onMarkerSheet, onProfileClick, onSelect]);
 
   const currentUserData = currentUser || { roles: ['musteri'], user_role: 'musteri', user_id: 'self' };
 
@@ -131,16 +149,17 @@ function MapView({
           provider={dark ? darkTileProvider : lightTileProvider}
           center={effectiveCenter}
           zoom={zoom}
-          minZoom={2}
+          minZoom={1}
+          maxZoom={22}
           animate={true}
           animateMaxScreens={5}
           mouseEvents={true}
           touchEvents={true}
           twoFingerDrag={false}
-          metaWheelZoom={true}
+          metaWheelZoom={false}
           style={{ width: '100%', height: '100%' }}
           onBoundsChanged={({ center: newCenter, zoom: newZoom }) => {
-            setUserModified(true);
+            if (!userModified) setUserModified(true);
             setZoom(newZoom);
             setCenter(newCenter);
           }}
@@ -185,27 +204,33 @@ function MapView({
           </Marker>
         )}
         
-        {/* Other users markers - Small and centered */}
-        {(others || []).map((u) => (
-          <Marker
-            key={`${u.user_id}-${(u.roles || [u.user_role]).join(',')}`}
-            anchor={[u.lat, u.lng]}
-            width={12}
-            height={12}
-            onClick={handleMarkerClick(u)}
-          >
-            <div
-              style={{
-                width: 12,
-                height: 12,
-                borderRadius: '50%',
-                backgroundColor: getRoleColor(u.roles || [u.user_role]),
-                border: '2px solid white',
-                boxShadow: '0 2px 4px rgba(0,0,0,0.4)',
-              }}
-            />
-          </Marker>
-        ))}
+        {/* Other users markers */}
+        {(others || []).map((u) => {
+          const uRoles = u.roles || [u.user_role];
+          const color = getRoleColor(uRoles);
+          const glow = getRoleGlow(uRoles);
+          return (
+            <Marker
+              key={`${u.user_id}-${uRoles.join(',')}`}
+              anchor={[u.lat, u.lng]}
+              width={20}
+              height={20}
+              onClick={handleMarkerClick(u)}
+            >
+              <div style={{ position: 'relative', width: 20, height: 20, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div style={{
+                  width: 14,
+                  height: 14,
+                  borderRadius: '50%',
+                  backgroundColor: color,
+                  border: '2px solid rgba(255,255,255,0.9)',
+                  boxShadow: glow,
+                  cursor: 'pointer',
+                }} />
+              </div>
+            </Marker>
+          );
+        })}
         
         <ZoomControl />
         </PigeonMap>
@@ -1569,6 +1594,8 @@ function Home() {
   const [codeVerified, setCodeVerified] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [paymentDone, setPaymentDone] = useState(false);
+  const [markerSheet, setMarkerSheet] = useState(null); // { user, stats }
+  const [markerSheetLoading, setMarkerSheetLoading] = useState(false);
 
   const [currentStage, setCurrentStage] = useState('accepted');
   const [photoProofRequired, setPhotoProofRequired] = useState(false);
@@ -4060,6 +4087,21 @@ function Home() {
             lng={konum?.lng}
             others={filteredDigerleri}
             onSelect={setSeciliKisi}
+            onMarkerSheet={async (u) => {
+              setMarkerSheet({ user: u, stats: null });
+              setMarkerSheetLoading(true);
+              try {
+                const [reviewsRes, requestsRes] = await Promise.all([
+                  supabase.from('reviews').select('rating, comment, created_at').eq('reviewee_id', u.user_id).order('created_at', { ascending: false }).limit(5),
+                  supabase.from('requests').select('id').eq('receiver_id', u.user_id).eq('status', 'completed'),
+                ]);
+                const reviews = reviewsRes.data || [];
+                const completedCount = requestsRes.data?.length || 0;
+                const avgRating = reviews.length ? (reviews.reduce((s, r) => s + r.rating, 0) / reviews.length) : 0;
+                setMarkerSheet({ user: u, stats: { reviews, completedCount, avgRating } });
+              } catch {}
+              finally { setMarkerSheetLoading(false); }
+            }}
             onProfileClick={async (u) => {
               await handleProfilAc(u);
               setShowProfileModal(true);
@@ -4805,6 +4847,110 @@ function Home() {
             supabase={supabase}
           />
         )}
+        {/* Marker Bottom Sheet */}
+        {markerSheet && (
+          <div
+            className="fixed inset-0 z-[8500]"
+            onClick={() => setMarkerSheet(null)}
+          >
+            <div
+              className={`absolute bottom-0 left-0 right-0 rounded-t-[32px] p-6 pb-10 shadow-2xl transition-transform duration-300 ease-out ${isDarkMode ? 'bg-[#141414] border-t border-white/10' : 'bg-white border-t border-black/10'}`}
+              style={{ transform: markerSheet ? 'translateY(0)' : 'translateY(100%)' }}
+              onClick={e => e.stopPropagation()}
+            >
+              {/* Drag handle */}
+              <div className="flex justify-center mb-4">
+                <div className={`w-10 h-1 rounded-full ${isDarkMode ? 'bg-white/20' : 'bg-black/20'}`} />
+              </div>
+
+              {(() => {
+                const u = markerSheet.user;
+                const stats = markerSheet.stats;
+                const uRoles = u.roles || [u.user_role];
+                const color = getRoleColor(uRoles);
+                const glow = getRoleGlow(uRoles);
+                const roleLabels = { kurye: 'Kurye', emanetci: 'Emanetçi', siraci: 'Sıra Bekle', hepsi: 'Hepsi', musteri: 'Müşteri' };
+                const primaryRole = getPrimaryRole(u);
+
+                return (
+                  <div className="space-y-4">
+                    {/* Kullanıcı bilgisi */}
+                    <div className="flex items-center gap-4">
+                      <div style={{ width: 52, height: 52, borderRadius: '50%', backgroundColor: color + '22', border: `2px solid ${color}`, boxShadow: glow, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <span style={{ fontSize: 22 }}>{u.name?.[0]?.toUpperCase() || '?'}</span>
+                      </div>
+                      <div className="flex-1">
+                        <p className={`font-black text-lg ${isDarkMode ? 'text-white' : 'text-black'}`}>{u.name || '?'}</p>
+                        <span style={{ backgroundColor: color + '22', color, border: `1px solid ${color}55`, boxShadow: glow }} className="text-[11px] font-bold px-2 py-0.5 rounded-full">
+                          {roleLabels[primaryRole] || primaryRole}
+                        </span>
+                      </div>
+                      {markerSheetLoading && <div className="text-[#2ECC71] text-xs animate-pulse">Yükleniyor...</div>}
+                    </div>
+
+                    {/* İstatistikler */}
+                    {stats && (
+                      <div className="grid grid-cols-3 gap-3">
+                        <div className={`rounded-2xl p-3 text-center ${isDarkMode ? 'bg-white/5' : 'bg-gray-100'}`}>
+                          <p className="text-xl font-black" style={{ color }}>
+                            {stats.avgRating > 0 ? stats.avgRating.toFixed(1) : '—'}
+                          </p>
+                          <p className={`text-[10px] opacity-50 ${isDarkMode ? 'text-white' : 'text-black'}`}>⭐ Ortalama</p>
+                        </div>
+                        <div className={`rounded-2xl p-3 text-center ${isDarkMode ? 'bg-white/5' : 'bg-gray-100'}`}>
+                          <p className="text-xl font-black" style={{ color }}>{stats.reviews.length}</p>
+                          <p className={`text-[10px] opacity-50 ${isDarkMode ? 'text-white' : 'text-black'}`}>💬 Yorum</p>
+                        </div>
+                        <div className={`rounded-2xl p-3 text-center ${isDarkMode ? 'bg-white/5' : 'bg-gray-100'}`}>
+                          <p className="text-xl font-black" style={{ color }}>{stats.completedCount}</p>
+                          <p className={`text-[10px] opacity-50 ${isDarkMode ? 'text-white' : 'text-black'}`}>✅ Tamamlanan</p>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Yorumlar */}
+                    {stats?.reviews?.length > 0 && (
+                      <div className="space-y-2 max-h-40 overflow-y-auto">
+                        {stats.reviews.map((r, i) => (
+                          <div key={i} className={`rounded-xl p-3 ${isDarkMode ? 'bg-white/5' : 'bg-gray-100'}`}>
+                            <div className="flex items-center gap-1 mb-1">
+                              {[1,2,3,4,5].map(s => (
+                                <span key={s} className={`text-[10px] ${s <= r.rating ? 'text-yellow-400' : 'opacity-20'}`}>★</span>
+                              ))}
+                              <span className={`text-[9px] opacity-40 ml-1 ${isDarkMode ? 'text-white' : 'text-black'}`}>{new Date(r.created_at).toLocaleDateString()}</span>
+                            </div>
+                            {r.comment && <p className={`text-xs opacity-70 ${isDarkMode ? 'text-white' : 'text-black'}`}>{r.comment}</p>}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    {stats && stats.reviews.length === 0 && (
+                      <p className={`text-xs opacity-40 text-center ${isDarkMode ? 'text-white' : 'text-black'}`}>Henüz yorum yok</p>
+                    )}
+
+                    {/* Butonlar */}
+                    <div className="grid grid-cols-2 gap-3 pt-1">
+                      <button
+                        onClick={() => { setMarkerSheet(null); setSeciliKisi(u); }}
+                        className="py-3 rounded-2xl font-black text-sm text-black active:scale-95 transition-transform"
+                        style={{ backgroundColor: color, boxShadow: glow }}
+                      >
+                        Teklif Ver
+                      </button>
+                      <button
+                        onClick={async () => { setMarkerSheet(null); await handleProfilAc(u); setShowProfileModal(true); }}
+                        className={`py-3 rounded-2xl font-black text-sm active:scale-95 transition-transform border ${isDarkMode ? 'bg-white/5 text-white border-white/10' : 'bg-gray-100 text-black border-black/10'}`}
+                      >
+                        Profili Gör
+                      </button>
+                    </div>
+                  </div>
+                );
+              })()}
+            </div>
+          </div>
+        )}
+
         {showPaymentModal && aktifIs?.price && (
           <StripePaymentModal
             amount={parseFloat(aktifIs.price)}
