@@ -4036,10 +4036,15 @@ function Home() {
   // Client-side only - SSR sirasinda loading goster
   // Auth hydration bitmeden SADECE kullanici yoksa loading goster
   // localStorage'da kullanici varsa aninda goster, Supabase'i arka planda bekle
-  if (!authInitialized && !user) {
+  if (!isHydrated || (!authInitialized && !user)) {
     return (
-      <main className="fixed inset-0 bg-[#0F0F0F] flex items-center justify-center">
-        <div className="text-white text-2xl font-bold animate-pulse">Loading...</div>
+      <main className="fixed inset-0 bg-[#0F0F0F] flex items-center justify-center" suppressHydrationWarning>
+        <div className="flex flex-col items-center gap-4">
+          <h1 className="text-5xl font-black italic tracking-tighter text-[#2ECC71] transform -skew-x-12 animate-pulse">TICK</h1>
+          <div className="w-8 h-1 bg-[#2ECC71]/30 rounded-full overflow-hidden">
+            <div className="h-full bg-[#2ECC71] rounded-full animate-[slide_1.5s_ease-in-out_infinite]" style={{ width: '40%' }} />
+          </div>
+        </div>
       </main>
     );
   }
@@ -4050,7 +4055,7 @@ function Home() {
       suppressHydrationWarning
     >
       {isHydrated && <audio id="radar-remote-audio" autoPlay playsInline style={{ display: 'none' }} />}
-      <div className="relative w-full h-[100dvh]">
+      <div className="relative w-full h-[100dvh]" suppressHydrationWarning>
         {showNotifPrompt && (
           <div className="fixed left-1/2 -translate-x-1/2 top-6 z-[4000] w-[92%] max-w-md">
             <div className="rounded-2xl border border-white/10 bg-black/60 backdrop-blur-md p-4 flex items-center gap-3">
@@ -4069,6 +4074,7 @@ function Home() {
         )}
           <button 
           onClick={() => setAktifPage('menu')} 
+          suppressHydrationWarning
           className={`fixed top-6 left-6 z-[3000] p-4 rounded-2xl backdrop-blur-xl shadow-[0_0_30px_rgba(255,255,255,0.06)] transition-transform hover:scale-105 ${isDarkMode ? 'bg-black/40 border border-white/10' : 'bg-white/75 border border-black/10'}`}
         >
           <div className={`w-6 h-0.5 mb-1.5 ${isDarkMode ? 'bg-white' : 'bg-black'}`}></div><div className={`w-6 h-0.5 mb-1.5 ${isDarkMode ? 'bg-white' : 'bg-black'}`}></div><div className={`w-4 h-0.5 ${isDarkMode ? 'bg-white' : 'bg-black'}`}></div>
