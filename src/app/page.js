@@ -3234,16 +3234,14 @@ function Home() {
     const allRatings = [...(reviews || []).map(r => r.rating), rating];
     const avg = allRatings.reduce((s, r) => s + r, 0) / allRatings.length;
     // profiles tablosunu güncelle
-    await supabase.from('profiles').update({
+    // average_rating güncelle
+    await supabase.from('profilkisi').update({
       average_rating: parseFloat(avg.toFixed(2)),
-      total_completed_jobs: supabase.rpc ? undefined : undefined, // rpc ile increment
-    }).eq('id', targetId);
-    // total_completed_jobs için RPC ile increment
-    await supabase.rpc('increment_completed_jobs', { user_id: targetId }).catch(() => {
-      // RPC yoksa direkt update
-      supabase.from('profiles').select('total_completed_jobs').eq('id', targetId).single().then(({ data }) => {
-        supabase.from('profiles').update({ total_completed_jobs: (data?.total_completed_jobs || 0) + 1 }).eq('id', targetId);
-      });
+    }).eq('user_id', targetId);
+    // total_completed_jobs için RPC dene, yoksa direkt update
+    await supabase.rpc('increment_completed_jobs', { user_id: targetId }).catch(async () => {
+      const { data: pd } = await supabase.from('profilkisi').select('total_completed_jobs').eq('user_id', targetId).single();
+      await supabase.from('profilkisi').update({ total_completed_jobs: (pd?.total_completed_jobs || 0) + 1 }).eq('user_id', targetId);
     });
   };
 
