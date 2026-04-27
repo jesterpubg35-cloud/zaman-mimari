@@ -4046,6 +4046,7 @@ function Home() {
   return (
     <main 
       className={`w-screen overflow-hidden ${isDarkMode ? 'bg-[#0F0F0F] text-white' : 'bg-white text-black'} h-[100dvh]`}
+      suppressHydrationWarning
     >
       <audio id="radar-remote-audio" autoPlay playsInline style={{ display: 'none' }} suppressHydrationWarning />
       <div className="relative w-full h-[100dvh]">
