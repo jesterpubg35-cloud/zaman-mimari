@@ -94,21 +94,19 @@ function MapView({
   const [zoom, setZoom] = useState(15);
   const [center, setCenter] = useState(() => [lat || 38.411, lng || 27.158]);
   const [libsReady, setLibsReady] = useState(false);
-  // Kullanıcı manuel olarak haritayı hareket ettirdi mi?
-  const userInteracted = useRef(false);
-  const initialCentered = useRef(false);
+  const [isTracking, setIsTracking] = useState(true);
+  const userMovedMap = useRef(false);
 
   useEffect(() => {
     loadLibraries().then(() => setLibsReady(true));
   }, []);
 
-  // Sadece ilk konumda bir kez ortala; kullanıcı daha önce hareket ettirdiyse merkezleme
+  // GPS takibi aktifse haritayı güncelle
   useEffect(() => {
-    if (lat && lng && !initialCentered.current) {
+    if (lat && lng && isTracking) {
       setCenter([lat, lng]);
-      initialCentered.current = true;
     }
-  }, [lat, lng]);
+  }, [lat, lng, isTracking]);
 
   // Container: touch-action pan-x pan-y — sayfa scroll ile harita ayrışır, pointer-events korunur
   useEffect(() => {
@@ -117,11 +115,12 @@ function MapView({
     // Pigeon-maps kendi touch handling'ini yönetir, override etme
   }, [libsReady]);
 
-  // onResetRef: "Beni Bul" butonu ile manuel tetikleme
+  // onResetRef: "Beni Bul" butonu ile GPS takibini yeniden başlat
   useEffect(() => {
     if (onResetRef) {
       onResetRef.current = () => {
-        userInteracted.current = false;
+        userMovedMap.current = false;
+        setIsTracking(true);
         if (lat && lng) setCenter([lat, lng]);
       };
     }
@@ -165,7 +164,10 @@ function MapView({
           metaWheelZoom={true}
           style={{ width: '100%', height: '100%' }}
           onBoundsChanged={({ center: newCenter, zoom: newZoom }) => {
-            userInteracted.current = true;
+            if (!userMovedMap.current) {
+              userMovedMap.current = true;
+              setIsTracking(false);
+            }
             setZoom(newZoom);
             setCenter(newCenter);
           }}
@@ -4094,6 +4096,18 @@ function Home() {
             <button onClick={handleOfferCancel} className="px-3 py-2 rounded-xl bg-red-500/20 text-red-400 text-[10px] font-bold border border-red-500/30">✕ {t.cancelOffer}</button>
           </div>
         )}
+
+        <button
+          onClick={konumaGit}
+          className="fixed bottom-24 right-5 z-[2900] w-12 h-12 rounded-2xl bg-black/60 border border-white/10 backdrop-blur-md flex items-center justify-center shadow-lg active:scale-95 transition-transform"
+          title="Konumuma Git"
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2ECC71" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>
+            <path d="M12 8a4 4 0 100 8 4 4 0 000-8z" strokeOpacity="0.3"/>
+          </svg>
+        </button>
 
         <div className="absolute inset-0 z-0 h-[100dvh] w-screen" onClick={() => setSeciliKisi(null)}>
           <MapView
