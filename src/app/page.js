@@ -1382,6 +1382,10 @@ function Home() {
   const [pendingPhotoFile, setPendingPhotoFile] = useState(null);
   const [photoLabel, setPhotoLabel] = useState(null); // 'teslim_aldim' | 'teslim_ettim' | null
 
+  // Bildirimler
+  const [notifications, setNotifications] = useState([]);
+  const [notifPanelAcik, setNotifPanelAcik] = useState(false);
+
   const [profilKisi, setProfilKisi] = useState(null);
   const [profilReviews, setProfilReviews] = useState([]);
   const [profilStats, setProfilStats] = useState({ avg: '0', count: 0, jobCount: 0 });
@@ -2014,6 +2018,27 @@ function Home() {
       window.removeEventListener('deviceorientation', handleOrientation, true);
     };
   }, []);
+
+  // ─── BİLDİRİMLER ──────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (!user?.id) return;
+    const loadNotifs = async () => {
+      const { data } = await supabase
+        .from('notifications')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(50);
+      setNotifications(data || []);
+    };
+    loadNotifs();
+    const ch = supabase.channel(`notif-${user.id}`)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${user.id}` }, (payload) => {
+        setNotifications(prev => [payload.new, ...prev]);
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [user?.id]);
 
   // ─── REALTIME LOGIC ───────────────────────────────────────────────────────
   useEffect(() => {
@@ -4047,12 +4072,20 @@ function Home() {
         <div className={`fixed inset-0 z-[5000] transition-opacity duration-300 ${aktifPage === 'menu' ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
           <div className={`absolute inset-0 backdrop-blur-sm ${isDarkMode ? 'bg-black/60' : 'bg-black/30'}`} onClick={() => setAktifPage('map')}></div>
           <div className={`absolute inset-y-5 left-5 w-[65%] max-w-[260px] shadow-2xl transform transition-transform duration-500 ease-out flex flex-col p-6 overflow-y-auto rounded-3xl ${isDarkMode ? 'border border-white/10 bg-black/40' : 'border border-black/20 bg-zinc-200'} backdrop-blur-md ${aktifPage === 'menu' ? 'translate-x-0' : '-translate-x-[120%]'}`}>
-            <div className="flex items-center gap-4 mb-8 cursor-pointer transition-transform hover:scale-[1.02]" onClick={() => { setAktifPage('account'); }}>
-              <div className="w-14 h-14 bg-[#2ECC71]/20 rounded-full flex items-center justify-center text-xl font-bold text-[#2ECC71] shadow-[0_0_25px_rgba(46,204,113,0.18)]">{user.name[0].toUpperCase()}</div>
-              <div className="flex-1">
-                <p className={`font-bold text-lg ${isDarkMode ? 'text-white' : 'text-black'}`}>{user.name}</p>
+            <div className="flex items-center gap-3 mb-8">
+              <div className="w-14 h-14 bg-[#2ECC71]/20 rounded-full flex items-center justify-center text-xl font-bold text-[#2ECC71] shadow-[0_0_25px_rgba(46,204,113,0.18)] cursor-pointer flex-shrink-0" onClick={() => setAktifPage('account')}>{user.name[0].toUpperCase()}</div>
+              <div className="flex-1 min-w-0 cursor-pointer" onClick={() => setAktifPage('account')}>
+                <p className={`font-bold text-lg truncate ${isDarkMode ? 'text-white' : 'text-black'}`}>{user.name}</p>
                 <p className="text-[#2ECC71] text-[10px] font-black uppercase">{t.myAccount}</p>
               </div>
+              <button onClick={(e) => { e.stopPropagation(); setNotifPanelAcik(v => !v); }} className="relative flex-shrink-0 w-9 h-9 flex items-center justify-center rounded-full hover:bg-white/10 transition">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`w-5 h-5 ${isDarkMode ? 'text-white' : 'text-black'}`}><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                {notifications.filter(n => !n.is_read).length > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 bg-red-500 text-white text-[9px] font-black rounded-full flex items-center justify-center px-1">
+                    {notifications.filter(n => !n.is_read).length > 9 ? '9+' : notifications.filter(n => !n.is_read).length}
+                  </span>
+                )}
+              </button>
             </div>
             <div className="flex-1 space-y-1">
               {['support', 'payment', 'history'].map(p => <button key={p} onClick={() => setAktifPage(p)} className={`w-full text-left py-3 px-2 font-semibold text-sm border-b transition-all hover:scale-[1.01] hover:bg-white/5 hover:shadow-[0_0_20px_rgba(255,255,255,0.06)] ${isDarkMode ? 'text-white border-white/10' : 'text-black border-black/10'}`}>{t[p]}</button>)}
@@ -4075,7 +4108,49 @@ function Home() {
             </div>
           </div>
         </div>
-        {aktifPage === 'support' && (
+        {/* ── BİLDİRİM PANELİ ── */}
+      {notifPanelAcik && aktifPage === 'menu' && (
+        <div className="fixed inset-0 z-[5500]" onClick={() => setNotifPanelAcik(false)}>
+          <div className={`absolute top-5 left-5 w-[65%] max-w-[260px] rounded-3xl border shadow-2xl overflow-hidden ${isDarkMode ? 'bg-[#111] border-white/10' : 'bg-white border-black/10'}`}
+            style={{ top: '5px', maxHeight: '70vh' }}
+            onClick={e => e.stopPropagation()}>
+            <div className={`flex items-center justify-between px-4 py-3 border-b ${isDarkMode ? 'border-white/10' : 'border-black/10'}`}>
+              <p className={`font-black text-sm ${isDarkMode ? 'text-white' : 'text-black'}`}>Bildirimler</p>
+              {notifications.some(n => !n.is_read) && (
+                <button onClick={async () => {
+                  await supabase.from('notifications').update({ is_read: true }).eq('user_id', user.id).eq('is_read', false);
+                  setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
+                }} className="text-[10px] text-emerald-400 font-black">Tümünü okundu say</button>
+              )}
+            </div>
+            <div className="overflow-y-auto" style={{ maxHeight: 'calc(70vh - 48px)' }}>
+              {notifications.length === 0 ? (
+                <p className={`text-center text-xs py-8 ${isDarkMode ? 'text-white/30' : 'text-black/30'}`}>Henüz bildirim yok</p>
+              ) : notifications.map(n => (
+                <div key={n.id} onClick={async () => {
+                  if (!n.is_read) {
+                    await supabase.from('notifications').update({ is_read: true }).eq('id', n.id);
+                    setNotifications(prev => prev.map(x => x.id === n.id ? { ...x, is_read: true } : x));
+                  }
+                  if (n.link) { setNotifPanelAcik(false); }
+                }} className={`px-4 py-3 border-b cursor-pointer transition-colors ${isDarkMode ? 'border-white/5 hover:bg-white/5' : 'border-black/5 hover:bg-black/5'} ${!n.is_read ? isDarkMode ? 'bg-white/[0.03]' : 'bg-emerald-50' : ''}`}>
+                  <div className="flex items-start gap-2">
+                    {!n.is_read && <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 mt-1.5 flex-shrink-0" />}
+                    {n.is_read && <div className="w-1.5 h-1.5 flex-shrink-0" />}
+                    <div className="flex-1 min-w-0">
+                      <p className={`font-bold text-xs ${isDarkMode ? 'text-white' : 'text-black'}`}>{n.title}</p>
+                      <p className={`text-[11px] mt-0.5 ${isDarkMode ? 'text-white/50' : 'text-black/50'}`}>{n.body}</p>
+                      <p className={`text-[10px] mt-1 ${isDarkMode ? 'text-white/25' : 'text-black/25'}`}>{new Date(n.created_at).toLocaleString('tr-TR', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' })}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {aktifPage === 'support' && (
           <div className={`fixed inset-0 z-[6000] flex flex-col ${isDarkMode ? 'bg-[#0F0F0F]' : 'bg-zinc-200'}`}>
             <div className="flex items-center gap-4 p-6 pt-12"><button onClick={() => setAktifPage('menu')} className={`text-2xl ${isDarkMode ? 'text-white' : 'text-black'}`}>←</button><h2 className={`font-black text-xl uppercase ${isDarkMode ? 'text-white' : 'text-black'}`}>{t.support}</h2></div>
             <div className="flex-1 overflow-y-auto px-6 pb-10">{[1, 2, 3].map(i => <Accordion key={i} title={t[`supportQ${i}`]} dark={isDarkMode}>{t[`supportA${i}`]}</Accordion>)}</div>

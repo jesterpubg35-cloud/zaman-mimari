@@ -197,7 +197,7 @@ export async function POST(req) {
     if (error) return NextResponse.json({ error }, { status: error === 'Forbidden' ? 403 : 401 });
 
     const body = await req.json().catch(() => ({}));
-    const { action, targetUserId, reviewId, withdrawalId, title, body: annBody, adminId } = body;
+    const { action, targetUserId, reviewId, withdrawalId, title, body: annBody, adminId, target, link } = body;
     if (!action) return NextResponse.json({ error: 'Missing action' }, { status: 400 });
 
     if (action === 'ban') {
@@ -221,8 +221,38 @@ export async function POST(req) {
       return NextResponse.json({ success: true });
     }
     if (action === 'send_announcement') {
-      await adminClient.from('announcements').insert({ title, body: annBody, created_by: adminId });
-      return NextResponse.json({ success: true });
+      // 1. Duyuruyu kaydet
+      await adminClient.from('announcements').insert({ title, body: annBody, target: target || 'all', link: link || null });
+
+      // 2. Hedef kullanıcıları belirle
+      let query = adminClient.from('profilkisi').select('user_id, roles');
+      const { data: allUsers } = await query;
+      const targetUsers = (allUsers || []).filter(u => {
+        if (target === 'providers') {
+          const r = Array.isArray(u.roles) ? u.roles : [];
+          return r.some(x => ['kurye','emanetci','siraci'].includes(x));
+        }
+        if (target === 'customers') {
+          const r = Array.isArray(u.roles) ? u.roles : [];
+          return r.includes('musteri') || r.length === 0;
+        }
+        return true; // 'all'
+      });
+
+      // 3. Her kullanıcıya notifications kaydı oluştur (toplu)
+      if (targetUsers.length > 0) {
+        const rows = targetUsers.map(u => ({
+          user_id: u.user_id,
+          title,
+          body: annBody,
+          type: 'announcement',
+          link: link || null,
+          is_read: false,
+        }));
+        await adminClient.from('notifications').insert(rows);
+      }
+
+      return NextResponse.json({ success: true, sent: targetUsers.length });
     }
     if (action === 'approve_withdrawal') {
       await adminClient.from('withdrawal_requests').update({ status: 'approved' }).eq('id', withdrawalId);

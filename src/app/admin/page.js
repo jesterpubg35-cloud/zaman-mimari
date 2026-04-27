@@ -301,9 +301,15 @@ export default function AdminDashboard() {
   const sendAnnouncement = async (e) => {
     e.preventDefault();
     if (!annTitle.trim() || !annBody.trim()) return;
-    await apiPost(token, { action: 'send_announcement', title: annTitle, body: annBody });
-    setAnnTitle(''); setAnnBody('');
-    showToast('Duyuru gönderildi ✓');
+    await apiPost(token, {
+      action: 'send_announcement',
+      title: annTitle,
+      body: annBody,
+      target: annTarget,
+      link: annLink,
+    });
+    setAnnTitle(''); setAnnBody(''); setAnnLink('');
+    showToast('Bildirim gönderildi ✓');
     loadAnnouncements();
   };
 
