@@ -4,50 +4,22 @@ import { MapContainer, TileLayer, Marker, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
-function SelfMarker({ lat, lng, heading, color }) {
+function SelfMarker({ lat, lng, color }) {
   const map = useMap();
   const markerRef = useRef(null);
-  const isZoomingRef = useRef(false);
-  const headingRef = useRef(heading);
-  const colorRef = useRef(color);
 
-  const buildIcon = (h, c) => {
-    const html = `
-      <div style="width:36px;height:36px;position:relative;display:flex;align-items:center;justify-content:center;">
-        ${h !== null && h !== undefined ? `
-          <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;transform:rotate(${h}deg);transform-origin:50% 50%;">
-            <div style="width:0;height:0;border-left:4px solid transparent;border-right:4px solid transparent;border-bottom:10px solid ${c};transform:translateY(-12px);opacity:0.95;"></div>
-          </div>` : ''}
-        <div style="width:14px;height:14px;border-radius:50%;background-color:${c};border:2px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.5);position:relative;z-index:1;"></div>
-      </div>`;
-    return L.divIcon({ html, className: '', iconSize: [36, 36], iconAnchor: [18, 18] });
-  };
+  const buildIcon = (c) => L.divIcon({
+    html: `<div style="width:14px;height:14px;border-radius:50%;background-color:${c};border:2px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.5);"></div>`,
+    className: '',
+    iconSize: [14, 14],
+    iconAnchor: [7, 7],
+  });
 
-  // Zoom event'lerini dinle - zoom sırasında icon güncelleme
-  useEffect(() => {
-    const onZoomStart = () => { isZoomingRef.current = true; };
-    const onZoomEnd = () => {
-      isZoomingRef.current = false;
-      // Zoom bittikten sonra icon'u bir kez güncelle
-      if (markerRef.current) {
-        markerRef.current.setIcon(buildIcon(headingRef.current, colorRef.current));
-      }
-    };
-    map.on('zoomstart', onZoomStart);
-    map.on('zoomend', onZoomEnd);
-    return () => {
-      map.off('zoomstart', onZoomStart);
-      map.off('zoomend', onZoomEnd);
-    };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [map]);
-
-  // Konum güncelle
   useEffect(() => {
     if (!lat || !lng) return;
     if (!markerRef.current) {
       markerRef.current = L.marker([lat, lng], {
-        icon: buildIcon(heading, color),
+        icon: buildIcon(color),
         zIndexOffset: 1000,
         interactive: false,
       }).addTo(map);
@@ -57,22 +29,9 @@ function SelfMarker({ lat, lng, heading, color }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lat, lng]);
 
-  // Heading/color değişince icon güncelle (sadece zoom yoksa)
-  useEffect(() => {
-    headingRef.current = heading;
-    colorRef.current = color;
-    if (markerRef.current && !isZoomingRef.current) {
-      markerRef.current.setIcon(buildIcon(heading, color));
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [heading, color]);
-
   useEffect(() => {
     return () => {
-      if (markerRef.current) {
-        markerRef.current.remove();
-        markerRef.current = null;
-      }
+      if (markerRef.current) { markerRef.current.remove(); markerRef.current = null; }
     };
   }, []);
 
@@ -175,7 +134,7 @@ export default function LeafletMapView({
         <MapRefSetter mapRef={mapRef} />
 
         {/* Kendi marker'ı - doğrudan Leaflet API ile, zoom/pan'de kaymasın */}
-        {lat && lng && <SelfMarker lat={lat} lng={lng} heading={heading} color={selfColor} />}
+        {lat && lng && <SelfMarker lat={lat} lng={lng} color={selfColor} />}
 
         {/* Diğer kullanıcı marker'ları */}
         {(others || []).map((u) => {
