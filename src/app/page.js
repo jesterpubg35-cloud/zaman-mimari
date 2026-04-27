@@ -1807,7 +1807,20 @@ function Home() {
           console.error('Error saving user to localStorage:', e);
         }
       } else {
-        setUser(null);
+        // Profil DB'den gelmedi - localStorage'daki kaydı koru (geçici hata olabilir)
+        try {
+          const saved = localStorage.getItem('radar_user');
+          if (saved) {
+            const parsed = JSON.parse(saved);
+            if (parsed?.id === session?.user?.id) {
+              setUser(parsed);
+            } else {
+              setUser(null);
+            }
+          } else {
+            setUser(null);
+          }
+        } catch { setUser(null); }
       }
     };
 
@@ -3336,7 +3349,7 @@ function Home() {
     setLangMenuAcik(false); 
   };
 
-  const handleLogout = async () => { await supabase.auth.signOut(); setUser(null); setAktifIs(null); setGelenTalep(null); setMesajlar([]); setChatAcik(false); setUnreadCount(0); setCallState('idle'); };
+  const handleLogout = async () => { await supabase.auth.signOut(); try { localStorage.removeItem('radar_user'); } catch {} setUser(null); setAktifIs(null); setGelenTalep(null); setMesajlar([]); setChatAcik(false); setUnreadCount(0); setCallState('idle'); };
 
   const filteredDigerleri = (() => {
     const result = digerleri.filter(u => {

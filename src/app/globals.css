@@ -27,6 +27,11 @@
   -webkit-tap-highlight-color: transparent;
 }
 
+/* opacity-0 olan fixed/absolute elementler tıklama almasın */
+.opacity-0 {
+  pointer-events: none !important;
+}
+
 html {
   height: 100%;
   width: 100%;
