@@ -93,29 +93,37 @@ function MapView({
   const containerRef = useRef(null);
   const [zoom, setZoom] = useState(15);
   const [center, setCenter] = useState(() => [lat || 38.411, lng || 27.158]);
-  const [userModified, setUserModified] = useState(false);
   const [libsReady, setLibsReady] = useState(false);
+  // Kullanıcı manuel olarak haritaya dokunuyor mu?
+  const isManualInteracting = useRef(false);
+  const initialCentered = useRef(false);
 
   useEffect(() => {
     loadLibraries().then(() => setLibsReady(true));
   }, []);
 
-  const prevLatLng = useRef({ lat: null, lng: null });
+  // Sadece ilk konumda bir kez ortala, sonra kullanıcı haritayı serbestçe kullanabilsin
   useEffect(() => {
-    if (!userModified && lat && lng) {
+    if (lat && lng && !initialCentered.current) {
       setCenter([lat, lng]);
-      prevLatLng.current = { lat, lng };
-    } else if (lat && lng && prevLatLng.current.lat === null) {
-      // İlk konum gelince sadece bir kez odakla
-      setCenter([lat, lng]);
-      prevLatLng.current = { lat, lng };
+      initialCentered.current = true;
     }
-  }, [lat, lng, userModified]);
+  }, [lat, lng]);
+
+  // Konteyner: touch-action manipulation, scroll çakışmasını engelle
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    el.style.touchAction = 'none';
+    const preventScroll = (e) => { if (e.touches.length >= 1) e.preventDefault(); };
+    el.addEventListener('touchmove', preventScroll, { passive: false });
+    return () => el.removeEventListener('touchmove', preventScroll);
+  }, [libsReady]);
 
   useEffect(() => {
     if (onResetRef) {
       onResetRef.current = () => {
-        setUserModified(false);
+        isManualInteracting.current = false;
         if (lat && lng) setCenter([lat, lng]);
       };
     }
@@ -147,7 +155,7 @@ function MapView({
     <div ref={containerRef} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, width: '100%', height: '100%', overflow: 'hidden' }}>
       <PigeonMap
           provider={dark ? darkTileProvider : lightTileProvider}
-          center={effectiveCenter}
+          center={center}
           zoom={zoom}
           minZoom={1}
           maxZoom={22}
@@ -155,11 +163,11 @@ function MapView({
           animateMaxScreens={5}
           mouseEvents={true}
           touchEvents={true}
-          twoFingerDrag={true}
+          twoFingerDrag={false}
           metaWheelZoom={true}
-          style={{ width: '100%', height: '100%' }}
+          style={{ width: '100%', height: '100%', touchAction: 'none' }}
           onBoundsChanged={({ center: newCenter, zoom: newZoom }) => {
-            if (!userModified) setUserModified(true);
+            isManualInteracting.current = true;
             setZoom(newZoom);
             setCenter(newCenter);
           }}
