@@ -4112,9 +4112,9 @@ function Home() {
         </div>
         {/* ── BİLDİRİM PANELİ ── */}
       {notifPanelAcik && aktifPage === 'menu' && (
-        <div className="fixed inset-0 z-[5500]" onClick={() => setNotifPanelAcik(false)}>
-          <div className={`absolute top-5 left-5 w-[65%] max-w-[260px] rounded-3xl border shadow-2xl overflow-hidden ${isDarkMode ? 'bg-[#111] border-white/10' : 'bg-white border-black/10'}`}
-            style={{ top: '5px', maxHeight: '70vh' }}
+        <div className="fixed inset-0 z-[5500] animate-fade-in" onClick={() => setNotifPanelAcik(false)}>
+          <div className={`absolute left-5 w-[72%] max-w-[280px] rounded-3xl border shadow-2xl overflow-hidden animate-fade-slide-up ${isDarkMode ? 'bg-[#111] border-white/10' : 'bg-white border-black/10'}`}
+            style={{ top: 'calc(env(safe-area-inset-top, 0px) + 60px)', maxHeight: 'calc(100dvh - env(safe-area-inset-top, 0px) - 80px)' }}
             onClick={e => e.stopPropagation()}>
             <div className={`flex items-center justify-between px-4 py-3 border-b ${isDarkMode ? 'border-white/10' : 'border-black/10'}`}>
               <p className={`font-black text-sm ${isDarkMode ? 'text-white' : 'text-black'}`}>Bildirimler</p>
@@ -4973,19 +4973,20 @@ function Home() {
             }}
           />
         )}
+        <button
+          onClick={konumaGit}
+          className={`fixed z-[3100] w-10 h-10 rounded-xl flex items-center justify-center shadow-lg active:scale-95 transition-transform ${isDarkMode ? 'bg-white/10 border border-white/10 backdrop-blur-md' : 'bg-white border border-black/10 shadow'}`}
+          style={{ bottom: (sheetYukseklik === 0 || seciliKisi) ? 'calc(var(--sheet-open-h, 220px) + 12px)' : '80px', right: '16px', transition: 'bottom 0.5s cubic-bezier(0.25,0.46,0.45,0.94), transform 0.15s ease' }}
+          title="Konumuma Git"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2ECC71" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>
+          </svg>
+        </button>
         <div className={`fixed bottom-0 left-0 right-0 rounded-t-[40px] z-[3000] transition-transform duration-500 ${isDarkMode ? 'bg-[#121212]' : 'bg-slate-200/90 backdrop-blur-xl border border-black/10 shadow-2xl'}`} style={{ transform: (sheetYukseklik === 1 && !seciliKisi) ? 'translateY(80%)' : 'translateY(0)' }}>
           <div className="w-full py-4 flex items-center justify-center relative cursor-pointer" onClick={() => setSheetYukseklik(sheetYukseklik === 0 ? 1 : 0)}>
             <div className={`w-12 h-1.5 rounded-full ${isDarkMode ? 'bg-gray-500/30' : 'bg-black/15'}`}></div>
-            <button
-              onClick={(e) => { e.stopPropagation(); konumaGit(); }}
-              className={`absolute right-4 w-9 h-9 rounded-xl flex items-center justify-center shadow active:scale-95 transition-transform ${isDarkMode ? 'bg-white/10 border border-white/10' : 'bg-white border border-black/10'}`}
-              title="Konumuma Git"
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2ECC71" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="3"/>
-                <path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>
-              </svg>
-            </button>
           </div>
           <div className="px-6 pb-10">
             {seciliKisi ? (
