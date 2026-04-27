@@ -11,21 +11,12 @@ import dynamic from 'next/dynamic';
 const StripePaymentModal = dynamic(() => import('./components/StripePaymentModal'), { ssr: false });
 
 // SSR-safe dynamic imports
-let PigeonMap, Marker, ZoomControl;
 let Geolocation;
 let libsLoaded = false;
 
 // Lazy load libraries only on client side
 const loadLibraries = async () => {
   if (libsLoaded || typeof window === 'undefined') return;
-  try {
-    const pigeon = await import('pigeon-maps');
-    PigeonMap = pigeon.Map;
-    Marker = pigeon.Marker;
-    ZoomControl = pigeon.ZoomControl;
-  } catch (e) {
-    console.warn('Pigeon maps load failed:', e);
-  }
   try {
     const cap = await import('@capacitor/geolocation');
     Geolocation = cap.Geolocation;
@@ -76,6 +67,9 @@ const getPrimaryRole = (u) => {
 };
 
 
+// Leaflet MapView - react-leaflet ile
+const LeafletMapView = dynamic(() => import('./components/LeafletMapView'), { ssr: false });
+
 function MapView({
   lat,
   lng,
@@ -90,159 +84,21 @@ function MapView({
   heading,
   onResetRef,
 }) {
-  const containerRef = useRef(null);
-  const [zoom, setZoom] = useState(15);
-  const [center, setCenter] = useState(() => [lat || 38.411, lng || 27.158]);
-  const [libsReady, setLibsReady] = useState(false);
-  const [isTracking, setIsTracking] = useState(true);
-  const userMovedMap = useRef(false);
-
-  useEffect(() => {
-    loadLibraries().then(() => setLibsReady(true));
-  }, []);
-
-  // GPS takibi aktifse haritayı güncelle
-  useEffect(() => {
-    if (lat && lng && isTracking) {
-      setCenter([lat, lng]);
-    }
-  }, [lat, lng, isTracking]);
-
-  // Container: touch-action pan-x pan-y — sayfa scroll ile harita ayrışır, pointer-events korunur
-  useEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
-    // Pigeon-maps kendi touch handling'ini yönetir, override etme
-  }, [libsReady]);
-
-  // onResetRef: "Beni Bul" butonu ile GPS takibini yeniden başlat
-  useEffect(() => {
-    if (onResetRef) {
-      onResetRef.current = () => {
-        userMovedMap.current = false;
-        setIsTracking(true);
-        if (lat && lng) setCenter([lat, lng]);
-      };
-    }
-  }, [onResetRef, lat, lng]);
-
-  const effectiveCenter = center;
-
-  const lightTileProvider = useCallback((x, y, z) => `https://mt1.google.com/vt/lyrs=m&x=${x}&y=${y}&z=${z}`, []);
-  const darkTileProvider = useCallback((x, y, z) => `https://a.basemaps.cartocdn.com/dark_all/${z}/${x}/${y}.png`, []);
-
-  const handleMarkerClick = useCallback((user) => (params) => {
-    params?.event?.stopPropagation?.();
-    if (user.user_id === 'self') return;
-    if (onMarkerSheet) return onMarkerSheet(user);
-    return onProfileClick ? onProfileClick(user) : onSelect(user);
-  }, [onMarkerSheet, onProfileClick, onSelect]);
-
-  const currentUserData = currentUser || { roles: ['musteri'], user_role: 'musteri', user_id: 'self' };
-
-  if (!libsReady || !PigeonMap) {
-    return (
-      <div ref={containerRef} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#1a1a1a' }}>
-        <div className="text-[#2ECC71] text-sm">Harita yükleniyor...</div>
-      </div>
-    );
-  }
-
   return (
-    <div ref={containerRef} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, width: '100%', height: '100%', overflow: 'hidden' }}>
-      <PigeonMap
-          provider={dark ? darkTileProvider : lightTileProvider}
-          center={center}
-          zoom={zoom}
-          minZoom={1}
-          maxZoom={22}
-          animate={true}
-          animateMaxScreens={5}
-          mouseEvents={true}
-          touchEvents={true}
-          twoFingerDrag={true}
-          metaWheelZoom={true}
-          style={{ width: '100%', height: '100%' }}
-          onBoundsChanged={({ center: newCenter, zoom: newZoom }) => {
-            if (!userMovedMap.current) {
-              userMovedMap.current = true;
-              setIsTracking(false);
-            }
-            setZoom(newZoom);
-            setCenter(newCenter);
-          }}
-          onClick={() => {}}
-        >
-        {/* Self marker - Direction arrow */}
-        {lat && lng && (
-          <Marker
-            anchor={[lat, lng]}
-            width={28}
-            height={28}
-            onClick={handleMarkerClick({ ...currentUserData, user_id: 'self', lat, lng })}
-          >
-            <div style={{ width: 28, height: 28, position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              {heading !== null && heading !== undefined && (
-                <div style={{
-                  position: 'absolute',
-                  width: 0,
-                  height: 0,
-                  borderLeft: '5px solid transparent',
-                  borderRight: '5px solid transparent',
-                  borderBottom: '12px solid ' + getRoleColor(currentUserData.roles),
-                  top: -4,
-                  left: '50%',
-                  transform: `translateX(-50%) rotate(${heading}deg)`,
-                  transformOrigin: '50% 200%',
-                  opacity: 0.85,
-                }} />
-              )}
-              <div
-                style={{
-                  width: 14,
-                  height: 14,
-                  borderRadius: '50%',
-                  backgroundColor: getRoleColor(currentUserData.roles),
-                  border: '2px solid white',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.5)',
-                  zIndex: 1,
-                }}
-              />
-            </div>
-          </Marker>
-        )}
-        
-        {/* Other users markers */}
-        {(others || []).map((u) => {
-          const uRoles = u.roles || [u.user_role];
-          const color = getRoleColor(uRoles);
-          const glow = getRoleGlow(uRoles);
-          return (
-            <Marker
-              key={`${u.user_id}-${uRoles.join(',')}`}
-              anchor={[u.lat, u.lng]}
-              width={20}
-              height={20}
-              onClick={handleMarkerClick(u)}
-            >
-              <div style={{ position: 'relative', width: 20, height: 20, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <div style={{
-                  width: 14,
-                  height: 14,
-                  borderRadius: '50%',
-                  backgroundColor: color,
-                  border: '2px solid rgba(255,255,255,0.9)',
-                  boxShadow: glow,
-                  cursor: 'pointer',
-                }} />
-              </div>
-            </Marker>
-          );
-        })}
-        
-        <ZoomControl />
-        </PigeonMap>
-    </div>
+    <LeafletMapView
+      lat={lat}
+      lng={lng}
+      others={others}
+      dark={dark}
+      currentUser={currentUser}
+      onSelect={onSelect}
+      onProfileClick={onProfileClick}
+      onMarkerSheet={onMarkerSheet}
+      heading={heading}
+      onResetRef={onResetRef}
+      getRoleColor={getRoleColor}
+      getRoleGlow={getRoleGlow}
+    />
   );
 }
 
