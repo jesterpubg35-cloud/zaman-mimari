@@ -3234,14 +3234,15 @@ function Home() {
     const allRatings = [...(reviews || []).map(r => r.rating), rating];
     const avg = allRatings.reduce((s, r) => s + r, 0) / allRatings.length;
     // profiles tablosunu güncelle
+    const tidStr = String(targetId);
     // average_rating güncelle
     await supabase.from('profilkisi').update({
       average_rating: parseFloat(avg.toFixed(2)),
-    }).eq('user_id', targetId);
+    }).eq('user_id', tidStr);
     // total_completed_jobs için RPC dene, yoksa direkt update
     await supabase.rpc('increment_completed_jobs', { user_id: targetId }).catch(async () => {
-      const { data: pd } = await supabase.from('profilkisi').select('total_completed_jobs').eq('user_id', targetId).single();
-      await supabase.from('profilkisi').update({ total_completed_jobs: (pd?.total_completed_jobs || 0) + 1 }).eq('user_id', targetId);
+      const { data: pd } = await supabase.from('profilkisi').select('total_completed_jobs').eq('user_id', tidStr).single();
+      await supabase.from('profilkisi').update({ total_completed_jobs: (pd?.total_completed_jobs || 0) + 1 }).eq('user_id', tidStr);
     });
   };
 
