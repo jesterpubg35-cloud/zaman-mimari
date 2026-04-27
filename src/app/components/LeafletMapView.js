@@ -7,6 +7,9 @@ import 'leaflet/dist/leaflet.css';
 function SelfMarker({ lat, lng, heading, color }) {
   const map = useMap();
   const markerRef = useRef(null);
+  const isZoomingRef = useRef(false);
+  const headingRef = useRef(heading);
+  const colorRef = useRef(color);
 
   const buildIcon = (h, c) => {
     const html = `
@@ -20,6 +23,26 @@ function SelfMarker({ lat, lng, heading, color }) {
     return L.divIcon({ html, className: '', iconSize: [36, 36], iconAnchor: [18, 18] });
   };
 
+  // Zoom event'lerini dinle - zoom sırasında icon güncelleme
+  useEffect(() => {
+    const onZoomStart = () => { isZoomingRef.current = true; };
+    const onZoomEnd = () => {
+      isZoomingRef.current = false;
+      // Zoom bittikten sonra icon'u bir kez güncelle
+      if (markerRef.current) {
+        markerRef.current.setIcon(buildIcon(headingRef.current, colorRef.current));
+      }
+    };
+    map.on('zoomstart', onZoomStart);
+    map.on('zoomend', onZoomEnd);
+    return () => {
+      map.off('zoomstart', onZoomStart);
+      map.off('zoomend', onZoomEnd);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [map]);
+
+  // Konum güncelle
   useEffect(() => {
     if (!lat || !lng) return;
     if (!markerRef.current) {
@@ -30,11 +53,19 @@ function SelfMarker({ lat, lng, heading, color }) {
       }).addTo(map);
     } else {
       markerRef.current.setLatLng([lat, lng]);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lat, lng]);
+
+  // Heading/color değişince icon güncelle (sadece zoom yoksa)
+  useEffect(() => {
+    headingRef.current = heading;
+    colorRef.current = color;
+    if (markerRef.current && !isZoomingRef.current) {
       markerRef.current.setIcon(buildIcon(heading, color));
     }
-    return () => {};
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [lat, lng, heading, color]);
+  }, [heading, color]);
 
   useEffect(() => {
     return () => {
