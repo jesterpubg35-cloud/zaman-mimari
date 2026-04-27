@@ -161,7 +161,7 @@ function MapView({
           animateMaxScreens={5}
           mouseEvents={true}
           touchEvents={true}
-          twoFingerDrag={false}
+          twoFingerDrag={true}
           metaWheelZoom={true}
           style={{ width: '100%', height: '100%' }}
           onBoundsChanged={({ center: newCenter, zoom: newZoom }) => {
