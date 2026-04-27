@@ -1,6 +1,6 @@
 'use client';
-import { useEffect, useRef, useState } from 'react';
-import { MapContainer, TileLayer, Marker, useMap, useMapEvents } from 'react-leaflet';
+import { useEffect, useRef } from 'react';
+import { MapContainer, TileLayer, Marker, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
@@ -96,40 +96,14 @@ function createDivIcon(html, size = 28) {
   });
 }
 
-function GPSTracker({ lat, lng, isTracking, mapRef }) {
+function MapRefSetter({ mapRef }) {
   const map = useMap();
-  const isZoomingRef = useRef(false);
-
   useEffect(() => {
     if (mapRef) mapRef.current = map;
   }, [map, mapRef]);
-
-  useEffect(() => {
-    const onZoomStart = () => { isZoomingRef.current = true; };
-    const onZoomEnd = () => { isZoomingRef.current = false; };
-    map.on('zoomstart', onZoomStart);
-    map.on('zoomend', onZoomEnd);
-    return () => {
-      map.off('zoomstart', onZoomStart);
-      map.off('zoomend', onZoomEnd);
-    };
-  }, [map]);
-
-  useEffect(() => {
-    if (lat && lng && isTracking && map && !isZoomingRef.current) {
-      map.setView([lat, lng], map.getZoom(), { animate: true });
-    }
-  }, [lat, lng, isTracking, map]);
-
   return null;
 }
 
-function InteractionHandler({ onUserMove }) {
-  useMapEvents({
-    dragstart: () => onUserMove(),
-  });
-  return null;
-}
 
 export default function LeafletMapView({
   lat,
@@ -146,21 +120,10 @@ export default function LeafletMapView({
   getRoleGlow,
 }) {
   const mapRef = useRef(null);
-  const [isTracking, setIsTracking] = useState(true);
-  const userMoved = useRef(false);
-
-  const handleUserMove = () => {
-    if (!userMoved.current) {
-      userMoved.current = true;
-      setIsTracking(false);
-    }
-  };
 
   useEffect(() => {
     if (onResetRef) {
       onResetRef.current = () => {
-        userMoved.current = false;
-        setIsTracking(true);
         if (lat && lng && mapRef.current) {
           mapRef.current.setView([lat, lng], 15, { animate: true });
         }
@@ -209,8 +172,7 @@ export default function LeafletMapView({
         touchZoom={true}
       >
         <TileLayer url={tileUrl} attribution={tileAttrib} maxZoom={22} />
-        <GPSTracker lat={lat} lng={lng} isTracking={isTracking} mapRef={mapRef} />
-        <InteractionHandler onUserMove={handleUserMove} />
+        <MapRefSetter mapRef={mapRef} />
 
         {/* Kendi marker'ı - doğrudan Leaflet API ile, zoom/pan'de kaymasın */}
         {lat && lng && <SelfMarker lat={lat} lng={lng} heading={heading} color={selfColor} />}
