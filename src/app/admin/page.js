@@ -107,6 +107,9 @@ export default function AdminDashboard() {
   const [annTarget, setAnnTarget] = useState('all');
   const [annLink, setAnnLink] = useState('');
 
+  // Öneriler
+  const [suggestions, setSuggestions] = useState([]);
+
   // Güvenlik Radarı
   const [radar, setRadar] = useState([]);
   const [radarLoading, setRadarLoading] = useState(false);
@@ -248,6 +251,12 @@ export default function AdminDashboard() {
     setRadarLoading(false);
   }, [token]);
 
+  const loadSuggestions = useCallback(async () => {
+    const sb = getSupabase();
+    const { data } = await sb.from('suggestions').select('*').order('created_at', { ascending: false });
+    setSuggestions(data || []);
+  }, []);
+
   const loadGrowth = useCallback(async () => {
     if (!token) return;
     const data = await apiFetch(token, 'users');
@@ -277,6 +286,7 @@ export default function AdminDashboard() {
     if (tab === 'notifications') { loadAnnouncements(); }
     if (tab === 'radar') { loadRadar(); }
     if (tab === 'growth') { loadGrowth(); }
+    if (tab === 'suggestions') { loadSuggestions(); }
   }, [tab, isAdmin, token]);
 
   // ── Aksiyonlar ───────────────────────────────────────────
@@ -430,6 +440,7 @@ export default function AdminDashboard() {
           <Tab active={tab === 'notifications'} onClick={() => setTab('notifications')}>Bildirim Merkezi</Tab>
           <Tab active={tab === 'radar'} onClick={() => setTab('radar')}>Güvenlik Radarı</Tab>
           <Tab active={tab === 'growth'} onClick={() => setTab('growth')}>Büyüme</Tab>
+          <Tab active={tab === 'suggestions'} onClick={() => setTab('suggestions')}>Öneriler</Tab>
         </div>
 
         {/* ── DASHBOARD ── */}
@@ -779,6 +790,31 @@ export default function AdminDashboard() {
             </div>
           </div>
         )}
+        {/* ── ÖNERILER ── */}
+        {tab === 'suggestions' && (
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-[11px] font-black text-zinc-500 uppercase tracking-widest">Kullanıcı Önerileri ({suggestions.length})</h3>
+              <button onClick={loadSuggestions} className="text-xs text-emerald-400 font-bold">Yenile</button>
+            </div>
+            {suggestions.length === 0 ? (
+              <p className="text-zinc-600 text-sm">Henüz öneri yok.</p>
+            ) : (
+              <div className="space-y-3">
+                {suggestions.map(s => (
+                  <div key={s.id} className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="font-black text-sm text-white">{s.name}</span>
+                      <span className="text-[10px] text-zinc-500">{new Date(s.created_at).toLocaleString('tr-TR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>
+                    </div>
+                    <p className="text-sm text-zinc-300 leading-relaxed">{s.body}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
       </div>
     </main>
   );

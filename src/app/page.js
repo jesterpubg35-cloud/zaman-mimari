@@ -4094,18 +4094,13 @@ function Home() {
               </button>
             </div>
             <div className="flex-1 space-y-1">
-              {['support', 'payment', 'history', 'settings'].map(p => <button key={p} onClick={() => setAktifPage(p)} className={`w-full text-left py-3 px-2 font-semibold text-sm border-b transition-all hover:scale-[1.01] hover:bg-white/5 hover:shadow-[0_0_20px_rgba(255,255,255,0.06)] ${isDarkMode ? 'text-white border-white/10' : 'text-black border-black/10'}`}>{t[p] || 'Ayarlar'}</button>)}
+              {['support', 'payment', 'history'].map(p => <button key={p} onClick={() => setAktifPage(p)} className={`w-full text-left py-3 px-2 font-semibold text-sm border-b transition-all hover:scale-[1.01] hover:bg-white/5 hover:shadow-[0_0_20px_rgba(255,255,255,0.06)] ${isDarkMode ? 'text-white border-white/10' : 'text-black border-black/10'}`}>{t[p]}</button>)}
               {user?.is_admin && (
                 <a href="/admin" target="_blank" rel="noopener noreferrer" className={`w-full text-left py-3 px-2 font-semibold text-sm border-b transition-all hover:scale-[1.01] hover:bg-red-500/10 flex items-center gap-2 ${isDarkMode ? 'text-red-400 border-white/10' : 'text-red-600 border-black/10'}`}>🛡 Admin Paneli <span className="text-[10px] opacity-50">↗</span></a>
               )}
             </div>
             <div className="mt-6 space-y-3">
-              <div className={`rounded-2xl border overflow-hidden ${isDarkMode ? 'bg-white/5 border-white/5' : 'bg-black/5 border-black/5'}`}>
-                <button onClick={() => setLangMenuAcik(!langMenuAcik)} className={`w-full flex justify-between items-center p-4 text-sm font-bold ${isDarkMode ? 'text-white' : 'text-black'}`}>
-                  <span>{t.language}: {TRANSLATIONS[lang]?.flag} {TRANSLATIONS[lang]?.name}</span><span className={`transition-transform ${langMenuAcik ? 'rotate-180' : ''}`}>▼</span>
-                </button>
-                {langMenuAcik && <div className="max-h-48 overflow-y-auto">{Object.entries(TRANSLATIONS).map(([code, tl]) => <button key={code} onClick={() => handleLangChange(code)} className={`w-full text-left px-4 py-2.5 text-sm flex items-center gap-2 ${lang === code ? 'bg-[#2ECC71]/20 text-[#2ECC71] font-bold' : isDarkMode ? 'text-gray-300 hover:bg-white/5' : 'text-gray-700 hover:bg-black/5'}`}><span>{tl.flag}</span> {tl.name}</button>)}</div>}
-              </div>
+              <button onClick={() => setAktifPage('settings')} className={`w-full p-4 rounded-2xl font-bold text-sm text-left flex items-center gap-2 ${isDarkMode ? 'bg-white/5 text-white' : 'bg-black/5 text-black'}`}>⚙️ {t.settings || 'Ayarlar'}</button>
               <button onClick={handleLogout} className="w-full p-4 bg-red-500/10 text-red-500 rounded-2xl font-bold text-sm">{t.logout}</button>
             </div>
           </div>
@@ -4171,6 +4166,23 @@ function Home() {
               </div>
             </div>
 
+            {/* Dil Seçimi */}
+            <div className={`rounded-3xl border overflow-hidden ${isDarkMode ? 'bg-white/5 border-white/10' : 'bg-white border-black/10'}`}>
+              <button onClick={() => setLangMenuAcik(!langMenuAcik)} className={`w-full flex justify-between items-center p-5 text-sm font-bold ${isDarkMode ? 'text-white' : 'text-black'}`}>
+                <span>🌍 {t.language}: {TRANSLATIONS[lang]?.flag} {TRANSLATIONS[lang]?.name}</span>
+                <span className={`transition-transform duration-300 ${langMenuAcik ? 'rotate-180' : ''}`}>▼</span>
+              </button>
+              {langMenuAcik && (
+                <div className="max-h-56 overflow-y-auto border-t border-white/10">
+                  {Object.entries(TRANSLATIONS).map(([code, tl]) => (
+                    <button key={code} onClick={() => handleLangChange(code)} className={`w-full text-left px-5 py-3 text-sm flex items-center gap-2 ${lang === code ? 'bg-[#2ECC71]/20 text-[#2ECC71] font-bold' : isDarkMode ? 'text-gray-300 hover:bg-white/5' : 'text-gray-700 hover:bg-black/5'}`}>
+                      <span>{tl.flag}</span> {tl.name}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
             {/* Bildirimler */}
             <div className={`rounded-3xl p-5 border space-y-4 ${isDarkMode ? 'bg-white/5 border-white/10' : 'bg-white border-black/10'}`}>
               <p className={`text-xs font-black uppercase tracking-widest opacity-40 ${isDarkMode ? 'text-white' : 'text-black'}`}>Bildirimler</p>
@@ -4179,30 +4191,80 @@ function Home() {
                   <p className={`text-sm font-semibold ${isDarkMode ? 'text-white' : 'text-black'}`}>Anlık bildirimleri al</p>
                   <p className={`text-[11px] mt-0.5 ${isDarkMode ? 'text-white/40' : 'text-black/40'}`}>İş teklifleri ve mesajlar için</p>
                 </div>
-                <button className="w-11 h-6 rounded-full bg-[#2ECC71] relative">
-                  <div className="absolute top-0.5 right-0.5 w-5 h-5 bg-white rounded-full shadow"></div>
+                <button onClick={async () => {
+                  if (!('Notification' in window)) return showToast('Tarayıcınız bildirimleri desteklemiyor');
+                  const perm = await Notification.requestPermission();
+                  if (perm === 'granted') showToast('Bildirimler açıldı ✓');
+                  else showToast('Bildirim izni reddedildi');
+                }} className={`w-11 h-6 rounded-full transition-colors relative ${'Notification' in window && Notification.permission === 'granted' ? 'bg-[#2ECC71]' : 'bg-gray-400'}`}>
+                  <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full transition-all shadow ${'Notification' in window && Notification.permission === 'granted' ? 'right-0.5' : 'left-0.5'}`}></div>
                 </button>
               </div>
-            </div>
-
-            {/* Destek */}
-            <div className={`rounded-3xl p-5 border space-y-2 ${isDarkMode ? 'bg-white/5 border-white/10' : 'bg-white border-black/10'}`}>
-              <p className={`text-xs font-black uppercase tracking-widest opacity-40 mb-3 ${isDarkMode ? 'text-white' : 'text-black'}`}>Destek</p>
-              <button onClick={() => setAktifPage('support')} className={`w-full flex items-center justify-between py-3 border-b text-sm font-semibold ${isDarkMode ? 'text-white border-white/10' : 'text-black border-black/10'}`}>
-                <span>❓ Sıkça Sorulan Sorular</span><span className="opacity-40">›</span>
-              </button>
-              <button onClick={() => setAktifPage('support')} className={`w-full flex items-center justify-between py-3 text-sm font-semibold ${isDarkMode ? 'text-white' : 'text-black'}`}>
-                <span>✉️ Bize Ulaşın</span><span className="opacity-40">›</span>
-              </button>
             </div>
 
             {/* Yasal */}
             <div className={`rounded-3xl p-5 border ${isDarkMode ? 'bg-white/5 border-white/10' : 'bg-white border-black/10'}`}>
               <p className={`text-xs font-black uppercase tracking-widest opacity-40 mb-3 ${isDarkMode ? 'text-white' : 'text-black'}`}>Yasal Bilgiler & Politikalar</p>
-              <Accordion title="Kullanıcı Sözleşmesi" dark={isDarkMode}>{`Platform yalnızca bir aracı hizmet olarak görev yapar. Taraflar arasındaki anlaşmazlıklardan platform sorumlu tutulamaz. Kullanıcılar, hizmet verirken tüm yasal yükümlülükleri kendileri üstlenir. Platform, kullanıcı davranışlarından doğan hukuki sorumluluğu kabul etmez. Hizmet koşullarına aykırı davranan hesaplar askıya alınabilir.`}</Accordion>
-              <Accordion title="Gizlilik Politikası" dark={isDarkMode}>{`Konum verileriniz yalnızca harita üzerinde görünürlük sağlamak amacıyla kullanılır ve üçüncü taraflarla paylaşılmaz. Profil fotoğrafınız yalnızca diğer kullanıcılara gösterilir. Kişisel verileriniz KVKK kapsamında işlenmekte olup talep halinde silinebilir. Verilerinizin işlenmesine ilişkin detaylı bilgi için destek hattımıza ulaşabilirsiniz.`}</Accordion>
-              <Accordion title="Çerez Politikası" dark={isDarkMode}>{`Uygulama deneyimini iyileştirmek amacıyla oturum bilgileri ve tercihleriniz yerel depolamada (localStorage) saklanır. Bu veriler reklam amaçlı kullanılmaz. Tarayıcı ayarlarınızdan yerel depolamayı temizleyerek bu verileri kaldırabilirsiniz.`}</Accordion>
-              <Accordion title="Hizmet Şartları" dark={isDarkMode}>{`Emanet hizmetlerinde teslim edilen eşyaların korunması emanetçinin sorumluluğundadır. Sıra bekleme hizmetinde belirlenen süre ve koşullar taraflarca önceden mutabık kalınmalıdır. Hizmet bedeli platform üzerinden güvence altına alınmadan ödeme yapılması tavsiye edilmez. Anlaşmazlık durumunda platform arabuluculuk yapabilir ancak karar yetkisi taraflara aittir.`}</Accordion>
+              <Accordion title="Kullanıcı Sözleşmesi" dark={isDarkMode}>{`İşbu Kullanıcı Sözleşmesi, platform ile kullanıcı arasındaki karşılıklı hak ve yükümlülükleri belirler.
+
+Platformun Rolü: Platform, hizmet veren (kurye, emanetçi, sıra bekleyen) ile hizmet alanı buluşturan bir 'Aracı Hizmet Sağlayıcı'dır. Platform, kullanıcılar arasında gerçekleşen hizmetin kalitesinden, doğruluğundan veya tarafların davranışlarından doğrudan sorumlu tutulamaz.
+
+Hizmet İlişkisi: Kullanıcılar, platform üzerinden bir işlem başlattıklarında, hukuki ilişki doğrudan hizmet veren ile hizmet alan arasında kurulur. Platform, sadece bu sürecin güvenli bir şekilde takip edilmesini sağlayan teknolojik altyapıyı sunar.
+
+Sorumluluk Sınırları: Kullanıcılar tarafından paylaşılan bilgilerin doğruluğu kullanıcının sorumluluğundadır. Platform, mücbir sebepler veya teknik aksaklıklar nedeniyle oluşabilecek kesintilerden sorumlu tutulamaz. Kullanıcı, hesabı üzerinden yapılan tüm işlemlerden bizzat sorumludur.`}</Accordion>
+              <Accordion title="Gizlilik Politikası" dark={isDarkMode}>{`Kişisel verilerinizin güvenliği bizim için önceliklidir. 6698 sayılı KVKK kapsamında verileriniz şu şekilde işlenmektedir:
+
+Toplanan Veriler: Uygulamanın çalışması için ad-soyad, e-posta, telefon numarası ve konum verileriniz toplanır. Hizmet doğrulaması için çekilen teslimat fotoğrafları sistemimizde güvenli bir şekilde saklanır.
+
+Veri İşleme Amacı: Konum verileriniz sadece harita üzerinde görünürlük sağlamak ve doğru hizmet eşleşmesi yapmak için kullanılır. Fotoğraflar, olası anlaşmazlıklarda kanıt sunmak amacıyla kayıt altına alınır.
+
+Üçüncü Taraflarla Paylaşım: Verileriniz asla reklam amacıyla üçüncü taraflara satılmaz. Sadece ödeme işlemleri için Stripe ve veritabanı yönetimi için Supabase gibi güvenilir altyapı sağlayıcıları ile paylaşılır.
+
+Kullanıcı Hakları: Kullanıcılar, diledikleri zaman hesaplarını silme veya verilerinin işlenmesi hakkında bilgi alma hakkına sahiptir.`}</Accordion>
+              <Accordion title="Çerez Politikası" dark={isDarkMode}>{`Uygulamamız, size daha hızlı ve kişiselleştirilmiş bir deneyim sunmak için modern depolama teknolojilerini kullanır.
+
+Kullanım Amacı: Oturum bilgilerinizin hatırlanması, tema tercihiniz (koyu/açık mod) ve uygulama içi performans ayarlarınız için yerel depolama (localStorage) kullanılır.
+
+Takip ve Reklam: Uygulamamızda üçüncü taraf reklam takibi yapılmamaktadır. Kullanılan çerezler ve depolama birimleri tamamen işlevseldir.
+
+Kontrol Sizde: Tarayıcı ayarlarınızdan veya uygulama içinden çıkış yaparak bu verileri temizleyebilirsiniz. Ancak oturum bilgilerinin silinmesi, her girişte tekrar giriş yapmanızı gerektirecektir.`}</Accordion>
+              <Accordion title="Hizmet Şartları" dark={isDarkMode}>{`Hizmet alırken ve verirken uyulması gereken temel kurallar şunlardır:
+
+Emanet Hizmeti: Emanet bırakılan eşyaların yasalara uygun olması zorunludur. Emanetçi, eşyayı teslim aldığı andaki durumuyla korumakla yükümlüdür. Teslim alma ve teslim etme anında çekilen fotoğraflar, eşyanın durumuna dair kesin kanıt sayılır.
+
+Sıra Bekleme: Sıra bekleyen kullanıcı, belirlenen saatte ve yerde bulunmak zorundadır. Görevin iptali veya gecikme durumunda platformun belirlediği ceza/iade politikaları geçerli olur.
+
+Ödeme Kuralları: Tüm ödemeler platformun güvenli ödeme altyapısı (Stripe) üzerinden yapılmalıdır. Platform dışı ödeme yapılması durumunda oluşabilecek zararlardan platform sorumlu değildir.
+
+İptal ve İade: Hizmet başladıktan sonra yapılan iptallerde, hizmet verenin emeğini korumak adına kısmi kesinti yapılabilir. Anlaşmazlık durumunda platform yönetimi son karar verici merci olarak arabuluculuk yapar.`}</Accordion>
+            </div>
+
+            {/* Bize Ulaşın */}
+            <div className={`rounded-3xl p-5 border space-y-4 ${isDarkMode ? 'bg-white/5 border-white/10' : 'bg-white border-black/10'}`}>
+              <p className={`text-xs font-black uppercase tracking-widest opacity-40 ${isDarkMode ? 'text-white' : 'text-black'}`}>Bize Ulaşın</p>
+              <p className={`text-[11px] ${isDarkMode ? 'text-white/40' : 'text-black/40'}`}>Bize önerilerinizi yazın</p>
+              <input
+                type="text"
+                placeholder="Adınız Soyadınız"
+                id="suggestion-name"
+                className={`w-full px-4 py-3 rounded-2xl text-sm outline-none border ${isDarkMode ? 'bg-white/5 border-white/10 text-white placeholder:text-white/30' : 'bg-black/5 border-black/10 text-black placeholder:text-black/30'}`}
+              />
+              <textarea
+                placeholder="Önerinizi buraya yazın..."
+                id="suggestion-body"
+                rows={3}
+                className={`w-full px-4 py-3 rounded-2xl text-sm outline-none border resize-none ${isDarkMode ? 'bg-white/5 border-white/10 text-white placeholder:text-white/30' : 'bg-black/5 border-black/10 text-black placeholder:text-black/30'}`}
+              />
+              <button onClick={async () => {
+                const name = document.getElementById('suggestion-name')?.value?.trim();
+                const body = document.getElementById('suggestion-body')?.value?.trim();
+                if (!name || !body) return showToast('Lütfen ad ve öneri alanlarını doldurun');
+                const { error } = await supabase.from('suggestions').insert({ name, body, user_id: user?.id || null });
+                if (error) return showToast('Hata oluştu');
+                document.getElementById('suggestion-name').value = '';
+                document.getElementById('suggestion-body').value = '';
+                showToast('Öneriniz gönderildi ✓');
+              }} className="w-full py-3 bg-[#2ECC71] text-black font-black rounded-2xl text-sm">Gönder</button>
             </div>
 
           </div>
