@@ -6,47 +6,32 @@ import 'leaflet/dist/leaflet.css';
 
 function SelfMarker({ lat, lng, color }) {
   const map = useMap();
-  const elRef = useRef(null);
-  const latLngRef = useRef([lat, lng]);
-
-  const updatePos = () => {
-    if (!elRef.current || !latLngRef.current) return;
-    const p = map.latLngToLayerPoint(latLngRef.current);
-    elRef.current.style.transform = `translate(${p.x - 7}px, ${p.y - 7}px)`;
-  };
+  const markerRef = useRef(null);
 
   useEffect(() => {
     if (!lat || !lng) return;
-    latLngRef.current = [lat, lng];
 
-    if (!elRef.current) {
-      const div = document.createElement('div');
-      div.style.cssText = `
-        position:absolute;
-        width:14px;height:14px;
-        border-radius:50%;
-        background-color:${color};
-        border:2px solid white;
-        box-shadow:0 2px 8px rgba(0,0,0,0.5);
-        pointer-events:none;
-        z-index:1000;
-      `;
-      map.getPanes().overlayPane.appendChild(div);
-      elRef.current = div;
+    if (!markerRef.current) {
+      markerRef.current = L.circleMarker([lat, lng], {
+        radius: 8,
+        fillColor: color,
+        fillOpacity: 1,
+        color: 'white',
+        weight: 2,
+        interactive: false,
+        pane: 'markerPane',
+      }).addTo(map);
+    } else {
+      markerRef.current.setLatLng([lat, lng]);
     }
-
-    updatePos();
-
-    map.on('zoom move zoomend moveend', updatePos);
-    return () => { map.off('zoom move zoomend moveend', updatePos); };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lat, lng]);
 
   useEffect(() => {
     return () => {
-      if (elRef.current) {
-        elRef.current.remove();
-        elRef.current = null;
+      if (markerRef.current) {
+        markerRef.current.remove();
+        markerRef.current = null;
       }
     };
   }, []);
