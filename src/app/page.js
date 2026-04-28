@@ -4094,7 +4094,7 @@ function Home() {
               </button>
             </div>
             <div className="flex-1 space-y-1">
-              {['support', 'payment', 'history'].map(p => <button key={p} onClick={() => setAktifPage(p)} className={`w-full text-left py-3 px-2 font-semibold text-sm border-b transition-all hover:scale-[1.01] hover:bg-white/5 hover:shadow-[0_0_20px_rgba(255,255,255,0.06)] ${isDarkMode ? 'text-white border-white/10' : 'text-black border-black/10'}`}>{t[p]}</button>)}
+              {['support', 'payment', 'history', 'settings'].map(p => <button key={p} onClick={() => setAktifPage(p)} className={`w-full text-left py-3 px-2 font-semibold text-sm border-b transition-all hover:scale-[1.01] hover:bg-white/5 hover:shadow-[0_0_20px_rgba(255,255,255,0.06)] ${isDarkMode ? 'text-white border-white/10' : 'text-black border-black/10'}`}>{t[p] || 'Ayarlar'}</button>)}
               {user?.is_admin && (
                 <a href="/admin" target="_blank" rel="noopener noreferrer" className={`w-full text-left py-3 px-2 font-semibold text-sm border-b transition-all hover:scale-[1.01] hover:bg-red-500/10 flex items-center gap-2 ${isDarkMode ? 'text-red-400 border-white/10' : 'text-red-600 border-black/10'}`}>🛡 Admin Paneli <span className="text-[10px] opacity-50">↗</span></a>
               )}
@@ -4105,10 +4105,6 @@ function Home() {
                   <span>{t.language}: {TRANSLATIONS[lang]?.flag} {TRANSLATIONS[lang]?.name}</span><span className={`transition-transform ${langMenuAcik ? 'rotate-180' : ''}`}>▼</span>
                 </button>
                 {langMenuAcik && <div className="max-h-48 overflow-y-auto">{Object.entries(TRANSLATIONS).map(([code, tl]) => <button key={code} onClick={() => handleLangChange(code)} className={`w-full text-left px-4 py-2.5 text-sm flex items-center gap-2 ${lang === code ? 'bg-[#2ECC71]/20 text-[#2ECC71] font-bold' : isDarkMode ? 'text-gray-300 hover:bg-white/5' : 'text-gray-700 hover:bg-black/5'}`}><span>{tl.flag}</span> {tl.name}</button>)}</div>}
-              </div>
-              <div className={`rounded-xl flex justify-between items-center px-4 py-3 ${isDarkMode ? 'bg-white/5' : 'bg-black/5'}`}>
-                <span className={`text-xs font-semibold ${isDarkMode ? 'text-white' : 'text-black'}`}>{isDarkMode ? '☾ Koyu' : '☀ Açık'}</span>
-                <button onClick={() => setIsDarkMode(!isDarkMode)} className={`w-10 h-5 rounded-full transition-colors relative ${isDarkMode ? 'bg-[#2ECC71]' : 'bg-gray-400'}`}><div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition-all shadow ${isDarkMode ? 'right-0.5' : 'left-0.5'}`}></div></button>
               </div>
               <button onClick={handleLogout} className="w-full p-4 bg-red-500/10 text-red-500 rounded-2xl font-bold text-sm">{t.logout}</button>
             </div>
@@ -4156,6 +4152,62 @@ function Home() {
         </div>
       )}
 
+      {aktifPage === 'settings' && (
+        <div className={`fixed inset-0 z-[6000] flex flex-col animate-fade-slide-up ${isDarkMode ? 'bg-[#0F0F0F]' : 'bg-zinc-100'}`}>
+          <div className="flex items-center gap-4 p-6 pt-12">
+            <button onClick={() => setAktifPage('menu')} className={`text-2xl ${isDarkMode ? 'text-white' : 'text-black'}`}>←</button>
+            <h2 className={`font-black text-xl uppercase ${isDarkMode ? 'text-white' : 'text-black'}`}>Ayarlar</h2>
+          </div>
+          <div className="flex-1 overflow-y-auto px-6 pb-10 space-y-6">
+
+            {/* Görünüm */}
+            <div className={`rounded-3xl p-5 border space-y-4 ${isDarkMode ? 'bg-white/5 border-white/10' : 'bg-white border-black/10'}`}>
+              <p className={`text-xs font-black uppercase tracking-widest opacity-40 ${isDarkMode ? 'text-white' : 'text-black'}`}>Görünüm</p>
+              <div className="flex items-center justify-between">
+                <span className={`text-sm font-semibold ${isDarkMode ? 'text-white' : 'text-black'}`}>{isDarkMode ? '☾ Koyu Tema' : '☀ Açık Tema'}</span>
+                <button onClick={() => setIsDarkMode(!isDarkMode)} className={`w-11 h-6 rounded-full transition-colors relative ${isDarkMode ? 'bg-[#2ECC71]' : 'bg-gray-300'}`}>
+                  <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full transition-all shadow ${isDarkMode ? 'right-0.5' : 'left-0.5'}`}></div>
+                </button>
+              </div>
+            </div>
+
+            {/* Bildirimler */}
+            <div className={`rounded-3xl p-5 border space-y-4 ${isDarkMode ? 'bg-white/5 border-white/10' : 'bg-white border-black/10'}`}>
+              <p className={`text-xs font-black uppercase tracking-widest opacity-40 ${isDarkMode ? 'text-white' : 'text-black'}`}>Bildirimler</p>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className={`text-sm font-semibold ${isDarkMode ? 'text-white' : 'text-black'}`}>Anlık bildirimleri al</p>
+                  <p className={`text-[11px] mt-0.5 ${isDarkMode ? 'text-white/40' : 'text-black/40'}`}>İş teklifleri ve mesajlar için</p>
+                </div>
+                <button className="w-11 h-6 rounded-full bg-[#2ECC71] relative">
+                  <div className="absolute top-0.5 right-0.5 w-5 h-5 bg-white rounded-full shadow"></div>
+                </button>
+              </div>
+            </div>
+
+            {/* Destek */}
+            <div className={`rounded-3xl p-5 border space-y-2 ${isDarkMode ? 'bg-white/5 border-white/10' : 'bg-white border-black/10'}`}>
+              <p className={`text-xs font-black uppercase tracking-widest opacity-40 mb-3 ${isDarkMode ? 'text-white' : 'text-black'}`}>Destek</p>
+              <button onClick={() => setAktifPage('support')} className={`w-full flex items-center justify-between py-3 border-b text-sm font-semibold ${isDarkMode ? 'text-white border-white/10' : 'text-black border-black/10'}`}>
+                <span>❓ Sıkça Sorulan Sorular</span><span className="opacity-40">›</span>
+              </button>
+              <button onClick={() => setAktifPage('support')} className={`w-full flex items-center justify-between py-3 text-sm font-semibold ${isDarkMode ? 'text-white' : 'text-black'}`}>
+                <span>✉️ Bize Ulaşın</span><span className="opacity-40">›</span>
+              </button>
+            </div>
+
+            {/* Yasal */}
+            <div className={`rounded-3xl p-5 border ${isDarkMode ? 'bg-white/5 border-white/10' : 'bg-white border-black/10'}`}>
+              <p className={`text-xs font-black uppercase tracking-widest opacity-40 mb-3 ${isDarkMode ? 'text-white' : 'text-black'}`}>Yasal Bilgiler & Politikalar</p>
+              <Accordion title="Kullanıcı Sözleşmesi" dark={isDarkMode}>{`Platform yalnızca bir aracı hizmet olarak görev yapar. Taraflar arasındaki anlaşmazlıklardan platform sorumlu tutulamaz. Kullanıcılar, hizmet verirken tüm yasal yükümlülükleri kendileri üstlenir. Platform, kullanıcı davranışlarından doğan hukuki sorumluluğu kabul etmez. Hizmet koşullarına aykırı davranan hesaplar askıya alınabilir.`}</Accordion>
+              <Accordion title="Gizlilik Politikası" dark={isDarkMode}>{`Konum verileriniz yalnızca harita üzerinde görünürlük sağlamak amacıyla kullanılır ve üçüncü taraflarla paylaşılmaz. Profil fotoğrafınız yalnızca diğer kullanıcılara gösterilir. Kişisel verileriniz KVKK kapsamında işlenmekte olup talep halinde silinebilir. Verilerinizin işlenmesine ilişkin detaylı bilgi için destek hattımıza ulaşabilirsiniz.`}</Accordion>
+              <Accordion title="Çerez Politikası" dark={isDarkMode}>{`Uygulama deneyimini iyileştirmek amacıyla oturum bilgileri ve tercihleriniz yerel depolamada (localStorage) saklanır. Bu veriler reklam amaçlı kullanılmaz. Tarayıcı ayarlarınızdan yerel depolamayı temizleyerek bu verileri kaldırabilirsiniz.`}</Accordion>
+              <Accordion title="Hizmet Şartları" dark={isDarkMode}>{`Emanet hizmetlerinde teslim edilen eşyaların korunması emanetçinin sorumluluğundadır. Sıra bekleme hizmetinde belirlenen süre ve koşullar taraflarca önceden mutabık kalınmalıdır. Hizmet bedeli platform üzerinden güvence altına alınmadan ödeme yapılması tavsiye edilmez. Anlaşmazlık durumunda platform arabuluculuk yapabilir ancak karar yetkisi taraflara aittir.`}</Accordion>
+            </div>
+
+          </div>
+        </div>
+      )}
       {aktifPage === 'support' && (
           <div className={`fixed inset-0 z-[6000] flex flex-col ${isDarkMode ? 'bg-[#0F0F0F]' : 'bg-zinc-200'}`}>
             <div className="flex items-center gap-4 p-6 pt-12"><button onClick={() => setAktifPage('menu')} className={`text-2xl ${isDarkMode ? 'text-white' : 'text-black'}`}>←</button><h2 className={`font-black text-xl uppercase ${isDarkMode ? 'text-white' : 'text-black'}`}>{t.support}</h2></div>
