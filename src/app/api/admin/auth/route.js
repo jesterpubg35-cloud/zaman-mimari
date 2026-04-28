@@ -31,37 +31,20 @@ export async function POST(req) {
     const ip = getIp(req);
     const ua = req.headers.get('user-agent') || '';
     const hash = createHash('sha256').update((password || '') + 'tick_admin_salt_2025').digest('hex');
+    const sb = getAdminClient();
 
     if (hash !== ADMIN_HASH) {
-      // Hatalı deneme — sessizce logla
-      getAdminClient().from('admin_logs').insert({
-        event_type: 'login_fail',
-        ip_address: ip,
-        user_agent: ua,
-        detail: 'Hatalı şifre denemesi',
-      }).catch(() => {});
-      getAdminClient().from('admin_login_attempts').insert({
-        email: 'admin',
-        success: false,
-        ip_address: ip,
-        user_agent: ua,
-      }).catch(() => {});
+      await Promise.allSettled([
+        sb.from('admin_logs').insert({ event_type: 'login_fail', ip_address: ip, user_agent: ua, detail: 'Hatalı şifre denemesi' }),
+        sb.from('admin_login_attempts').insert({ email: 'admin', success: false, ip_address: ip, user_agent: ua }),
+      ]);
       return NextResponse.json({ error: 'Hatalı şifre.' }, { status: 401 });
     }
 
-    // Başarılı giriş
-    getAdminClient().from('admin_logs').insert({
-      event_type: 'login_success',
-      ip_address: ip,
-      user_agent: ua,
-      detail: 'Admin paneli girişi başarılı.',
-    }).catch(() => {});
-    getAdminClient().from('admin_login_attempts').insert({
-      email: 'admin',
-      success: true,
-      ip_address: ip,
-      user_agent: ua,
-    }).catch(() => {});
+    await Promise.allSettled([
+      sb.from('admin_logs').insert({ event_type: 'login_success', ip_address: ip, user_agent: ua, detail: 'Admin paneli girişi başarılı.' }),
+      sb.from('admin_login_attempts').insert({ email: 'admin', success: true, ip_address: ip, user_agent: ua }),
+    ]);
 
     return NextResponse.json({ success: true });
   } catch (e) {
