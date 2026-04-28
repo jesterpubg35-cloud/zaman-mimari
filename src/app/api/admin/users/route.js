@@ -192,6 +192,28 @@ export async function GET(req) {
       return NextResponse.json({ history: data || [] });
     }
 
+    // ── giriş denemeleri ──────────────────────────────────────
+    if (type === 'login_attempts') {
+      const { data, error: err } = await adminClient
+        .from('admin_login_attempts')
+        .select('id, email, ip_address, attempted_at, success, user_agent')
+        .order('attempted_at', { ascending: false })
+        .limit(200);
+      if (err) return NextResponse.json({ attempts: [] });
+      return NextResponse.json({ attempts: data || [] });
+    }
+
+    // ── adres geçmişi ─────────────────────────────────────────
+    if (type === 'address_history') {
+      const { data, error: err } = await adminClient
+        .from('address_history')
+        .select('id, user_id, old_address, new_address, changed_at, change_type')
+        .order('changed_at', { ascending: false })
+        .limit(300);
+      if (err) return NextResponse.json({ history: [] });
+      return NextResponse.json({ history: data || [] });
+    }
+
     // ── users (default) ───────────────────────────────────────
     const { data: users, error: usersErr } = await adminClient
       .from('profilkisi')
@@ -270,6 +292,16 @@ export async function POST(req) {
     }
     if (action === 'approve_withdrawal') {
       await adminClient.from('withdrawal_requests').update({ status: 'approved' }).eq('id', withdrawalId);
+      return NextResponse.json({ success: true });
+    }
+    if (action === 'log_login_attempt') {
+      const { email: attemptEmail, success: attemptSuccess } = body;
+      await adminClient.from('admin_login_attempts').insert({
+        email: attemptEmail || 'unknown',
+        success: Boolean(attemptSuccess),
+        ip_address: req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || null,
+        user_agent: req.headers.get('user-agent') || null,
+      });
       return NextResponse.json({ success: true });
     }
 

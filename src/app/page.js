@@ -2804,7 +2804,15 @@ function Home() {
 
       const normalizedRoles = normalizeRolesValue(profile?.roles);
       const rolesForUser = normalizedRoles || (profile?.role ? [profile.role] : ['musteri']);
-      const loggedUser = { id: authData.user.id, ...profile, roles: rolesForUser };
+
+      // E-posta doğrulama kalıcılığı: auth veya DB'den doğrulanmışsa DB'ye işle
+      const isVerified = !!(authData.user.email_confirmed_at || profile?.email_verified);
+      if (isVerified && !profile?.email_verified) {
+        supabase.from('profilkisi').update({ email_verified: true }).eq('user_id', authData.user.id).then(() => {});
+      }
+      setEmailVerified(isVerified);
+
+      const loggedUser = { id: authData.user.id, ...profile, roles: rolesForUser, email_verified: isVerified };
       setUser(loggedUser);
       setSelectedRoles(rolesForUser);
       setTempSelectedRoles(rolesForUser);
@@ -2993,11 +3001,30 @@ function Home() {
         return;
       }
       
+      // Eski adres verilerini al (loglama için)
+      const oldAddress = {
+        address_line1: user.address_line1 || null,
+        address_line2: user.address_line2 || null,
+        city: user.city || null,
+        district: user.district || null,
+        neighborhood: user.neighborhood || null,
+        postal_code: user.postal_code || null,
+      };
+
       const { error } = await supabase
         .from('profilkisi')
         .update(addressData)
         .eq('user_id', user.id);
       if (error) throw error;
+
+      // Adres geçmişine logla (sessizce, hata olsa da devam et)
+      const hasOldAddress = Object.values(oldAddress).some(Boolean);
+      supabase.from('address_history').insert({
+        user_id: user.id,
+        old_address: hasOldAddress ? oldAddress : null,
+        new_address: addressData,
+        change_type: hasOldAddress ? 'update' : 'initial',
+      }).then(({ error: hErr }) => { if (hErr) console.error('address_history insert error:', hErr); });
       
       // LocalStorage'a da kaydet
       const updatedUser = { ...user, ...addressData };

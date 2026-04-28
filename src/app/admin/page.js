@@ -7,6 +7,7 @@ import {
 } from 'recharts';
 
 const ADMIN_EMAIL = 'uguryigitkarakuzu@gmail.com';
+const ADMIN_PASSWORD = 'ADMIN_SIFRENIZI_BURAYA_YAZIN'; // <- Manuel olarak değiştirin
 const DONUT_COLORS = ['#2ECC71', '#4b5563', '#6b7280', '#9ca3af'];
 
 function getSupabase() {
@@ -70,7 +71,17 @@ export default function AdminDashboard() {
   const [loginPassword, setLoginPassword] = useState('');
   const [loginLoading, setLoginLoading] = useState(false);
   const [loginErr, setLoginErr] = useState('');
+  const [loginAttempts, setLoginAttempts] = useState(0);
+  const [loginBlocked, setLoginBlocked] = useState(false);
   const [tab, setTab] = useState('dashboard');
+
+  // Hatalı giriş takibi
+  const [adminAttempts, setAdminAttempts] = useState([]);
+  const [attemptsLoading, setAttemptsLoading] = useState(false);
+
+  // Adres geçmişi
+  const [addressHistory, setAddressHistory] = useState([]);
+  const [addressHistoryLoading, setAddressHistoryLoading] = useState(false);
 
   // Dashboard
   const [stats, setStats] = useState(null);
@@ -140,16 +151,45 @@ export default function AdminDashboard() {
 
   const handleLogin = async (e) => {
     e.preventDefault();
+    if (loginBlocked) return;
     setLoginLoading(true);
     setLoginErr('');
     try {
+      // Ek şifre katmanı kontrolü
+      if (loginPassword !== ADMIN_PASSWORD && ADMIN_PASSWORD !== 'ADMIN_SIFRENIZI_BURAYA_YAZIN') {
+        throw new Error('Hatalı admin şifresi.');
+      }
       const sb = getSupabase();
       const { data, error } = await sb.auth.signInWithPassword({ email: loginEmail, password: loginPassword });
       if (error) throw error;
       if (data?.user?.email !== ADMIN_EMAIL) { await sb.auth.signOut(); throw new Error('Admin yetkisi yok.'); }
+      // Başarılı giriş — deneme sayacını sıfırla
+      setLoginAttempts(0);
       setToken(data.session.access_token);
       setIsAdmin(true);
-    } catch (e) { setLoginErr(e?.message || 'Hata'); }
+      // Başarılı girişi logla
+      fetch('/api/admin/users', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${data.session.access_token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'log_login_attempt', email: loginEmail, success: true }),
+      }).catch(() => {});
+    } catch (err) {
+      const newCount = loginAttempts + 1;
+      setLoginAttempts(newCount);
+      setLoginErr(`${err?.message || 'Hata'} (${newCount}. deneme)`);
+      // 5 hatalı denemede 30 sn kilitle
+      if (newCount >= 5) {
+        setLoginBlocked(true);
+        setLoginErr('Çok fazla hatalı deneme. 30 saniye bekleyin.');
+        setTimeout(() => { setLoginBlocked(false); setLoginAttempts(0); }, 30000);
+      }
+      // Hatalı girişi logla (token olmadan service key üzerinden)
+      fetch('/api/admin/login-attempt', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: loginEmail, success: false }),
+      }).catch(() => {});
+    }
     finally { setLoginLoading(false); }
   };
 
@@ -260,6 +300,22 @@ export default function AdminDashboard() {
     setSuggestions(data || []);
   }, []);
 
+  const loadAdminAttempts = useCallback(async () => {
+    if (!token) return;
+    setAttemptsLoading(true);
+    const data = await apiFetch(token, 'login_attempts');
+    setAdminAttempts(data.attempts || []);
+    setAttemptsLoading(false);
+  }, [token]);
+
+  const loadAddressHistory = useCallback(async () => {
+    if (!token) return;
+    setAddressHistoryLoading(true);
+    const data = await apiFetch(token, 'address_history');
+    setAddressHistory(data.history || []);
+    setAddressHistoryLoading(false);
+  }, [token]);
+
   const loadGrowth = useCallback(async () => {
     if (!token) return;
     const data = await apiFetch(token, 'users');
@@ -290,6 +346,8 @@ export default function AdminDashboard() {
     if (tab === 'radar') { loadRadar(); }
     if (tab === 'growth') { loadGrowth(); }
     if (tab === 'suggestions') { loadSuggestions(); }
+    if (tab === 'attempts') { loadAdminAttempts(); }
+    if (tab === 'address_history') { loadAddressHistory(); }
   }, [tab, isAdmin, token]);
 
   // ── Aksiyonlar ───────────────────────────────────────────
@@ -328,27 +386,73 @@ export default function AdminDashboard() {
 
   // ── Giriş ekranı ─────────────────────────────────────────
   if (!authChecked) return (
-    <main className="min-h-screen bg-zinc-950 flex items-center justify-center">
-      <div className="text-white/30 text-sm">Yükleniyor...</div>
+    <main className="min-h-screen bg-black flex items-center justify-center">
+      <div className="text-blue-400/40 text-sm animate-pulse">Yükleniyor...</div>
     </main>
   );
 
   if (!isAdmin) return (
-    <main className="min-h-screen bg-zinc-950 flex items-center justify-center p-6">
-      <form onSubmit={handleLogin} className="w-full max-w-sm bg-zinc-900 border border-zinc-800 rounded-2xl p-8 flex flex-col gap-4">
-        <div className="text-center mb-2">
-          <div className="text-3xl font-black text-emerald-400 mb-1">TICK</div>
-          <div className="text-white/50 text-sm">Admin Paneli</div>
+    <main className="min-h-screen bg-black flex items-center justify-center p-6 overflow-hidden">
+      {/* Neon arka plan animasyonu */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full bg-blue-900/10 blur-[120px] animate-pulse" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] rounded-full bg-blue-700/5 blur-[80px] animate-pulse" style={{ animationDelay: '1s' }} />
+      </div>
+      <form onSubmit={handleLogin} className="relative w-full max-w-sm flex flex-col gap-5"
+        style={{ filter: loginBlocked ? 'grayscale(0.5)' : 'none' }}>
+        {/* Neon çerçeveli kart */}
+        <div className="relative rounded-2xl p-8 flex flex-col gap-5"
+          style={{
+            background: 'rgba(0,0,20,0.95)',
+            boxShadow: '0 0 0 1px rgba(59,130,246,0.3), 0 0 40px rgba(59,130,246,0.08), 0 0 80px rgba(59,130,246,0.04)',
+            animation: 'neonFade 3s ease-in-out infinite alternate',
+          }}>
+          <style>{`@keyframes neonFade { from { box-shadow: 0 0 0 1px rgba(59,130,246,0.2), 0 0 40px rgba(59,130,246,0.06); } to { box-shadow: 0 0 0 1.5px rgba(59,130,246,0.5), 0 0 60px rgba(59,130,246,0.15), 0 0 120px rgba(59,130,246,0.06); } }`}</style>
+          <div className="text-center">
+            <div className="text-2xl font-black tracking-widest" style={{ color: '#3b82f6', textShadow: '0 0 20px rgba(59,130,246,0.6)' }}>TICK</div>
+            <div className="text-white/30 text-xs mt-1 tracking-widest uppercase">Güvenli Admin Erişimi</div>
+          </div>
+          {loginAttempts > 0 && (
+            <div className="text-center text-[10px] font-black text-blue-400/50 tracking-widest">
+              {loginAttempts} hatalı deneme
+            </div>
+          )}
+          {loginErr && (
+            <div className="text-red-400 text-xs font-bold bg-red-500/10 border border-red-500/20 rounded-xl p-3 text-center">
+              {loginErr}
+            </div>
+          )}
+          <div className="space-y-3">
+            <div>
+              <div className="text-[10px] font-black uppercase tracking-widest text-blue-400/50 mb-1.5">E-posta</div>
+              <input type="email" value={loginEmail} onChange={e => setLoginEmail(e.target.value)} placeholder="admin@ornek.com" required
+                disabled={loginBlocked}
+                className="w-full bg-black/60 border rounded-xl px-4 py-3 text-sm text-white outline-none placeholder:text-white/20 transition-all"
+                style={{ borderColor: 'rgba(59,130,246,0.3)', boxShadow: 'inset 0 0 20px rgba(59,130,246,0.03)' }}
+                onFocus={e => e.target.style.borderColor = 'rgba(59,130,246,0.7)'}
+                onBlur={e => e.target.style.borderColor = 'rgba(59,130,246,0.3)'} />
+            </div>
+            <div>
+              <div className="text-[10px] font-black uppercase tracking-widest text-blue-400/50 mb-1.5">Şifre</div>
+              <input type="password" value={loginPassword} onChange={e => setLoginPassword(e.target.value)} placeholder="••••••••••" required
+                disabled={loginBlocked}
+                className="w-full bg-black/60 border rounded-xl px-4 py-3 text-sm text-white outline-none placeholder:text-white/20 transition-all"
+                style={{ borderColor: 'rgba(59,130,246,0.3)', boxShadow: 'inset 0 0 20px rgba(59,130,246,0.03)' }}
+                onFocus={e => e.target.style.borderColor = 'rgba(59,130,246,0.7)'}
+                onBlur={e => e.target.style.borderColor = 'rgba(59,130,246,0.3)'} />
+            </div>
+          </div>
+          <button type="submit" disabled={loginLoading || loginBlocked}
+            className="py-3 rounded-xl font-black text-sm tracking-widest uppercase transition-all disabled:opacity-40"
+            style={{
+              background: loginBlocked ? '#111' : 'linear-gradient(135deg, #1d4ed8, #2563eb)',
+              color: 'white',
+              boxShadow: loginBlocked ? 'none' : '0 0 20px rgba(59,130,246,0.4)',
+            }}>
+            {loginLoading ? '⏳ Doğrulanıyor...' : loginBlocked ? '🔒 Kilitli' : '→ Giriş Yap'}
+          </button>
         </div>
-        {loginErr && <div className="text-red-400 text-xs font-bold bg-red-500/10 rounded-xl p-3 text-center">{loginErr}</div>}
-        <input type="email" value={loginEmail} onChange={e => setLoginEmail(e.target.value)} placeholder="E-posta" required
-          className="bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-sm text-white outline-none placeholder:text-white/30" />
-        <input type="password" value={loginPassword} onChange={e => setLoginPassword(e.target.value)} placeholder="Şifre" required
-          className="bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-sm text-white outline-none placeholder:text-white/30" />
-        <button type="submit" disabled={loginLoading}
-          className="py-3 bg-emerald-500 text-black font-black rounded-xl text-sm disabled:opacity-50">
-          {loginLoading ? 'Giriş yapılıyor...' : 'Giriş Yap'}
-        </button>
+        <div className="text-center text-[10px] text-white/10 tracking-widest">YETKİSİZ ERİŞİM YASAKTIR</div>
       </form>
     </main>
   );
@@ -444,6 +548,8 @@ export default function AdminDashboard() {
           <Tab active={tab === 'radar'} onClick={() => setTab('radar')}>Güvenlik Radarı</Tab>
           <Tab active={tab === 'growth'} onClick={() => setTab('growth')}>Büyüme</Tab>
           <Tab active={tab === 'suggestions'} onClick={() => setTab('suggestions')}>Öneriler</Tab>
+          <Tab active={tab === 'attempts'} onClick={() => setTab('attempts')}>🔐 Giriş Denemeleri</Tab>
+          <Tab active={tab === 'address_history'} onClick={() => setTab('address_history')}>📍 Adres Geçmişi</Tab>
         </div>
 
         {/* ── DASHBOARD ── */}
@@ -835,6 +941,74 @@ export default function AdminDashboard() {
             </div>
           </div>
         )}
+        {/* ── GİRİŞ DENEMELERİ ── */}
+        {tab === 'attempts' && (
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-[11px] font-black text-zinc-500 uppercase tracking-widest">Admin Paneli — Hatalı Giriş Denemeleri</h2>
+              <button onClick={loadAdminAttempts} className="text-[11px] px-3 py-1.5 bg-zinc-900 border border-zinc-800 rounded-lg font-black text-zinc-400 hover:text-white">Yenile</button>
+            </div>
+            {attemptsLoading && <p className="text-zinc-600 text-sm">Yükleniyor...</p>}
+            {!attemptsLoading && adminAttempts.length === 0 && (
+              <p className="text-zinc-600 text-sm">Kayıtlı hatalı giriş denemesi yok.</p>
+            )}
+            <div className="space-y-2">
+              {adminAttempts.map((a, i) => (
+                <div key={a.id || i} className={`rounded-xl px-4 py-3 flex items-center gap-4 border ${a.success ? 'bg-emerald-900/10 border-emerald-900/30' : 'bg-red-900/10 border-red-900/30'}`}>
+                  <div className={`w-2 h-2 rounded-full flex-shrink-0 ${a.success ? 'bg-emerald-500' : 'bg-red-500'}`} />
+                  <div className="flex-1 min-w-0">
+                    <span className={`font-black text-sm ${a.success ? 'text-emerald-400' : 'text-red-400'}`}>
+                      {a.success ? '✓ Başarılı Giriş' : '✗ Hatalı Deneme'}
+                    </span>
+                    <p className="text-xs text-zinc-500 font-mono">{a.email}</p>
+                    {a.ip_address && <p className="text-[10px] text-zinc-600 font-mono">IP: {a.ip_address}</p>}
+                  </div>
+                  <span className="text-[10px] text-zinc-600 flex-shrink-0">
+                    {new Date(a.attempted_at).toLocaleString('tr-TR')}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ── ADRES GEÇMİŞİ ── */}
+        {tab === 'address_history' && (
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-[11px] font-black text-zinc-500 uppercase tracking-widest">Adres Değişiklik Arşivi</h2>
+              <button onClick={loadAddressHistory} className="text-[11px] px-3 py-1.5 bg-zinc-900 border border-zinc-800 rounded-lg font-black text-zinc-400 hover:text-white">Yenile</button>
+            </div>
+            {addressHistoryLoading && <p className="text-zinc-600 text-sm">Yükleniyor...</p>}
+            {!addressHistoryLoading && addressHistory.length === 0 && (
+              <p className="text-zinc-600 text-sm">Adres değişiklik kaydı yok.</p>
+            )}
+            <div className="space-y-3">
+              {addressHistory.map((h, i) => {
+                const fmt = (addr) => addr ? [addr.address_line1, addr.address_line2, addr.neighborhood, addr.district, addr.city, addr.postal_code, addr.country].filter(Boolean).join(', ') : '—';
+                return (
+                  <div key={h.id || i} className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 space-y-2">
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-[10px] font-mono text-zinc-500">{h.user_id?.slice(0, 16)}...</span>
+                      <span className="text-[10px] text-zinc-600">{new Date(h.changed_at).toLocaleString('tr-TR')}</span>
+                    </div>
+                    {h.old_address && (
+                      <div className="flex items-start gap-2">
+                        <span className="text-[9px] font-black uppercase text-red-400/70 bg-red-900/20 px-1.5 py-0.5 rounded flex-shrink-0 mt-0.5">Eski</span>
+                        <p className="text-xs text-zinc-500 leading-relaxed">{fmt(h.old_address)}</p>
+                      </div>
+                    )}
+                    <div className="flex items-start gap-2">
+                      <span className="text-[9px] font-black uppercase text-emerald-400/70 bg-emerald-900/20 px-1.5 py-0.5 rounded flex-shrink-0 mt-0.5">Yeni</span>
+                      <p className="text-xs text-zinc-300 leading-relaxed">{fmt(h.new_address)}</p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         {/* ── ÖNERILER ── */}
         {tab === 'suggestions' && (
           <div>
