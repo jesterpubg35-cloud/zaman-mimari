@@ -1422,6 +1422,8 @@ function Home() {
   const [balanceLoading, setBalanceLoading] = useState(false);
 
   const [langMenuAcik, setLangMenuAcik] = useState(false);
+  const [settingsSubPage, setSettingsSubPage] = useState(null); // null | 'contracts' | 'contract-detail' | 'language' | 'notifications'
+  const [activeContract, setActiveContract] = useState(null); // { title, text }
   const [toast, setToast] = useState(null);
   const [showNotifPrompt, setShowNotifPrompt] = useState(() => {
     try {
@@ -4162,129 +4164,134 @@ function Home() {
         </div>
       )}
 
-      {aktifPage === 'settings' && (
-        <div className={`fixed inset-0 z-[6000] flex flex-col animate-fade-slide-up ${isDarkMode ? 'bg-[#0F0F0F]' : 'bg-zinc-100'}`}>
-          <div className="flex items-center gap-4 p-6 pt-12">
-            <button onClick={() => setAktifPage('menu')} className={`text-2xl ${isDarkMode ? 'text-white' : 'text-black'}`}>←</button>
-            <h2 className={`font-black text-xl uppercase ${isDarkMode ? 'text-white' : 'text-black'}`}>Ayarlar</h2>
+      {aktifPage === 'settings' && (() => {
+        const contracts = [
+          { key: 'user', title: 'Kullanıcı Sözleşmesi', text: `İşbu Kullanıcı Sözleşmesi, platform ile kullanıcı arasındaki karşılıklı hak ve yükümlülükleri belirler.\n\nPlatformun Rolü: Platform, hizmet veren (kurye, emanetçi, sıra bekleyen) ile hizmet alanı buluşturan bir 'Aracı Hizmet Sağlayıcı'dır. Platform, kullanıcılar arasında gerçekleşen hizmetin kalitesinden, doğruluğundan veya tarafların davranışlarından doğrudan sorumlu tutulamaz.\n\nHizmet İlişkisi: Kullanıcılar, platform üzerinden bir işlem başlattıklarında, hukuki ilişki doğrudan hizmet veren ile hizmet alan arasında kurulur. Platform, sadece bu sürecin güvenli bir şekilde takip edilmesini sağlayan teknolojik altyapıyı sunar.\n\nSorumluluk Sınırları: Kullanıcılar tarafından paylaşılan bilgilerin doğruluğu kullanıcının sorumluluğundadır. Platform, mücbir sebepler veya teknik aksaklıklar nedeniyle oluşabilecek kesintilerden sorumlu tutulamaz. Kullanıcı, hesabı üzerinden yapılan tüm işlemlerden bizzat sorumludur.` },
+          { key: 'privacy', title: 'Gizlilik Politikası', text: `Kişisel verilerinizin güvenliği bizim için önceliklidir. 6698 sayılı KVKK kapsamında verileriniz şu şekilde işlenmektedir:\n\nToplanan Veriler: Uygulamanın çalışması için ad-soyad, e-posta, telefon numarası ve konum verileriniz toplanır. Hizmet doğrulaması için çekilen teslimat fotoğrafları sistemimizde güvenli bir şekilde saklanır.\n\nVeri İşleme Amacı: Konum verileriniz sadece harita üzerinde görünürlük sağlamak ve doğru hizmet eşleşmesi yapmak için kullanılır. Fotoğraflar, olası anlaşmazlıklarda kanıt sunmak amacıyla kayıt altına alınır.\n\nÜçüncü Taraflarla Paylaşım: Verileriniz asla reklam amacıyla üçüncü taraflara satılmaz. Sadece ödeme işlemleri için Stripe ve veritabanı yönetimi için Supabase gibi güvenilir altyapı sağlayıcıları ile paylaşılır.\n\nKullanıcı Hakları: Kullanıcılar, diledikleri zaman hesaplarını silme veya verilerinin işlenmesi hakkında bilgi alma hakkına sahiptir.` },
+          { key: 'cookie', title: 'Çerez Politikası', text: `Uygulamamız, size daha hızlı ve kişiselleştirilmiş bir deneyim sunmak için modern depolama teknolojilerini kullanır.\n\nKullanım Amacı: Oturum bilgilerinizin hatırlanması, tema tercihiniz (koyu/açık mod) ve uygulama içi performans ayarlarınız için yerel depolama (localStorage) kullanılır.\n\nTakip ve Reklam: Uygulamamızda üçüncü taraf reklam takibi yapılmamaktadır. Kullanılan çerezler ve depolama birimleri tamamen işlevseldir.\n\nKontrol Sizde: Tarayıcı ayarlarınızdan veya uygulama içinden çıkış yaparak bu verileri temizleyebilirsiniz.` },
+          { key: 'terms', title: 'Hizmet Şartları', text: `Hizmet alırken ve verirken uyulması gereken temel kurallar şunlardır:\n\nEmanet Hizmeti: Emanet bırakılan eşyaların yasalara uygun olması zorunludur. Emanetçi, eşyayı teslim aldığı andaki durumuyla korumakla yükümlüdür. Teslim alma ve teslim etme anında çekilen fotoğraflar, eşyanın durumuna dair kesin kanıt sayılır.\n\nSıra Bekleme: Sıra bekleyen kullanıcı, belirlenen saatte ve yerde bulunmak zorundadır. Görevin iptali veya gecikme durumunda platformun belirlediği ceza/iade politikaları geçerli olur.\n\nÖdeme Kuralları: Tüm ödemeler platformun güvenli ödeme altyapısı (Stripe) üzerinden yapılmalıdır. Platform dışı ödeme yapılması durumunda oluşabilecek zararlardan platform sorumlu değildir.\n\nİptal ve İade: Hizmet başladıktan sonra yapılan iptallerde, hizmet verenin emeğini korumak adına kısmi kesinti yapılabilir.` },
+        ];
+
+        const bg = isDarkMode ? 'bg-[#0F0F0F]' : 'bg-zinc-100';
+        const cardBg = isDarkMode ? 'bg-[#1A1A1A]' : 'bg-white';
+        const textPrimary = isDarkMode ? 'text-white' : 'text-black';
+        const textSub = isDarkMode ? 'text-white/40' : 'text-black/40';
+        const chevron = <svg width="7" height="12" viewBox="0 0 7 12" fill="none"><path d="M1 1l5 5-5 5" stroke={isDarkMode ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.3)'} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>;
+
+        const SettingsRow = ({ icon, label, sub, onClick }) => (
+          <button onClick={onClick} className={`w-full flex items-center gap-4 px-4 py-4 ${cardBg} rounded-2xl`}>
+            <span className="text-lg w-6 text-center flex-shrink-0">{icon}</span>
+            <div className="flex-1 text-left">
+              <p className={`text-sm font-semibold ${textPrimary}`}>{label}</p>
+              {sub && <p className={`text-[11px] mt-0.5 ${textSub}`}>{sub}</p>}
+            </div>
+            {chevron}
+          </button>
+        );
+
+        const PageHeader = ({ title, onBack }) => (
+          <div className="flex items-center gap-3 px-5 pt-14 pb-4">
+            <button onClick={onBack} className={`w-8 h-8 flex items-center justify-center rounded-full ${isDarkMode ? 'bg-white/10' : 'bg-black/10'}`}>
+              <svg width="8" height="13" viewBox="0 0 8 13" fill="none"><path d="M7 1L2 6.5 7 12" stroke={isDarkMode ? 'white' : 'black'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            </button>
+            <h2 className={`font-black text-base ${textPrimary}`}>{title}</h2>
           </div>
-          <div className="flex-1 overflow-y-auto px-6 pb-10 space-y-6">
+        );
 
-            {/* Görünüm */}
-            <div className={`rounded-3xl p-5 border space-y-4 ${isDarkMode ? 'bg-white/5 border-white/10' : 'bg-white border-black/10'}`}>
-              <p className={`text-xs font-black uppercase tracking-widest opacity-40 ${isDarkMode ? 'text-white' : 'text-black'}`}>Görünüm</p>
-              <div className="flex items-center justify-between">
-                <span className={`text-sm font-semibold ${isDarkMode ? 'text-white' : 'text-black'}`}>{isDarkMode ? '☾ Koyu Tema' : '☀ Açık Tema'}</span>
-                <button onClick={() => setIsDarkMode(!isDarkMode)} className={`w-11 h-6 rounded-full transition-colors relative ${isDarkMode ? 'bg-[#2ECC71]' : 'bg-gray-300'}`}>
-                  <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full transition-all shadow ${isDarkMode ? 'right-0.5' : 'left-0.5'}`}></div>
+        // Sayfa 3: Sözleşme Detayı
+        if (settingsSubPage === 'contract-detail' && activeContract) return (
+          <div className={`fixed inset-0 z-[6200] flex flex-col ${bg}`}>
+            <PageHeader title={activeContract.title} onBack={() => setSettingsSubPage('contracts')} />
+            <div className={`flex-1 overflow-y-auto px-5 pb-10`}>
+              <p className={`text-sm leading-relaxed whitespace-pre-line ${textPrimary} opacity-80`}>{activeContract.text}</p>
+            </div>
+          </div>
+        );
+
+        // Sayfa 2: Sözleşmeler Listesi
+        if (settingsSubPage === 'contracts') return (
+          <div className={`fixed inset-0 z-[6100] flex flex-col ${bg}`}>
+            <PageHeader title="Sözleşmeler" onBack={() => setSettingsSubPage(null)} />
+            <div className="flex-1 overflow-y-auto px-5 pb-10 space-y-2">
+              {contracts.map(c => (
+                <SettingsRow key={c.key} label={c.title} onClick={() => { setActiveContract(c); setSettingsSubPage('contract-detail'); }} />
+              ))}
+            </div>
+          </div>
+        );
+
+        // Sayfa 2: Dil Seçimi
+        if (settingsSubPage === 'language') return (
+          <div className={`fixed inset-0 z-[6100] flex flex-col ${bg}`}>
+            <PageHeader title="Uygulama Dili" onBack={() => setSettingsSubPage(null)} />
+            <div className="flex-1 overflow-y-auto px-5 pb-10 space-y-2">
+              {Object.entries(TRANSLATIONS).map(([code, tl]) => (
+                <button key={code} onClick={() => { handleLangChange(code); setSettingsSubPage(null); }}
+                  className={`w-full flex items-center gap-4 px-4 py-4 rounded-2xl ${lang === code ? 'bg-[#2ECC71]/15 border border-[#2ECC71]/30' : cardBg}`}>
+                  <span className="text-lg">{tl.flag}</span>
+                  <span className={`flex-1 text-left text-sm font-semibold ${lang === code ? 'text-[#2ECC71]' : textPrimary}`}>{tl.name}</span>
+                  {lang === code && <span className="text-[#2ECC71] text-xs font-black">✓</span>}
                 </button>
-              </div>
+              ))}
             </div>
+          </div>
+        );
 
-            {/* Dil Seçimi */}
-            <div className={`rounded-3xl border overflow-hidden ${isDarkMode ? 'bg-white/5 border-white/10' : 'bg-white border-black/10'}`}>
-              <button onClick={() => setLangMenuAcik(!langMenuAcik)} className={`w-full flex justify-between items-center p-5 text-sm font-bold ${isDarkMode ? 'text-white' : 'text-black'}`}>
-                <span>🌍 {t.language}: {TRANSLATIONS[lang]?.flag} {TRANSLATIONS[lang]?.name}</span>
-                <span className={`transition-transform duration-300 ${langMenuAcik ? 'rotate-180' : ''}`}>▼</span>
-              </button>
-              {langMenuAcik && (
-                <div className="max-h-56 overflow-y-auto border-t border-white/10">
-                  {Object.entries(TRANSLATIONS).map(([code, tl]) => (
-                    <button key={code} onClick={() => handleLangChange(code)} className={`w-full text-left px-5 py-3 text-sm flex items-center gap-2 ${lang === code ? 'bg-[#2ECC71]/20 text-[#2ECC71] font-bold' : isDarkMode ? 'text-gray-300 hover:bg-white/5' : 'text-gray-700 hover:bg-black/5'}`}>
-                      <span>{tl.flag}</span> {tl.name}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Bildirimler */}
-            <div className={`rounded-3xl p-5 border space-y-4 ${isDarkMode ? 'bg-white/5 border-white/10' : 'bg-white border-black/10'}`}>
-              <p className={`text-xs font-black uppercase tracking-widest opacity-40 ${isDarkMode ? 'text-white' : 'text-black'}`}>Bildirimler</p>
-              <div className="flex items-center justify-between">
+        // Sayfa 2: Anlık Bildirimler
+        if (settingsSubPage === 'notifications') return (
+          <div className={`fixed inset-0 z-[6100] flex flex-col ${bg}`}>
+            <PageHeader title="Anlık Bildirimler" onBack={() => setSettingsSubPage(null)} />
+            <div className="flex-1 px-5 pb-10 space-y-4">
+              <p className={`text-xs ${textSub} mt-2`}>İş teklifleri, mesajlar ve önemli güncellemeler için anlık bildirim alın.</p>
+              <div className={`flex items-center justify-between px-4 py-4 rounded-2xl ${cardBg}`}>
                 <div>
-                  <p className={`text-sm font-semibold ${isDarkMode ? 'text-white' : 'text-black'}`}>Anlık bildirimleri al</p>
-                  <p className={`text-[11px] mt-0.5 ${isDarkMode ? 'text-white/40' : 'text-black/40'}`}>İş teklifleri ve mesajlar için</p>
+                  <p className={`text-sm font-semibold ${textPrimary}`}>Anlık Bildirimleri Al</p>
+                  <p className={`text-[11px] mt-0.5 ${textSub}`}>
+                    {typeof window !== 'undefined' && 'Notification' in window
+                      ? Notification.permission === 'granted' ? 'Açık' : Notification.permission === 'denied' ? 'Reddedildi' : 'İzin bekleniyor'
+                      : 'Desteklenmiyor'}
+                  </p>
                 </div>
                 <button onClick={async () => {
                   if (!('Notification' in window)) return showToast('Tarayıcınız bildirimleri desteklemiyor');
                   const perm = await Notification.requestPermission();
                   if (perm === 'granted') showToast('Bildirimler açıldı ✓');
                   else showToast('Bildirim izni reddedildi');
-                }} className={`w-11 h-6 rounded-full transition-colors relative ${'Notification' in window && Notification.permission === 'granted' ? 'bg-[#2ECC71]' : 'bg-gray-400'}`}>
-                  <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full transition-all shadow ${'Notification' in window && Notification.permission === 'granted' ? 'right-0.5' : 'left-0.5'}`}></div>
+                  setSettingsSubPage('notifications');
+                }} className={`w-11 h-6 rounded-full transition-colors relative ${typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted' ? 'bg-[#2ECC71]' : 'bg-white/20'}`}>
+                  <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full transition-all shadow ${typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted' ? 'right-0.5' : 'left-0.5'}`}></div>
                 </button>
               </div>
             </div>
-
-            {/* Yasal */}
-            <div className={`rounded-3xl p-5 border ${isDarkMode ? 'bg-white/5 border-white/10' : 'bg-white border-black/10'}`}>
-              <p className={`text-xs font-black uppercase tracking-widest opacity-40 mb-3 ${isDarkMode ? 'text-white' : 'text-black'}`}>Yasal Bilgiler & Politikalar</p>
-              <Accordion title="Kullanıcı Sözleşmesi" dark={isDarkMode}>{`İşbu Kullanıcı Sözleşmesi, platform ile kullanıcı arasındaki karşılıklı hak ve yükümlülükleri belirler.
-
-Platformun Rolü: Platform, hizmet veren (kurye, emanetçi, sıra bekleyen) ile hizmet alanı buluşturan bir 'Aracı Hizmet Sağlayıcı'dır. Platform, kullanıcılar arasında gerçekleşen hizmetin kalitesinden, doğruluğundan veya tarafların davranışlarından doğrudan sorumlu tutulamaz.
-
-Hizmet İlişkisi: Kullanıcılar, platform üzerinden bir işlem başlattıklarında, hukuki ilişki doğrudan hizmet veren ile hizmet alan arasında kurulur. Platform, sadece bu sürecin güvenli bir şekilde takip edilmesini sağlayan teknolojik altyapıyı sunar.
-
-Sorumluluk Sınırları: Kullanıcılar tarafından paylaşılan bilgilerin doğruluğu kullanıcının sorumluluğundadır. Platform, mücbir sebepler veya teknik aksaklıklar nedeniyle oluşabilecek kesintilerden sorumlu tutulamaz. Kullanıcı, hesabı üzerinden yapılan tüm işlemlerden bizzat sorumludur.`}</Accordion>
-              <Accordion title="Gizlilik Politikası" dark={isDarkMode}>{`Kişisel verilerinizin güvenliği bizim için önceliklidir. 6698 sayılı KVKK kapsamında verileriniz şu şekilde işlenmektedir:
-
-Toplanan Veriler: Uygulamanın çalışması için ad-soyad, e-posta, telefon numarası ve konum verileriniz toplanır. Hizmet doğrulaması için çekilen teslimat fotoğrafları sistemimizde güvenli bir şekilde saklanır.
-
-Veri İşleme Amacı: Konum verileriniz sadece harita üzerinde görünürlük sağlamak ve doğru hizmet eşleşmesi yapmak için kullanılır. Fotoğraflar, olası anlaşmazlıklarda kanıt sunmak amacıyla kayıt altına alınır.
-
-Üçüncü Taraflarla Paylaşım: Verileriniz asla reklam amacıyla üçüncü taraflara satılmaz. Sadece ödeme işlemleri için Stripe ve veritabanı yönetimi için Supabase gibi güvenilir altyapı sağlayıcıları ile paylaşılır.
-
-Kullanıcı Hakları: Kullanıcılar, diledikleri zaman hesaplarını silme veya verilerinin işlenmesi hakkında bilgi alma hakkına sahiptir.`}</Accordion>
-              <Accordion title="Çerez Politikası" dark={isDarkMode}>{`Uygulamamız, size daha hızlı ve kişiselleştirilmiş bir deneyim sunmak için modern depolama teknolojilerini kullanır.
-
-Kullanım Amacı: Oturum bilgilerinizin hatırlanması, tema tercihiniz (koyu/açık mod) ve uygulama içi performans ayarlarınız için yerel depolama (localStorage) kullanılır.
-
-Takip ve Reklam: Uygulamamızda üçüncü taraf reklam takibi yapılmamaktadır. Kullanılan çerezler ve depolama birimleri tamamen işlevseldir.
-
-Kontrol Sizde: Tarayıcı ayarlarınızdan veya uygulama içinden çıkış yaparak bu verileri temizleyebilirsiniz. Ancak oturum bilgilerinin silinmesi, her girişte tekrar giriş yapmanızı gerektirecektir.`}</Accordion>
-              <Accordion title="Hizmet Şartları" dark={isDarkMode}>{`Hizmet alırken ve verirken uyulması gereken temel kurallar şunlardır:
-
-Emanet Hizmeti: Emanet bırakılan eşyaların yasalara uygun olması zorunludur. Emanetçi, eşyayı teslim aldığı andaki durumuyla korumakla yükümlüdür. Teslim alma ve teslim etme anında çekilen fotoğraflar, eşyanın durumuna dair kesin kanıt sayılır.
-
-Sıra Bekleme: Sıra bekleyen kullanıcı, belirlenen saatte ve yerde bulunmak zorundadır. Görevin iptali veya gecikme durumunda platformun belirlediği ceza/iade politikaları geçerli olur.
-
-Ödeme Kuralları: Tüm ödemeler platformun güvenli ödeme altyapısı (Stripe) üzerinden yapılmalıdır. Platform dışı ödeme yapılması durumunda oluşabilecek zararlardan platform sorumlu değildir.
-
-İptal ve İade: Hizmet başladıktan sonra yapılan iptallerde, hizmet verenin emeğini korumak adına kısmi kesinti yapılabilir. Anlaşmazlık durumunda platform yönetimi son karar verici merci olarak arabuluculuk yapar.`}</Accordion>
-            </div>
-
-            {/* Bize Ulaşın */}
-            <div className={`rounded-3xl p-5 border space-y-4 ${isDarkMode ? 'bg-white/5 border-white/10' : 'bg-white border-black/10'}`}>
-              <p className={`text-xs font-black uppercase tracking-widest opacity-40 ${isDarkMode ? 'text-white' : 'text-black'}`}>Bize Ulaşın</p>
-              <p className={`text-[11px] ${isDarkMode ? 'text-white/40' : 'text-black/40'}`}>Bize önerilerinizi yazın</p>
-              <input
-                type="text"
-                placeholder="Adınız Soyadınız"
-                id="suggestion-name"
-                className={`w-full px-4 py-3 rounded-2xl text-sm outline-none border ${isDarkMode ? 'bg-white/5 border-white/10 text-white placeholder:text-white/30' : 'bg-black/5 border-black/10 text-black placeholder:text-black/30'}`}
-              />
-              <textarea
-                placeholder="Önerinizi buraya yazın..."
-                id="suggestion-body"
-                rows={3}
-                className={`w-full px-4 py-3 rounded-2xl text-sm outline-none border resize-none ${isDarkMode ? 'bg-white/5 border-white/10 text-white placeholder:text-white/30' : 'bg-black/5 border-black/10 text-black placeholder:text-black/30'}`}
-              />
-              <button onClick={async () => {
-                const name = document.getElementById('suggestion-name')?.value?.trim();
-                const body = document.getElementById('suggestion-body')?.value?.trim();
-                if (!name || !body) return showToast('Lütfen ad ve öneri alanlarını doldurun');
-                const { error } = await supabase.from('suggestions').insert({ name, body, user_id: user?.id || null });
-                if (error) return showToast('Hata oluştu');
-                document.getElementById('suggestion-name').value = '';
-                document.getElementById('suggestion-body').value = '';
-                showToast('Öneriniz gönderildi ✓');
-              }} className="w-full py-3 bg-[#2ECC71] text-black font-black rounded-2xl text-sm">Gönder</button>
-            </div>
-
           </div>
-        </div>
-      )}
+        );
+
+        // Sayfa 1: Ana Ayarlar
+        return (
+          <div className={`fixed inset-0 z-[6000] flex flex-col ${bg}`}>
+            <PageHeader title="Ayarlar" onBack={() => { setAktifPage('menu'); setSettingsSubPage(null); }} />
+            <div className="flex-1 overflow-y-auto px-5 pb-10 space-y-2 pt-2">
+              <SettingsRow
+                icon="🌍"
+                label="Uygulama Dili"
+                sub={`${TRANSLATIONS[lang]?.flag} ${TRANSLATIONS[lang]?.name}`}
+                onClick={() => setSettingsSubPage('language')}
+              />
+              <SettingsRow
+                icon="🔔"
+                label="Anlık Bildirimler"
+                sub={typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted' ? 'Açık' : 'Kapalı'}
+                onClick={() => setSettingsSubPage('notifications')}
+              />
+              <SettingsRow
+                icon="📄"
+                label="Sözleşmeler"
+                onClick={() => setSettingsSubPage('contracts')}
+              />
+            </div>
+          </div>
+        );
+      })()}
       {aktifPage === 'support' && (
           <div className={`fixed inset-0 z-[6000] flex flex-col ${isDarkMode ? 'bg-[#0F0F0F]' : 'bg-zinc-200'}`}>
             <div className="flex items-center gap-4 p-6 pt-12"><button onClick={() => setAktifPage('menu')} className={`text-2xl ${isDarkMode ? 'text-white' : 'text-black'}`}>←</button><h2 className={`font-black text-xl uppercase ${isDarkMode ? 'text-white' : 'text-black'}`}>{t.support}</h2></div>
