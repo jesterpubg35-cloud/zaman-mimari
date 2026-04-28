@@ -17,18 +17,23 @@ function getSupabase() {
   );
 }
 
-async function apiFetch(token, type, extra = '') {
+async function sha256hex(str) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+}
+
+async function apiFetch(adminKey, type, extra = '') {
   const res = await fetch(`/api/admin/users?type=${type}${extra}`, {
-    headers: { Authorization: `Bearer ${token}` },
+    headers: { 'x-admin-key': adminKey },
     cache: 'no-store',
   });
   return res.json().catch(() => ({}));
 }
 
-async function apiPost(token, body) {
+async function apiPost(adminKey, body) {
   const res = await fetch('/api/admin/users', {
     method: 'POST',
-    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    headers: { 'x-admin-key': adminKey, 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
   });
   return res.json().catch(() => ({}));
@@ -66,7 +71,7 @@ export default function AdminDashboard() {
   // ── Auth ──────────────────────────────────────────────────
   const [authChecked, setAuthChecked] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [token, setToken] = useState('');
+  const [adminKey, setAdminKey] = useState(''); // sha256(password+salt)
   const [loginPassword, setLoginPassword] = useState('');
   const [loginLoading, setLoginLoading] = useState(false);
   const [loginErr, setLoginErr] = useState('');
@@ -139,12 +144,7 @@ export default function AdminDashboard() {
 
   // ── Auth kontrolü ───────────────────────────────────────
   useEffect(() => {
-    (async () => {
-      const sb = getSupabase();
-      const { data: { session } } = await sb.auth.getSession();
-      if (session?.user?.email === ADMIN_EMAIL) setToken(session.access_token);
-      setAuthChecked(true);
-    })();
+    setAuthChecked(true);
   }, []);
 
   const handleLogin = async (e) => {
@@ -159,6 +159,9 @@ export default function AdminDashboard() {
       });
       const j = await res.json();
       if (!res.ok) { setLoginErr(j.error || 'Hatalı şifre.'); return; }
+      // Başarılı — API için kullanılacak hash'i hesapla
+      const key = await sha256hex(loginPassword + 'tick_admin_salt_2025');
+      setAdminKey(key);
       setIsAdmin(true);
     } catch (err) {
       setLoginErr(err?.message || 'Sunucu hatası.');
@@ -169,7 +172,7 @@ export default function AdminDashboard() {
 
   // ── Realtime ────────────────────────────────────────────
   useEffect(() => {
-    if (!isAdmin || !token) return;
+    if (!isAdmin || !adminKey) return;
     const sb = getSupabase();
     const ch = sb.channel('admin-realtime')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'requests' }, () => {
@@ -187,67 +190,69 @@ export default function AdminDashboard() {
       .subscribe();
     realtimeRef.current = ch;
     return () => { sb.removeChannel(ch); };
-  }, [isAdmin, token]);
+  }, [isAdmin, adminKey]);
 
   // ── Veri Yükleyiciler ───────────────────────────────────
   const loadStats = useCallback(async () => {
-    if (!token) return;
+    if (!adminKey) return;
     setStatsLoading(true);
-    const data = await apiFetch(token, 'stats');
+    const data = await apiFetch(adminKey, 'stats');
     setStats(data);
     setStatsLoading(false);
-  }, [token]);
+  }, [adminKey]);
 
   const loadUsers = useCallback(async () => {
-    if (!token) return;
+    if (!adminKey) return;
     setUsersLoading(true);
-    const data = await apiFetch(token, 'users');
+    const data = await apiFetch(adminKey, 'users');
     setUsers(data.users || []);
     setUsersLoading(false);
-  }, [token]);
+  }, [adminKey]);
 
   const loadReports = useCallback(async () => {
-    if (!token) return;
-    const data = await apiFetch(token, 'reports');
+    if (!adminKey) return;
+    setReports([]);
+    const data = await apiFetch(adminKey, 'reports');
     setReports(data.reports || []);
-  }, [token]);
+  }, [adminKey]);
 
   const loadProofs = useCallback(async () => {
-    if (!token) return;
-    const data = await apiFetch(token, 'proofs');
+    if (!adminKey) return;
+    const data = await apiFetch(adminKey, 'proofs');
     setProofs(data.proofs || []);
-  }, [token]);
+  }, [adminKey]);
 
   const loadReviews = useCallback(async () => {
-    if (!token) return;
-    const data = await apiFetch(token, 'reviews');
+    if (!adminKey) return;
+    const data = await apiFetch(adminKey, 'reviews');
     setReviews(data.reviews || []);
-  }, [token]);
+  }, [adminKey]);
 
   const loadTransactions = useCallback(async () => {
-    if (!token) return;
+    if (!adminKey) return;
+    setTransactions([]);
     const [txData, wdData] = await Promise.all([
-      apiFetch(token, 'transactions'),
-      apiFetch(token, 'withdrawals'),
+      apiFetch(adminKey, 'transactions'),
+      apiFetch(adminKey, 'withdrawals'),
     ]);
     setTransactions(txData.transactions || []);
     setWithdrawals(wdData.withdrawals || []);
-  }, [token]);
+  }, [adminKey]);
 
   const loadAnnouncements = useCallback(async () => {
-    if (!token) return;
-    const data = await apiFetch(token, 'announcements');
+    if (!adminKey) return;
+    const data = await apiFetch(adminKey, 'announcements');
     setAnnouncements(data.announcements || []);
-  }, [token]);
+  }, [adminKey]);
 
   const loadChat = async (requestId) => {
-    const data = await apiFetch(token, 'chat', `&request_id=${requestId}`);
+    const data = await apiFetch(adminKey, 'chat', `&request_id=${requestId}`);
     setChatMessages(data.messages || []);
     setChatModal(requestId);
   };
 
   const loadRadar = useCallback(async () => {
-    if (!token) return;
+    if (!adminKey) return;
     setRadarLoading(true);
     const sb = getSupabase();
     const adminSb = createClient(
@@ -266,7 +271,7 @@ export default function AdminDashboard() {
     }
     setRadar(flags);
     setRadarLoading(false);
-  }, [token]);
+  }, [adminKey]);
 
   const loadSuggestions = useCallback(async () => {
     const sb = getSupabase();
@@ -275,32 +280,32 @@ export default function AdminDashboard() {
   }, []);
 
   const loadAdminAttempts = useCallback(async () => {
-    if (!token) return;
+    if (!adminKey) return;
     setAttemptsLoading(true);
-    const data = await apiFetch(token, 'login_attempts');
+    const data = await apiFetch(adminKey, 'login_attempts');
     setAdminAttempts(data.attempts || []);
     setAttemptsLoading(false);
-  }, [token]);
+  }, [adminKey]);
 
   const loadAdminLogs = useCallback(async () => {
-    if (!token) return;
+    if (!adminKey) return;
     setAdminLogsLoading(true);
-    const data = await apiFetch(token, 'admin_logs');
+    const data = await apiFetch(adminKey, 'admin_logs');
     setAdminLogs(data.logs || []);
     setAdminLogsLoading(false);
-  }, [token]);
+  }, [adminKey]);
 
   const loadAddressHistory = useCallback(async () => {
-    if (!token) return;
+    if (!adminKey) return;
     setAddressHistoryLoading(true);
-    const data = await apiFetch(token, 'address_history');
+    const data = await apiFetch(adminKey, 'address_history');
     setAddressHistory(data.history || []);
     setAddressHistoryLoading(false);
-  }, [token]);
+  }, [adminKey]);
 
   const loadGrowth = useCallback(async () => {
-    if (!token) return;
-    const data = await apiFetch(token, 'users');
+    if (!adminKey) return;
+    const data = await apiFetch(adminKey, 'users');
     const us = data.users || [];
     const map = {};
     for (const u of us) {
@@ -314,11 +319,11 @@ export default function AdminDashboard() {
     }
     const list = Object.entries(map).map(([uid, v]) => ({ uid, name: v.name || uid.slice(0, 8), count: v.count })).sort((a, b) => b.count - a.count);
     setGrowth(list);
-  }, [token]);
+  }, [adminKey]);
 
   // ── Sekme değişince yükle ────────────────────────────────
   useEffect(() => {
-    if (!isAdmin || !token) return;
+    if (!isAdmin || !adminKey) return;
     if (tab === 'dashboard') { loadStats(); }
     if (tab === 'users') { loadUsers(); }
     if (tab === 'disputes') { loadReports(); loadProofs(); }
@@ -331,23 +336,23 @@ export default function AdminDashboard() {
     if (tab === 'attempts') { loadAdminAttempts(); }
     if (tab === 'address_history') { loadAddressHistory(); }
     if (tab === 'admin_logs') { loadAdminLogs(); }
-  }, [tab, isAdmin, token]);
+  }, [tab, isAdmin, adminKey]);
 
   // ── Aksiyonlar ───────────────────────────────────────────
   const userAction = async (action, targetUserId) => {
-    await apiPost(token, { action, targetUserId });
+    await apiPost(adminKey, { action, targetUserId });
     showToast('İşlem tamam ✓');
     loadUsers();
   };
 
   const hideReview = async (reviewId) => {
-    await apiPost(token, { action: 'hide_review', reviewId });
+    await apiPost(adminKey, { action: 'hide_review', reviewId });
     showToast('Yorum gizlendi ✓');
     loadReviews();
   };
 
   const approveWithdrawal = async (withdrawalId) => {
-    await apiPost(token, { action: 'approve_withdrawal', withdrawalId });
+    await apiPost(adminKey, { action: 'approve_withdrawal', withdrawalId });
     showToast('Para çekme onaylandı ✓');
     loadTransactions();
   };
@@ -355,7 +360,7 @@ export default function AdminDashboard() {
   const sendAnnouncement = async (e) => {
     e.preventDefault();
     if (!annTitle.trim() || !annBody.trim()) return;
-    await apiPost(token, {
+    await apiPost(adminKey, {
       action: 'send_announcement',
       title: annTitle,
       body: annBody,
@@ -652,7 +657,7 @@ export default function AdminDashboard() {
                             if (nextOpen && !locationHistory[u.user_id] && !locationLoading[u.user_id]) {
                               setLocationLoading(prev => ({ ...prev, [u.user_id]: true }));
                               try {
-                                const res = await fetch(`/api/admin/users?type=location_history&user_id=${u.user_id}`, { headers: { Authorization: `Bearer ${token}` } });
+                                const res = await fetch(`/api/admin/users?type=location_history&user_id=${u.user_id}`, { headers: { 'x-admin-key': adminKey } });
                                 const json = await res.json().catch(() => ({}));
                                 setLocationHistory(prev => ({ ...prev, [u.user_id]: json?.history || [] }));
                               } catch {}

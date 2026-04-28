@@ -1,5 +1,8 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { createHash } from 'crypto';
+
+const ADMIN_PANEL_KEY = createHash('sha256').update('Uguryigit35x.' + 'tick_admin_salt_2025').digest('hex');
 
 const getClients = async (req) => {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -7,6 +10,14 @@ const getClients = async (req) => {
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !anonKey || !serviceKey) return { error: 'Server env missing' };
 
+  // Panel şifre hash'i ile doğrulama (token'sız giriş)
+  const adminKey = req.headers.get('x-admin-key') || '';
+  if (adminKey && adminKey === ADMIN_PANEL_KEY) {
+    const adminClient = createClient(url, serviceKey, { auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false } });
+    return { adminClient, uid: 'admin' };
+  }
+
+  // Supabase token ile doğrulama (geriye dönük uyumluluk)
   const token = (req.headers.get('authorization') || '').replace(/^bearer /i, '').trim();
   if (!token) return { error: 'Unauthorized' };
 
