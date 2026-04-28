@@ -48,12 +48,22 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    // Stripe Payment Intent oluştur
+    // Stripe Payment Intent oluştur - 3D Secure ZORUNLU
     const paymentIntent = await stripe.paymentIntents.create({
       amount: amount * 100, // cents
       currency: 'try',
-      automatic_payment_methods: { enabled: true },
-      metadata: { userId: userId, originalAmount: amount, commission: commission }
+      payment_method_types: ['card'],
+      payment_method_options: {
+        card: {
+          request_three_d_secure: 'any', // Her zaman 3DS iste
+        }
+      },
+      metadata: { 
+        userId: userId, 
+        originalAmount: amount, 
+        commission: commission,
+        requires3ds: 'true'
+      }
     });
 
     return NextResponse.json({ 

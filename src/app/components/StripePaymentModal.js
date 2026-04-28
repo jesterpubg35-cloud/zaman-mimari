@@ -60,8 +60,21 @@ function CheckoutForm({ amount, requestId, onSuccess, onClose, isDarkMode, supab
         if (!res.ok || !data.success) throw new Error(data.error || 'Ödeme başarısız');
 
         if (data.requiresAction) {
-          const { error: confirmError } = await stripe.confirmCardPayment(data.clientSecret);
-          if (confirmError) throw new Error(confirmError.message);
+          const { error: confirmError, paymentIntent } = await stripe.confirmCardPayment(data.clientSecret);
+          if (confirmError) {
+            // 3D Secure hatası kontrolü
+            if (confirmError.code === 'card_declined' || 
+                confirmError.decline_code === 'authentication_required' ||
+                confirmError.message?.includes('3D Secure') ||
+                confirmError.message?.includes('authentication')) {
+              throw new Error('Güvenlik politikamız gereği 3D Secure doğrulaması yapılamayan kartlar kabul edilmemektedir. Lütfen başka bir kart deneyiniz.');
+            }
+            throw new Error(confirmError.message);
+          }
+          // 3DS sonrası hala requires_action varsa kart reddedildi demektir
+          if (paymentIntent?.status === 'requires_action' || paymentIntent?.status === 'requires_confirmation') {
+            throw new Error('Güvenlik politikamız gereği 3D Secure doğrulaması yapılamayan kartlar kabul edilmemektedir.');
+          }
         }
       }
 

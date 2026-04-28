@@ -305,27 +305,89 @@ export default function AdminDashboard() {
     setChatModal(requestId);
   };
 
+  const loadRequestChat = async (requestId) => {
+    if (!requestId) return;
+    setChatMessages([]);
+    setChatModal(requestId);
+    const data = await apiFetch(adminKey, 'chat', `&request_id=${requestId}`);
+    setChatMessages(data.messages || []);
+  };
+
   const loadRadar = useCallback(async () => {
     if (!adminKey) return;
     setRadarLoading(true);
-    const sb = getSupabase();
-    const adminSb = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-      { auth: { persistSession: false } }
-    );
-    // Hızlı tamamlanan işler (2dk altı)
-    const { data: fastJobs } = await adminSb.from('requests')
-      .select('id, sender_id, receiver_id, created_at, updated_at, amount')
-      .eq('status', 'completed').limit(200);
-    const flags = [];
-    for (const j of (fastJobs || [])) {
-      const diff = (new Date(j.updated_at) - new Date(j.created_at)) / 60000;
-      if (diff < 2 && diff > 0) flags.push({ type: 'Hızlı İşlem', detail: `${diff.toFixed(1)}dk'da tamamlandı`, sender: j.sender_id, receiver: j.receiver_id, id: j.id });
+    try {
+      const res = await fetch('/api/admin/security?type=radar', {
+        headers: { 'x-admin-key': adminKey, 'Authorization': `Bearer ${adminKey}` },
+        cache: 'no-store'
+      });
+      const data = await res.json();
+      setRadar(data.radar || []);
+    } catch (e) {
+      console.error('Radar load error:', e);
+      setRadar([]);
     }
-    setRadar(flags);
     setRadarLoading(false);
   }, [adminKey]);
+
+  // Güvenlik radarı ödeme işlemleri
+  const processSecurityPayment = useCallback(async (radarId, action) => {
+    if (!adminKey) return;
+    const confirmed = action === 'reject' 
+      ? confirm('Ödemeyi reddedip iade işlemi başlatılacak. Emin misiniz?')
+      : confirm('Ödeme onaylanacak ve kuryenin hesabına aktarılacak. Emin misiniz?');
+    if (!confirmed) return;
+    
+    try {
+      const res = await fetch('/api/admin/security', {
+        method: 'POST',
+        headers: { 
+          'x-admin-key': adminKey, 
+          'Authorization': `Bearer ${adminKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          action: action === 'approve' ? 'approve_payment' : 'reject_payment',
+          radar_id: radarId,
+          admin_id: 'admin',
+          cancel_job: false
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert(action === 'approve' ? 'Ödeme onaylandı' : 'Ödeme reddedildi');
+        loadRadar(); // Listeyi yenile
+      } else {
+        alert('İşlem başarısız: ' + (data.error || 'Bilinmeyen hata'));
+      }
+    } catch (e) {
+      alert('İşlem hatası: ' + e.message);
+    }
+  }, [adminKey, loadRadar]);
+
+  // Radar durum güncelleme
+  const updateRadarStatus = useCallback(async (radarId, status) => {
+    if (!adminKey) return;
+    try {
+      const res = await fetch('/api/admin/security', {
+        method: 'POST',
+        headers: { 
+          'x-admin-key': adminKey, 
+          'Authorization': `Bearer ${adminKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          action: 'update_status',
+          radar_id: radarId,
+          status: status
+        })
+      });
+      const data = await res.json();
+      if (data.success) loadRadar();
+    } catch (e) {
+      console.error('Status update error:', e);
+    }
+  }, [adminKey, loadRadar]);
 
   const loadSuggestions = useCallback(async () => {
     const sb = getSupabase();
@@ -1058,19 +1120,109 @@ export default function AdminDashboard() {
             </div>
             {radarLoading && <p className="text-zinc-600 text-sm">Taranıyor...</p>}
             {!radarLoading && radar.length === 0 && <p className="text-zinc-600 text-sm">Şüpheli işlem bulunamadı.</p>}
-            <div className="space-y-2">
+            <div className="space-y-3">
               {radar.map((f, i) => (
-                <div key={i} className="bg-zinc-900 border border-red-900/30 rounded-xl px-4 py-3 flex items-center gap-4">
-                  <div className="w-2 h-2 rounded-full bg-red-500 flex-shrink-0" />
-                  <div className="flex-1">
-                    <span className="font-black text-sm text-red-400">{f.type}</span>
-                    <p className="text-xs text-zinc-500">{f.detail}</p>
-                    <p className="text-[10px] text-zinc-600">Görev: {f.id?.slice(0,8)}</p>
+                <div key={f.id || i} className={`bg-zinc-900 border rounded-xl p-4 ${f.payment_hold ? 'border-red-500/50 shadow-lg shadow-red-500/10' : 'border-red-900/30'}`}>
+                  {/* Header */}
+                  <div className="flex items-start justify-between gap-3 mb-3">
+                    <div className="flex items-center gap-2">
+                      <div className={`w-2 h-2 rounded-full flex-shrink-0 ${f.severity === 'critical' ? 'bg-red-600 animate-pulse' : f.severity === 'high' ? 'bg-red-500' : f.severity === 'medium' ? 'bg-orange-400' : 'bg-yellow-400'}`} />
+                      <span className="font-black text-sm text-white">{f.alert_type === 'fast_completion' ? '⚡ Hızlı Tamamlanma' : f.alert_type === 'chat_violation' ? '💬 Sohbet İhlali' : f.alert_type === 'reported_worker' ? '⚠️ Çalışan Bildirimi' : f.alert_type}</span>
+                      {f.payment_hold && <span className="px-2 py-0.5 bg-red-500/20 text-red-400 text-[10px] font-black rounded">ÖDEME BLOKE</span>}
+                    </div>
+                    <span className="text-[10px] text-zinc-600 font-mono">{new Date(f.created_at).toLocaleString('tr-TR')}</span>
                   </div>
-                  <div className="flex gap-2">
-                    {f.sender && <button onClick={() => userAction('ban', f.sender)} className="text-[10px] px-2.5 py-1.5 bg-zinc-800 border border-red-900/50 text-red-400 rounded-lg font-black">Askıya Al</button>}
-                    {f.receiver && f.receiver !== f.sender && <button onClick={() => userAction('ban', f.receiver)} className="text-[10px] px-2.5 py-1.5 bg-zinc-800 border border-red-900/50 text-red-400 rounded-lg font-black">Alıcıyı Askıya Al</button>}
+                  
+                  {/* Details */}
+                  <p className="text-xs text-zinc-400 mb-3">{f.details}</p>
+                  
+                  {/* Related Info */}
+                  <div className="grid grid-cols-2 gap-2 mb-3 text-[11px]">
+                    {f.request && (
+                      <div className="bg-zinc-950 rounded-lg p-2">
+                        <span className="text-zinc-600">İş:</span>
+                        <span className="text-zinc-400 ml-1">#{f.request.id?.slice(0,8)}</span>
+                        {f.request.price && <span className="text-emerald-400 ml-1">₺{f.request.price}</span>}
+                        {f.request.completed_duration_minutes && (
+                          <span className="text-red-400 ml-1">({f.request.completed_duration_minutes} dk)</span>
+                        )}
+                      </div>
+                    )}
+                    {f.reporter && (
+                      <div className="bg-zinc-950 rounded-lg p-2">
+                        <span className="text-zinc-600">Bildiren:</span>
+                        <span className="text-zinc-400 ml-1">{f.reporter.name || f.reporter.email}</span>
+                      </div>
+                    )}
+                    {f.reported && (
+                      <div className="bg-zinc-950 rounded-lg p-2">
+                        <span className="text-zinc-600">Bildirilen:</span>
+                        <span className="text-red-400 ml-1">{f.reported.name || f.reported.email}</span>
+                      </div>
+                    )}
+                    <div className="bg-zinc-950 rounded-lg p-2">
+                      <span className="text-zinc-600">Durum:</span>
+                      <span className={`ml-1 font-bold ${f.status === 'open' ? 'text-yellow-400' : f.status === 'resolved' ? 'text-emerald-400' : 'text-zinc-400'}`}>{f.status}</span>
+                    </div>
                   </div>
+                  
+                  {/* Actions */}
+                  <div className="flex flex-wrap gap-2 pt-3 border-t border-zinc-800">
+                    {/* Ödeme Onay/Red Butonları - Sadece payment_hold varsa */}
+                    {f.payment_hold && f.status !== 'resolved' && f.status !== 'rejected' && (
+                      <>
+                        <button 
+                          onClick={() => processSecurityPayment(f.id, 'approve')} 
+                          className="px-3 py-2 bg-emerald-500/20 text-emerald-400 border border-emerald-500/50 rounded-lg text-[10px] font-black hover:bg-emerald-500/30"
+                        >
+                          ✓ Ödemeyi Onayla
+                        </button>
+                        <button 
+                          onClick={() => processSecurityPayment(f.id, 'reject')} 
+                          className="px-3 py-2 bg-red-500/20 text-red-400 border border-red-500/50 rounded-lg text-[10px] font-black hover:bg-red-500/30"
+                        >
+                          ✗ Ödemeyi Reddet/İade
+                        </button>
+                      </>
+                    )}
+                    
+                    {/* Durum Güncelleme */}
+                    {f.status === 'open' && (
+                      <button 
+                        onClick={() => updateRadarStatus(f.id, 'investigating')} 
+                        className="px-3 py-2 bg-blue-500/20 text-blue-400 border border-blue-500/50 rounded-lg text-[10px] font-black hover:bg-blue-500/30"
+                      >
+                        İnceleniyor
+                      </button>
+                    )}
+                    
+                    {/* Kullanıcı Askıya Alma */}
+                    {f.reported?.user_id && (
+                      <button 
+                        onClick={() => userAction('ban', f.reported.user_id)} 
+                        className="px-3 py-2 bg-zinc-800 text-red-400 border border-red-900/50 rounded-lg text-[10px] font-black hover:bg-zinc-700"
+                      >
+                        Bildirileni Askıya Al
+                      </button>
+                    )}
+                    
+                    {/* İşi Görüntüle */}
+                    {f.request_id && (
+                      <button 
+                        onClick={() => loadRequestChat(f.request_id)} 
+                        className="px-3 py-2 bg-zinc-800 text-zinc-400 border border-zinc-700 rounded-lg text-[10px] font-black hover:bg-zinc-700"
+                      >
+                        Sohbeti Görüntüle
+                      </button>
+                    )}
+                  </div>
+                  
+                  {/* Admin Notes */}
+                  {f.admin_notes && (
+                    <div className="mt-3 p-2 bg-zinc-950/50 rounded-lg text-[10px] text-zinc-500">
+                      <span className="text-zinc-600">Admin Notu:</span> {f.admin_notes}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

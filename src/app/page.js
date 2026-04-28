@@ -224,6 +224,10 @@ const TRANSLATIONS = {
     priceSuggestion: 'Öneri fiyat',
     blockUser: 'Kullanıcıyı Engelle', reportUser: 'Şikayet Et',
     blocked: 'Engellendi', reported: 'Şikayet gönderildi',
+    // Çalışan bildirim ve sohbet güvenliği
+    reportWorker: '⚠️ Çalışanı Bildir', reportReason: 'Bildirme Nedeni',
+    cancelCurrentJob: 'Mevcut İşi İptal Et', reportSubmitted: 'Bildirim alındı. Admin inceleyecek.',
+    securityViolation: 'Güvenlik ihlali tespit edildi', offPlatformWarning: 'Sistem dışı ödeme yasaktır.',
     completedJobs: 'Tamamlanan İş', avgRating: 'Ort. Puan',
     userUnavailable: 'Kullanıcı şu an müsait değil',
     outOfRadius: 'Hizmet alanı dışında', userBlocked: 'Bu kullanıcıyla iletişim kurulamaz',
@@ -540,6 +544,10 @@ const TRANSLATIONS = {
     priceSuggestion: 'Suggested price',
     blockUser: 'Block User', reportUser: 'Report',
     blocked: 'Blocked', reported: 'Report sent',
+    // Worker reporting and chat security
+    reportWorker: '⚠️ Report Worker', reportReason: 'Reason for Report',
+    cancelCurrentJob: 'Cancel Current Job', reportSubmitted: 'Report received. Admin will review.',
+    securityViolation: 'Security violation detected', offPlatformWarning: 'Off-platform payments are prohibited.',
     completedJobs: 'Completed Jobs', avgRating: 'Avg Rating',
     userUnavailable: 'User is not available',
     outOfRadius: 'Out of service radius', userBlocked: 'Cannot contact this user',
@@ -1575,6 +1583,12 @@ function Home() {
   const [photoLabelModal, setPhotoLabelModal] = useState(false);
   const [pendingPhotoFile, setPendingPhotoFile] = useState(null);
   const [photoLabel, setPhotoLabel] = useState(null); // 'teslim_aldim' | 'teslim_ettim' | null
+
+  // Çalışan Bildirim Modal
+  const [reportModal, setReportModal] = useState(false);
+  const [reportReason, setReportReason] = useState('');
+  const [reportCancelJob, setReportCancelJob] = useState(false);
+  const [reportSubmitting, setReportSubmitting] = useState(false);
 
   // Bildirimler
   const [notifications, setNotifications] = useState([]);
@@ -3517,9 +3531,36 @@ function Home() {
     else showToast(t.codeWrong);
   };
 
+  // Güvenlik kelime filtresi
+  const VIOLATION_KEYWORDS = ['elden', 'ibann', 'iban', 'whatsapp', 'wp', '05', 'parayı elden', 'nakit', 'havale', 'eft', 'dışarıdan', 'kapora elden'];
+  
+  const checkMessageViolation = (content) => {
+    const lower = content.toLowerCase();
+    const found = VIOLATION_KEYWORDS.filter(kw => lower.includes(kw.toLowerCase()));
+    return found.length > 0 ? found : null;
+  };
+
   const handleMesajGonder = async () => {
     if (!yeniMesaj.trim() || !aktifIs || !user) return;
     const content = yeniMesaj.trim();
+    
+    // Güvenlik: Sistem dışı ödeme kelimeleri kontrolü
+    const violations = checkMessageViolation(content);
+    if (violations) {
+      // Kullanıcıya uyarı göster ama mesajı gönder
+      showToast(t.offPlatformWarning);
+      // Admin radarına otomatik raporla (async, bekleme)
+      supabase.from('security_radar').insert({
+        request_id: aktifIs.id,
+        alert_type: 'chat_violation',
+        severity: 'medium',
+        reporter_id: user.id,
+        reported_id: aktifIs.sender_id === user.id ? aktifIs.receiver_id : aktifIs.sender_id,
+        details: `Sohbet ihlali: ${violations.join(', ')} | Mesaj: ${content.slice(0, 100)}`
+      }).then(() => {
+        showToast(t.securityViolation);
+      }).catch(() => {});
+    }
     
     // Çevrimdışı kontrolü - offline ise kuyruğa ekle
     if (typeof navigator !== 'undefined' && !navigator.onLine) {
@@ -3574,6 +3615,55 @@ function Home() {
     typingBroadcastTimerRef.current = setTimeout(() => {
       typingChannelRef.current?.send({ type: 'broadcast', event: 'typing', payload: { user_id: user.id } });
     }, 300);
+  };
+
+  // Çalışan bildirim fonksiyonu
+  const handleReportSubmit = async () => {
+    if (!aktifIs || !user || !reportReason.trim()) return;
+    setReportSubmitting(true);
+    
+    const reportedId = aktifIs.sender_id === user.id ? aktifIs.receiver_id : aktifIs.sender_id;
+    
+    try {
+      // Güvenlik radarına bildirim ekle
+      const { error } = await supabase.from('security_radar').insert({
+        request_id: aktifIs.id,
+        alert_type: 'reported_worker',
+        severity: 'high',
+        reporter_id: user.id,
+        reported_id: reportedId,
+        details: `Kullanıcı bildirimi: ${reportReason}${reportCancelJob ? ' | İş iptali istendi' : ''}`,
+        payment_hold: true, // Raporlanan işlerde ödeme bloke
+        status: 'open'
+      });
+      
+      if (error) throw error;
+      
+      // İşi iptal et seçeneği işaretliyse
+      if (reportCancelJob) {
+        await supabase.from('requests').update({
+          status: 'cancelled_reported',
+          cancelled_at: new Date().toISOString(),
+          cancel_reason: 'Security report: ' + reportReason
+        }).eq('id', aktifIs.id);
+        
+        setAktifIs(null);
+        setChatAcik(false);
+        showToast('İş iptal edildi ve bildirim gönderildi');
+      } else {
+        showToast(t.reportSubmitted);
+      }
+      
+      // Modalı kapat ve temizle
+      setReportModal(false);
+      setReportReason('');
+      setReportCancelJob(false);
+    } catch (err) {
+      console.error('Report error:', err);
+      showToast('Bildirim gönderilemedi');
+    } finally {
+      setReportSubmitting(false);
+    }
   };
 
   const handleFotoGonder = async (e) => {
@@ -5739,7 +5829,7 @@ function Home() {
         )}
         {chatAcik && aktifIs && (
           <div className={`fixed inset-0 z-[7000] flex flex-col ${isDarkMode ? 'bg-[#0F0F0F]' : 'bg-white'}`}>
-            <div className={`flex items-center gap-4 p-4 pt-12 border-b ${isDarkMode ? 'border-white/10' : 'border-black/10'}`}><button onClick={() => setChatAcik(false)} className={`text-2xl ${isDarkMode ? 'text-white' : 'text-black'}`}>←</button><div className="flex-1 min-w-0"><p className={`font-black text-sm uppercase truncate ${isDarkMode ? 'text-white' : 'text-black'}`}>{aktifIs.title || t.activeJob}</p>{aktifIs.price && <p className="text-[#2ECC71] text-xs">₺{aktifIs.price}</p>}</div><div className="flex items-center gap-2 flex-shrink-0">{['idle', 'ended', 'missed'].includes(callState) ? <button onClick={handleStartCall} className="w-9 h-9 rounded-full bg-[#2ECC71]/20 text-[#2ECC71] flex items-center justify-center text-lg">📞</button> : callState === 'connected' ? <button onClick={handleEndCall} className="w-9 h-9 rounded-full bg-red-500 text-white flex items-center justify-center text-lg animate-pulse">📵</button> : <span className="text-[10px] text-[#2ECC71] font-bold animate-pulse">📞...</span>}{!aktifIs[isSender ? 'sender_confirmed' : 'receiver_confirmed'] ? <button onClick={handleOnayla} className="px-3 py-2 bg-[#2ECC71]/20 text-[#2ECC71] rounded-xl text-xs font-bold whitespace-nowrap">{t.confirmJob}</button> : <span className="text-[#2ECC71] text-xs font-bold">{t.youConfirmed}</span>}</div></div>
+            <div className={`flex items-center gap-4 p-4 pt-12 border-b ${isDarkMode ? 'border-white/10' : 'border-black/10'}`}><button onClick={() => setChatAcik(false)} className={`text-2xl ${isDarkMode ? 'text-white' : 'text-black'}`}>←</button><div className="flex-1 min-w-0"><p className={`font-black text-sm uppercase truncate ${isDarkMode ? 'text-white' : 'text-black'}`}>{aktifIs.title || t.activeJob}</p>{aktifIs.price && <p className="text-[#2ECC71] text-xs">₺{aktifIs.price}</p>}</div><div className="flex items-center gap-2 flex-shrink-0">{['idle', 'ended', 'missed'].includes(callState) ? <button onClick={handleStartCall} className="w-9 h-9 rounded-full bg-[#2ECC71]/20 text-[#2ECC71] flex items-center justify-center text-lg">📞</button> : callState === 'connected' ? <button onClick={handleEndCall} className="w-9 h-9 rounded-full bg-red-500 text-white flex items-center justify-center text-lg animate-pulse">📵</button> : <span className="text-[10px] text-[#2ECC71] font-bold animate-pulse">📞...</span>}{!aktifIs[isSender ? 'sender_confirmed' : 'receiver_confirmed'] ? <button onClick={handleOnayla} className="px-3 py-2 bg-[#2ECC71]/20 text-[#2ECC71] rounded-xl text-xs font-bold whitespace-nowrap">{t.confirmJob}</button> : <span className="text-[#2ECC71] text-xs font-bold">{t.youConfirmed}</span>}<button onClick={() => setReportModal(true)} className="px-3 py-2 bg-red-500/20 text-red-400 rounded-xl text-[10px] font-bold whitespace-nowrap">{t.reportWorker}</button></div></div>
             
             {/* SABİT HATIRLATMA MESAJI - DARALTILMIŞ */}
             <div className="mx-auto my-2 px-6 py-4 bg-[#2ECC71]/10 border border-[#2ECC71]/30 rounded-3xl backdrop-blur-xl shadow-lg z-[8000] max-w-[85%]">
@@ -6238,6 +6328,55 @@ function Home() {
                   className="py-2 text-xs text-red-400 font-bold"
                 >
                   {t.photoLabelCancel}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Çalışan Bildirim Modalı */}
+        {reportModal && (
+          <div className="fixed inset-0 z-[9600] flex items-center justify-center p-6 bg-black/70 backdrop-blur-md">
+            <div className={`w-full max-w-sm rounded-3xl p-6 ${isDarkMode ? 'bg-[#1a1a1a]' : 'bg-white'}`}>
+              <h3 className={`font-black text-xl text-center mb-2 ${isDarkMode ? 'text-white' : 'text-black'}`}>{t.reportWorker}</h3>
+              <p className={`text-center text-xs mb-4 opacity-60 ${isDarkMode ? 'text-white' : 'text-black'}`}>
+                {t.reportReason}
+              </p>
+              
+              {/* Neden metin kutusu */}
+              <textarea
+                value={reportReason}
+                onChange={(e) => setReportReason(e.target.value)}
+                placeholder="Örn: Elden ödeme talep etti, kaba davrandı, vs."
+                rows={3}
+                className={`w-full p-4 rounded-2xl text-sm outline-none resize-none mb-4 ${isDarkMode ? 'bg-white/5 text-white placeholder-gray-500 border border-white/10' : 'bg-gray-100 text-black border border-gray-200'}`}
+              />
+              
+              {/* İş iptal seçeneği */}
+              <label className={`flex items-center gap-3 p-3 rounded-xl mb-4 cursor-pointer ${isDarkMode ? 'bg-white/5' : 'bg-gray-50'}`}>
+                <input
+                  type="checkbox"
+                  checked={reportCancelJob}
+                  onChange={(e) => setReportCancelJob(e.target.checked)}
+                  className="w-5 h-5 accent-red-500"
+                />
+                <span className={`text-sm font-bold ${isDarkMode ? 'text-red-400' : 'text-red-500'}`}>{t.cancelCurrentJob}</span>
+              </label>
+              
+              {/* Butonlar */}
+              <div className="flex gap-3">
+                <button
+                  onClick={() => { setReportModal(false); setReportReason(''); setReportCancelJob(false); }}
+                  className={`flex-1 py-3 rounded-2xl font-bold text-sm ${isDarkMode ? 'bg-white/10 text-white' : 'bg-gray-200 text-black'}`}
+                >
+                  {t.cancel}
+                </button>
+                <button
+                  onClick={handleReportSubmit}
+                  disabled={!reportReason.trim() || reportSubmitting}
+                  className="flex-1 py-3 bg-red-500 text-white rounded-2xl font-black text-sm disabled:opacity-50"
+                >
+                  {reportSubmitting ? '...' : t.send}
                 </button>
               </div>
             </div>
