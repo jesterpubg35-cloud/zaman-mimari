@@ -625,9 +625,19 @@ export default function AdminDashboard() {
 
       <div className="max-w-7xl mx-auto px-4 py-8">
         <div className="flex items-center justify-between mb-8">
-          <div>
-            <div className="text-xl font-black text-emerald-400">TICK</div>
-            <div className="text-[11px] text-zinc-600 font-bold uppercase tracking-widest">Admin Paneli</div>
+          <div className="flex items-center gap-4">
+            {/* Mobil: Uygulamaya dön butonu */}
+            <a 
+              href="/" 
+              className="flex items-center gap-2 px-3 py-2 bg-zinc-900 border border-zinc-800 rounded-xl text-zinc-400 hover:text-white hover:border-zinc-600 transition md:hidden"
+            >
+              <span>←</span>
+              <span className="text-xs font-bold">Uygulamaya Dön</span>
+            </a>
+            <div>
+              <div className="text-xl font-black text-emerald-400">TICK</div>
+              <div className="text-[11px] text-zinc-600 font-bold uppercase tracking-widest">Admin Paneli</div>
+            </div>
           </div>
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2">

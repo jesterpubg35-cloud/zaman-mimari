@@ -214,6 +214,9 @@ const TRANSLATIONS = {
     callWeak: 'Ses bağlantısı zayıf, chate geçin',
     arrived: 'Varıldı', pickedUp: 'Teslim Alındı', delivered: 'Teslim Edildi',
     stageArrived: 'Varıldı', stagePickedUp: 'Alındı', stageDelivered: 'Teslim Edildi',
+    // Rehber (Tur rehberi) için aşama butonları
+    guideStageMeeting: '📍 Buluşma Noktasındayım', guideStageStarted: '🚶 Tur Başladı', guideStageEnded: '✅ Tur Bitti',
+    guideStageMeetingShort: 'Buluşma', guideStageStartedShort: 'Tur Başladı', guideStageEndedShort: 'Tur Bitti',
     photoProof: 'Fotoğraf Kanıtı Ekle', photoRequired: 'Bu aşama için fotoğraf gerekli',
     deliveryCode: 'Teslim Kodu', enterCode: 'Kodu Girin',
     codeGenerated: 'Teslim kodu oluşturuldu', codeVerified: '✓ Kod doğrulandı',
@@ -527,6 +530,9 @@ const TRANSLATIONS = {
     missedCall: '📵 Missed Call', callFailed: 'Call failed, continue with chat', callWeak: 'Weak connection, switch to chat',
     arrived: 'Arrived', pickedUp: 'Picked Up', delivered: 'Delivered',
     stageArrived: 'Arrived', stagePickedUp: 'Picked Up', stageDelivered: 'Delivered',
+    // Guide stage buttons
+    guideStageMeeting: '📍 At Meeting Point', guideStageStarted: '🚶 Tour Started', guideStageEnded: '✅ Tour Ended',
+    guideStageMeetingShort: 'Meeting', guideStageStartedShort: 'Tour Started', guideStageEndedShort: 'Tour Ended',
     photoProof: 'Add Photo Proof', photoRequired: 'Photo required for this stage',
     deliveryCode: 'Delivery Code', enterCode: 'Enter Code',
     codeGenerated: 'Delivery code generated', codeVerified: '✓ Code verified',
@@ -1755,6 +1761,9 @@ function Home() {
             if (error) throw error;
           } else if (item.type === 'request_insert') {
             const { error } = await supabase.from('requests').insert([item.data]);
+            if (error) throw error;
+          } else if (item.type === 'message_insert') {
+            const { error } = await supabase.from('messages').insert([item.data]);
             if (error) throw error;
           }
         } catch {
@@ -3410,6 +3419,12 @@ function Home() {
 
   const handleTalepKabul = async () => {
     if (!gelenTalep) return;
+    // Stripe güvenlik kontrolü: Hizmet verenin Stripe hesabı bağlı mı?
+    if (!stripeConnected) {
+      showToast('İşi kabul etmek için önce Stripe hesabınızı bağlamalısınız');
+      setShowProviderOnboarding(true);
+      return;
+    }
     const code = generateDeliveryCode();
     // Optimistic: hemen kabul et
     const optimisticJob = { ...gelenTalep, status: 'accepted', active_job: true, delivery_code: code };
@@ -3504,8 +3519,28 @@ function Home() {
 
   const handleMesajGonder = async () => {
     if (!yeniMesaj.trim() || !aktifIs || !user) return;
-    setMesajGonderiliyor(true);
     const content = yeniMesaj.trim();
+    
+    // Çevrimdışı kontrolü - offline ise kuyruğa ekle
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      const queueItem = {
+        type: 'message_insert',
+        data: { request_id: aktifIs.id, sender_id: user.id, content, type: 'text' },
+        ts: Date.now()
+      };
+      try {
+        const key = 'radar_offline_queue';
+        const raw = localStorage.getItem(key);
+        const arr = raw ? JSON.parse(raw) : [];
+        arr.push(queueItem);
+        localStorage.setItem(key, JSON.stringify(arr));
+        showToast('Mesajınız bağlantı kurulduğunda gönderilecek');
+        setYeniMesaj('');
+      } catch {}
+      return;
+    }
+    
+    setMesajGonderiliyor(true);
     const tempId = `temp-${Date.now()}`;
     const msgData = { id: tempId, request_id: aktifIs.id, sender_id: user.id, content, type: 'text', created_at: new Date().toISOString() };
     
@@ -5797,7 +5832,55 @@ function Home() {
               </div>
             )}
 
-            {bothConfirmedFlag && <div className="px-4 py-2 flex gap-2 overflow-x-auto no-scrollbar">{currentStage === 'accepted' && <button onClick={() => handleAdvanceStage('arrived')} className="flex-shrink-0 px-4 py-2 bg-blue-500/20 text-blue-400 rounded-xl text-[10px] font-black uppercase border border-blue-500/20 shadow-lg">📍 {t.stageArrived}</button>}{currentStage === 'arrived' && <button onClick={() => handleAdvanceStage('picked_up')} className="flex-shrink-0 px-4 py-2 bg-orange-500/20 text-orange-400 rounded-xl text-[10px] font-black uppercase border border-orange-500/20 shadow-lg">📦 {t.stagePickedUp}</button>}{currentStage === 'picked_up' && <button onClick={() => handleAdvanceStage('delivered')} className="flex-shrink-0 px-4 py-2 bg-purple-500/20 text-purple-400 rounded-xl text-[10px] font-black uppercase border border-purple-500/20 shadow-lg">🏠 {t.stageDelivered}</button>}</div>}
+            {bothConfirmedFlag && (
+              <div className="px-4 py-2 flex gap-2 overflow-x-auto no-scrollbar">
+                {/* Rol bazlı dinamik aşama butonları */}
+                {(() => {
+                  const isGuide = user?.roles?.includes('rehber') || user?.role === 'rehber';
+                  const isCourier = user?.roles?.includes('kurye') || user?.role === 'kurye';
+                  
+                  // Rehber (Tur Rehberi) için butonlar
+                  if (isGuide) {
+                    return (<>
+                      {currentStage === 'accepted' && (
+                        <button onClick={() => handleAdvanceStage('arrived')} className="flex-shrink-0 px-4 py-2 bg-blue-500/20 text-blue-400 rounded-xl text-[10px] font-black uppercase border border-blue-500/20 shadow-lg">
+                          📍 {t.guideStageMeetingShort}
+                        </button>
+                      )}
+                      {currentStage === 'arrived' && (
+                        <button onClick={() => handleAdvanceStage('picked_up')} className="flex-shrink-0 px-4 py-2 bg-orange-500/20 text-orange-400 rounded-xl text-[10px] font-black uppercase border border-orange-500/20 shadow-lg">
+                          🚶 {t.guideStageStartedShort}
+                        </button>
+                      )}
+                      {currentStage === 'picked_up' && (
+                        <button onClick={() => handleAdvanceStage('delivered')} className="flex-shrink-0 px-4 py-2 bg-purple-500/20 text-purple-400 rounded-xl text-[10px] font-black uppercase border border-purple-500/20 shadow-lg">
+                          ✅ {t.guideStageEndedShort}
+                        </button>
+                      )}
+                    </>);
+                  }
+                  
+                  // Kurye için butonlar (varsayılan)
+                  return (<>
+                    {currentStage === 'accepted' && (
+                      <button onClick={() => handleAdvanceStage('arrived')} className="flex-shrink-0 px-4 py-2 bg-blue-500/20 text-blue-400 rounded-xl text-[10px] font-black uppercase border border-blue-500/20 shadow-lg">
+                        📍 {t.stageArrived}
+                      </button>
+                    )}
+                    {currentStage === 'arrived' && (
+                      <button onClick={() => handleAdvanceStage('picked_up')} className="flex-shrink-0 px-4 py-2 bg-orange-500/20 text-orange-400 rounded-xl text-[10px] font-black uppercase border border-orange-500/20 shadow-lg">
+                        📦 {t.stagePickedUp}
+                      </button>
+                    )}
+                    {currentStage === 'picked_up' && (
+                      <button onClick={() => handleAdvanceStage('delivered')} className="flex-shrink-0 px-4 py-2 bg-purple-500/20 text-purple-400 rounded-xl text-[10px] font-black uppercase border border-purple-500/20 shadow-lg">
+                        🏠 {t.stageDelivered}
+                      </button>
+                    )}
+                  </>);
+                })()}
+              </div>
+            )}
              <div className={`flex items-center gap-2 p-4 border-t ${isDarkMode ? 'border-white/10' : 'border-black/10'}`}><input type="file" ref={fileInputRef} accept="image/*" onChange={handleFotoGonder} className="hidden" /><button onClick={() => fileInputRef.current?.click()} className={`p-3 rounded-xl text-lg flex-shrink-0 ${isDarkMode ? 'bg-white/5' : 'bg-gray-100'}`}>📷</button><VoiceMsgRecorder onSend={handleVoiceMsgSend} dark={isDarkMode} t={t} /><input value={yeniMesaj} onChange={(e) => handleTypingInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleMesajGonder()} placeholder={t.msgPlaceholder} className={`flex-1 px-4 py-3 rounded-2xl text-sm outline-none min-w-0 ${isDarkMode ? 'bg-white/5 text-white placeholder-gray-500' : 'bg-gray-100 text-black'}`} /><button onClick={handleMesajGonder} disabled={mesajGonderiliyor || !yeniMesaj.trim()} className="p-3 rounded-xl bg-[#2ECC71] text-black font-bold text-sm disabled:opacity-40">↑</button></div>
           </div>
         )}
