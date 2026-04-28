@@ -242,10 +242,10 @@ export async function GET(req) {
       .select('user_id, name, email, phone, birth_date, is_admin, is_banned, is_verified, created_at, rating, roles, average_rating, total_completed_jobs, stripe_account_id, ip_address, registered_ip, address_line1, address_line2, city, district, neighborhood, postal_code, country')
       .order('created_at', { ascending: false });
 
-    if (usersErr) return NextResponse.json({ error: usersErr.message }, { status: 500 });
-    return NextResponse.json({ users: users || [] });
-  } catch {
-    return NextResponse.json({ error: 'Server error' }, { status: 500 });
+    if (usersErr) return NextResponse.json({ error: usersErr.message, code: usersErr.code }, { status: 500 });
+    return NextResponse.json({ users: users || [], count: users?.length ?? 0 });
+  } catch (e) {
+    return NextResponse.json({ error: 'Server error', detail: e?.message }, { status: 500 });
   }
 }
 
