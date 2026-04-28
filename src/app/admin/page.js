@@ -82,6 +82,9 @@ export default function AdminDashboard() {
   const [userQ, setUserQ] = useState('');
   const [filterRole, setFilterRole] = useState('hepsi');
   const [filterBanned, setFilterBanned] = useState('hepsi');
+  const [expandedUser, setExpandedUser] = useState(null);
+  const [locationHistory, setLocationHistory] = useState({});
+  const [locationLoading, setLocationLoading] = useState({});
   const [filterVerified, setFilterVerified] = useState('hepsi');
 
   // Raporlar & Kanıtlar
@@ -501,30 +504,72 @@ export default function AdminDashboard() {
               <p className="text-[11px] text-zinc-600 mb-3">{filteredUsers.length} kullanıcı — alfabetik sıralı</p>
               {usersLoading ? <p className="text-zinc-600 text-sm">Yükleniyor...</p> : (
                 <div className="space-y-2">
-                  {filteredUsers.map(u => (
-                    <div key={u.user_id} className="bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 flex items-center gap-3 flex-wrap">
-                      <div className="w-9 h-9 rounded-lg bg-zinc-800 flex items-center justify-center font-black text-zinc-400 text-sm flex-shrink-0">
-                        {(u.name || '?')[0].toUpperCase()}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-black text-sm">{u.name || '—'}</span>
-                          {u.is_verified && <span className="text-[9px] bg-zinc-700 text-zinc-300 px-1.5 py-0.5 rounded font-black">Onaylı</span>}
-                          {u.is_banned && <span className="text-[9px] bg-red-900/40 text-red-400 px-1.5 py-0.5 rounded font-black">Banlı</span>}
+                  {filteredUsers.map(u => {
+                    const isOpen = expandedUser === u.user_id;
+                    return (
+                    <div key={u.user_id} className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden">
+                      <div className="px-4 py-3 flex items-center gap-3 flex-wrap">
+                        <div className="w-9 h-9 rounded-lg bg-zinc-800 flex items-center justify-center font-black text-zinc-400 text-sm flex-shrink-0">
+                          {(u.name || '?')[0].toUpperCase()}
                         </div>
-                        <div className="text-[11px] text-zinc-500">{u.email} · {u.phone}</div>
-                        <div className="text-[10px] text-zinc-600">{u.average_rating || 0} puan · {u.total_completed_jobs || 0} iş · {new Date(u.created_at).toLocaleDateString()}</div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-black text-sm">{u.name || '—'}</span>
+                            {u.is_verified && <span className="text-[9px] bg-zinc-700 text-zinc-300 px-1.5 py-0.5 rounded font-black">Onaylı</span>}
+                            {u.is_banned && <span className="text-[9px] bg-red-900/40 text-red-400 px-1.5 py-0.5 rounded font-black">Banlı</span>}
+                          </div>
+                          <div className="text-[11px] text-zinc-500">{u.email} · {u.phone}</div>
+                          <div className="text-[10px] text-zinc-600">{u.average_rating || 0} puan · {u.total_completed_jobs || 0} iş · {new Date(u.created_at).toLocaleDateString()}</div>
+                        </div>
+                        <div className="flex gap-1.5 items-center">
+                          {!u.is_verified
+                            ? <button onClick={() => userAction('verify', u.user_id)} className="text-[10px] px-2.5 py-1.5 bg-zinc-800 border border-zinc-700 text-zinc-300 rounded-lg font-black hover:border-emerald-700 hover:text-emerald-400">Onayla</button>
+                            : <button onClick={() => userAction('unverify', u.user_id)} className="text-[10px] px-2.5 py-1.5 bg-zinc-800 border border-zinc-700 text-zinc-500 rounded-lg font-black">Kaldır</button>}
+                          {!u.is_banned
+                            ? <button onClick={() => userAction('ban', u.user_id)} className="text-[10px] px-2.5 py-1.5 bg-zinc-800 border border-red-900/50 text-red-400 rounded-lg font-black">Ban</button>
+                            : <button onClick={() => userAction('unban', u.user_id)} className="text-[10px] px-2.5 py-1.5 bg-zinc-800 border border-emerald-900/50 text-emerald-400 rounded-lg font-black">Banı Kaldır</button>}
+                          <button onClick={async () => {
+                            const nextOpen = expandedUser === u.user_id ? null : u.user_id;
+                            setExpandedUser(nextOpen);
+                            if (nextOpen && !locationHistory[u.user_id] && !locationLoading[u.user_id]) {
+                              setLocationLoading(prev => ({ ...prev, [u.user_id]: true }));
+                              try {
+                                const res = await fetch(`/api/admin/users?type=location_history&user_id=${u.user_id}`, { headers: { Authorization: `Bearer ${token}` } });
+                                const json = await res.json().catch(() => ({}));
+                                setLocationHistory(prev => ({ ...prev, [u.user_id]: json?.history || [] }));
+                              } catch {}
+                              setLocationLoading(prev => ({ ...prev, [u.user_id]: false }));
+                            }
+                          }} className="text-[10px] px-2.5 py-1.5 bg-zinc-800 border border-zinc-700 text-zinc-400 rounded-lg font-black hover:text-white">
+                            {isOpen ? '▲ Kapat' : '▼ Detay'}
+                          </button>
+                        </div>
                       </div>
-                      <div className="flex gap-1.5">
-                        {!u.is_verified
-                          ? <button onClick={() => userAction('verify', u.user_id)} className="text-[10px] px-2.5 py-1.5 bg-zinc-800 border border-zinc-700 text-zinc-300 rounded-lg font-black hover:border-emerald-700 hover:text-emerald-400">Onayla</button>
-                          : <button onClick={() => userAction('unverify', u.user_id)} className="text-[10px] px-2.5 py-1.5 bg-zinc-800 border border-zinc-700 text-zinc-500 rounded-lg font-black">Kaldır</button>}
-                        {!u.is_banned
-                          ? <button onClick={() => userAction('ban', u.user_id)} className="text-[10px] px-2.5 py-1.5 bg-zinc-800 border border-red-900/50 text-red-400 rounded-lg font-black">Ban</button>
-                          : <button onClick={() => userAction('unban', u.user_id)} className="text-[10px] px-2.5 py-1.5 bg-zinc-800 border border-emerald-900/50 text-emerald-400 rounded-lg font-black">Banı Kaldır</button>}
-                      </div>
+                      {isOpen && (
+                        <div className="border-t border-zinc-800 px-4 py-4 grid grid-cols-2 gap-x-6 gap-y-2 text-[11px]">
+                          <div><span className="text-zinc-500 font-black">IP Adresi: </span><span className="font-mono text-zinc-300">{u.ip_address || '—'}</span></div>
+                          <div><span className="text-zinc-500 font-black">Kayıt IP: </span><span className="font-mono text-zinc-300">{u.registered_ip || '—'}</span></div>
+                          <div><span className="text-zinc-500 font-black">Doğum Tarihi: </span><span className="text-zinc-300">{u.birth_date || '—'}</span></div>
+                          <div><span className="text-zinc-500 font-black">Ülke: </span><span className="text-zinc-300">{u.country || '—'}</span></div>
+                          <div className="col-span-2"><span className="text-zinc-500 font-black">Adres: </span><span className="text-zinc-300">{[u.address_line1, u.address_line2, u.neighborhood, u.district, u.city, u.postal_code].filter(Boolean).join(', ') || '—'}</span></div>
+                          <div className="col-span-2 mt-2">
+                            <div className="text-zinc-500 font-black mb-1">Konum Geçmişi</div>
+                            {locationLoading[u.user_id] ? <div className="text-zinc-600">Yükleniyor...</div> : (locationHistory[u.user_id] || []).length === 0 ? <div className="text-zinc-700">Kayıt yok</div> : (
+                              <div className="max-h-32 overflow-y-auto space-y-0.5">
+                                {(locationHistory[u.user_id] || []).map((loc, i) => (
+                                  <div key={i} className="flex justify-between gap-2 py-0.5 border-b border-zinc-800">
+                                    <span className="font-mono text-zinc-400">{loc.lat?.toFixed(5)}, {loc.lng?.toFixed(5)}</span>
+                                    <span className="text-zinc-600 flex-shrink-0">{new Date(loc.recorded_at).toLocaleString('tr-TR')}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>
