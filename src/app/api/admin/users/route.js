@@ -203,6 +203,17 @@ export async function GET(req) {
       return NextResponse.json({ attempts: data || [] });
     }
 
+    // ── admin logları ─────────────────────────────────────────
+    if (type === 'admin_logs') {
+      const { data, error: err } = await adminClient
+        .from('admin_logs')
+        .select('id, event_type, ip_address, user_agent, detail, created_at')
+        .order('created_at', { ascending: false })
+        .limit(300);
+      if (err) return NextResponse.json({ logs: [] });
+      return NextResponse.json({ logs: data || [] });
+    }
+
     // ── adres geçmişi ─────────────────────────────────────────
     if (type === 'address_history') {
       const { data, error: err } = await adminClient

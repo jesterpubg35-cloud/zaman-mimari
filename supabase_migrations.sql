@@ -1,6 +1,6 @@
 -- ══════════════════════════════════════════════════════════════
 -- TICK Platform — Güvenlik & Doğrulama Altyapısı Güncellemesi
--- Supabase SQL Editor'da bir kez çalıştır
+-- Supabase SQL Editor'da SIRAYLA çalıştır
 -- ══════════════════════════════════════════════════════════════
 
 -- 1. profilkisi tablosuna email_verified kalıcılık sütunu ekle
@@ -14,15 +14,15 @@ CREATE TABLE IF NOT EXISTS address_history (
   old_address   jsonb,
   new_address   jsonb NOT NULL,
   changed_at    timestamptz NOT NULL DEFAULT now(),
-  change_type   text NOT NULL DEFAULT 'update' -- 'initial' | 'update'
+  change_type   text NOT NULL DEFAULT 'update'
 );
 
--- address_history için index
 CREATE INDEX IF NOT EXISTS idx_address_history_user_id ON address_history(user_id);
 CREATE INDEX IF NOT EXISTS idx_address_history_changed_at ON address_history(changed_at DESC);
 
--- RLS: sadece service_role okuyabilir (admin)
 ALTER TABLE address_history ENABLE ROW LEVEL SECURITY;
+-- Policy zaten varsa sil, yeniden oluştur
+DROP POLICY IF EXISTS "Service role only" ON address_history;
 CREATE POLICY "Service role only" ON address_history
   USING (auth.role() = 'service_role');
 
@@ -39,13 +39,42 @@ CREATE TABLE IF NOT EXISTS admin_login_attempts (
 CREATE INDEX IF NOT EXISTS idx_admin_attempts_email ON admin_login_attempts(email);
 CREATE INDEX IF NOT EXISTS idx_admin_attempts_at ON admin_login_attempts(attempted_at DESC);
 
--- RLS: sadece service_role
 ALTER TABLE admin_login_attempts ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Service role only" ON admin_login_attempts;
 CREATE POLICY "Service role only" ON admin_login_attempts
   USING (auth.role() = 'service_role');
 
--- 4. Mevcut doğrulanmış kullanıcıları güncelle (Supabase auth'tan senkronize et)
--- Bu sorgu auth.users tablosundaki email_confirmed_at değerini profilkisi'ye yansıtır
+-- 4. admin_settings tablosu — admin şifresi ve sistem ayarları
+CREATE TABLE IF NOT EXISTS admin_settings (
+  key           text PRIMARY KEY,
+  value         text NOT NULL,
+  updated_at    timestamptz NOT NULL DEFAULT now()
+);
+
+ALTER TABLE admin_settings ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Service role only" ON admin_settings;
+CREATE POLICY "Service role only" ON admin_settings
+  USING (auth.role() = 'service_role');
+
+-- 5. admin_logs tablosu — giriş ve işlem logları
+CREATE TABLE IF NOT EXISTS admin_logs (
+  id            uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  event_type    text NOT NULL, -- 'login_success' | 'login_fail' | 'password_set'
+  ip_address    text,
+  user_agent    text,
+  detail        text,
+  created_at    timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_admin_logs_event_type ON admin_logs(event_type);
+CREATE INDEX IF NOT EXISTS idx_admin_logs_created_at ON admin_logs(created_at DESC);
+
+ALTER TABLE admin_logs ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Service role only" ON admin_logs;
+CREATE POLICY "Service role only" ON admin_logs
+  USING (auth.role() = 'service_role');
+
+-- 6. Mevcut doğrulanmış kullanıcıları senkronize et
 UPDATE profilkisi p
 SET email_verified = true
 FROM auth.users a
