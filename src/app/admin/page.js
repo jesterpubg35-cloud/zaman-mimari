@@ -67,16 +67,9 @@ export default function AdminDashboard() {
   const [authChecked, setAuthChecked] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [token, setToken] = useState('');
-  // 'loading' | 'setup' | 'login'
-  const [authMode, setAuthMode] = useState('loading');
   const [loginPassword, setLoginPassword] = useState('');
-  const [setupPassword, setSetupPassword] = useState('');
-  const [setupConfirm, setSetupConfirm] = useState('');
   const [loginLoading, setLoginLoading] = useState(false);
   const [loginErr, setLoginErr] = useState('');
-  const [loginAttempts, setLoginAttempts] = useState(0);
-  const [loginBlocked, setLoginBlocked] = useState(false);
-  const [loginEmail, setLoginEmail] = useState('');
   const [tab, setTab] = useState('dashboard');
 
   // Hatalı giriş takibi
@@ -147,82 +140,14 @@ export default function AdminDashboard() {
   // ── Auth kontrolü ───────────────────────────────────────
   useEffect(() => {
     (async () => {
-      // 1. Supabase oturumu hâlâ aktif mi?
       const sb = getSupabase();
       const { data: { session } } = await sb.auth.getSession();
-      if (session?.user?.email === ADMIN_EMAIL) {
-        // Oturum açık — panel şifresi de kontrol et
-        const res = await fetch('/api/admin/auth');
-        const j = await res.json();
-        if (j.hasPassword) {
-          // Şifre var ama bu sekmedeki oturum verify edilmedi — login ekranı göster
-          setAuthMode('login');
-        } else {
-          // Şifre hiç kurulmamış — setup ekranı
-          setAuthMode('setup');
-        }
-        // Supabase tokenını saklıyoruz; panel şifresi de doğrulanınca isAdmin=true yapacağız
-        setToken(session.access_token);
-      } else {
-        // Supabase oturumu yok — önce Supabase login, sonra panel şifresi
-        const res = await fetch('/api/admin/auth');
-        const j = await res.json();
-        setAuthMode(j.hasPassword ? 'login' : 'setup');
-      }
+      if (session?.user?.email === ADMIN_EMAIL) setToken(session.access_token);
       setAuthChecked(true);
     })();
   }, []);
 
-  // Supabase oturum girişi + panel şifre doğrulaması
   const handleLogin = async (e) => {
-    e.preventDefault();
-    if (loginBlocked) return;
-    setLoginLoading(true);
-    setLoginErr('');
-    try {
-      // 1. Panel şifresini doğrula
-      const authRes = await fetch('/api/admin/auth', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'login', password: loginPassword }),
-      });
-      const authJson = await authRes.json();
-      if (!authRes.ok) {
-        const newCount = loginAttempts + 1;
-        setLoginAttempts(newCount);
-        if (newCount >= 5) {
-          setLoginBlocked(true);
-          setLoginErr('Çok fazla hatalı deneme. 30 saniye bekleyin.');
-          setTimeout(() => { setLoginBlocked(false); setLoginAttempts(0); setLoginErr(''); }, 30000);
-        } else {
-          setLoginErr(`${authJson.error || 'Hatalı şifre.'} (${newCount}. deneme)`);
-        }
-        return;
-      }
-      // 2. Supabase oturumu aç (eğer token yoksa)
-      let currentToken = token;
-      if (!currentToken) {
-        const sb = getSupabase();
-        const { data, error } = await sb.auth.signInWithPassword({ email: loginEmail, password: loginPassword });
-        if (error || data?.user?.email !== ADMIN_EMAIL) {
-          // Supabase girişi başarısız — ama panel şifresi doğruysa token'sız ilerle
-          // (Supabase şifresi farklı olabilir, panel şifresi yeterli)
-        } else {
-          currentToken = data.session.access_token;
-          setToken(currentToken);
-        }
-      }
-      setLoginAttempts(0);
-      setIsAdmin(true);
-    } catch (err) {
-      setLoginErr(err?.message || 'Sunucu hatası.');
-    } finally {
-      setLoginLoading(false);
-    }
-  };
-
-  // İlk kurulum — şifre belirleme
-  const handleSetup = async (e) => {
     e.preventDefault();
     setLoginLoading(true);
     setLoginErr('');
@@ -230,16 +155,11 @@ export default function AdminDashboard() {
       const res = await fetch('/api/admin/auth', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'setup', password: setupPassword, confirmPassword: setupConfirm }),
+        body: JSON.stringify({ password: loginPassword }),
       });
       const j = await res.json();
-      if (!res.ok) { setLoginErr(j.error || 'Hata.'); return; }
-      // Şifre belirlendi, login moduna geç
-      setAuthMode('login');
-      setLoginErr('');
-      setSetupPassword('');
-      setSetupConfirm('');
-      showToast('Şifre başarıyla belirlendi! Giriş yapın.');
+      if (!res.ok) { setLoginErr(j.error || 'Hatalı şifre.'); return; }
+      setIsAdmin(true);
     } catch (err) {
       setLoginErr(err?.message || 'Sunucu hatası.');
     } finally {
@@ -447,141 +367,106 @@ export default function AdminDashboard() {
     loadAnnouncements();
   };
 
-  // ── Giriş ekranı ─────────────────────────────────────────
-  if (!authChecked || authMode === 'loading') return (
+  if (!authChecked) return (
     <main className="min-h-screen bg-black flex items-center justify-center">
-      <div className="space-y-3 text-center">
-        <div className="w-8 h-8 border-2 border-blue-500/40 border-t-blue-500 rounded-full animate-spin mx-auto" />
-        <div className="text-blue-400/30 text-xs tracking-widest uppercase">Sistem kontrol ediliyor...</div>
-      </div>
+      <div className="w-6 h-6 border-2 border-blue-500/30 border-t-blue-500 rounded-full animate-spin" />
     </main>
   );
 
-  // ── Neon ortak layout yardımcısı ───────────────────────────
-  const NeonInput = ({ label, ...props }) => (
-    <div>
-      <div className="text-[10px] font-black uppercase tracking-widest text-blue-400/50 mb-1.5 font-mono">{label}</div>
-      <input
-        {...props}
-        className="w-full bg-black/70 border rounded-xl px-4 py-3 text-sm text-white outline-none placeholder:text-white/15 transition-colors font-mono"
-        style={{ borderColor: props.disabled ? 'rgba(59,130,246,0.1)' : 'rgba(59,130,246,0.3)' }}
-        onFocus={e => { e.target.style.borderColor = 'rgba(59,130,246,0.8)'; e.target.style.boxShadow = '0 0 12px rgba(59,130,246,0.15)'; }}
-        onBlur={e => { e.target.style.borderColor = props.disabled ? 'rgba(59,130,246,0.1)' : 'rgba(59,130,246,0.3)'; e.target.style.boxShadow = 'none'; }}
-      />
-    </div>
-  );
+  if (!isAdmin) return (
+    <main className="min-h-screen bg-black flex items-center justify-center p-6 relative overflow-hidden">
+      <style>{`
+        @keyframes neonPulse {
+          0%,100% { box-shadow: 0 0 0 1px rgba(30,64,175,0.25), 0 0 32px rgba(37,99,235,0.06); }
+          50%      { box-shadow: 0 0 0 1.5px rgba(59,130,246,0.6), 0 0 56px rgba(59,130,246,0.2), 0 0 100px rgba(59,130,246,0.07); }
+        }
+        @keyframes bgGlow {
+          0%,100% { opacity:.07; transform:translate(-50%,-50%) scale(1); }
+          50%      { opacity:.18; transform:translate(-50%,-50%) scale(1.1); }
+        }
+        @keyframes fadeUp {
+          from { opacity:0; transform:translateY(20px); }
+          to   { opacity:1; transform:translateY(0); }
+        }
+        @keyframes shake {
+          0%,100%{transform:translateX(0)} 20%,60%{transform:translateX(-6px)} 40%,80%{transform:translateX(6px)}
+        }
+        .shake { animation: shake 0.4s ease; }
+      `}</style>
 
-  if (!isAdmin) {
-    const isSetup = authMode === 'setup';
-    return (
-      <main className="min-h-screen bg-[#000008] flex items-center justify-center p-6 relative overflow-hidden">
-        <style>{`
-          @keyframes neonPulse {
-            0%, 100% { box-shadow: 0 0 0 1px rgba(59,130,246,0.2), 0 0 30px rgba(59,130,246,0.05), 0 0 60px rgba(59,130,246,0.02); }
-            50% { box-shadow: 0 0 0 1.5px rgba(59,130,246,0.55), 0 0 50px rgba(59,130,246,0.18), 0 0 100px rgba(59,130,246,0.07); }
-          }
-          @keyframes neonBgPulse {
-            0%, 100% { opacity: 0.06; transform: translate(-50%,-50%) scale(1); }
-            50% { opacity: 0.14; transform: translate(-50%,-50%) scale(1.08); }
-          }
-          @keyframes fadeInUp {
-            from { opacity: 0; transform: translateY(24px); }
-            to { opacity: 1; transform: translateY(0); }
-          }
-        `}</style>
+      {/* Arka plan neon halka */}
+      <div style={{ position:'absolute', top:'50%', left:'50%', width:800, height:800, borderRadius:'50%', background:'radial-gradient(circle, rgba(37,99,235,0.12) 0%, transparent 70%)', transform:'translate(-50%,-50%)', animation:'bgGlow 5s ease-in-out infinite', pointerEvents:'none' }} />
+      <div style={{ position:'absolute', top:'50%', left:'50%', width:340, height:340, borderRadius:'50%', background:'radial-gradient(circle, rgba(59,130,246,0.08) 0%, transparent 70%)', transform:'translate(-50%,-50%)', animation:'bgGlow 3s ease-in-out infinite reverse', pointerEvents:'none' }} />
 
-        {/* Neon arka plan */}
-        <div className="absolute top-1/2 left-1/2 w-[700px] h-[700px] rounded-full bg-blue-600"
-          style={{ transform: 'translate(-50%,-50%)', filter: 'blur(140px)', animation: 'neonBgPulse 4s ease-in-out infinite', opacity: 0.06, pointerEvents: 'none' }} />
-        <div className="absolute top-1/2 left-1/2 w-[300px] h-[300px] rounded-full bg-blue-400"
-          style={{ transform: 'translate(-50%,-50%)', filter: 'blur(80px)', animation: 'neonBgPulse 6s ease-in-out infinite reverse', opacity: 0.04, pointerEvents: 'none' }} />
-
-        {/* Kart */}
-        <div className="relative w-full max-w-[360px]" style={{ animation: 'fadeInUp 0.6s ease-out both' }}>
-          <form
-            onSubmit={isSetup ? handleSetup : handleLogin}
-            className="rounded-2xl p-8 flex flex-col gap-5"
-            style={{ background: 'rgba(0,1,15,0.96)', animation: 'neonPulse 4s ease-in-out infinite', border: '1px solid transparent' }}
-          >
-            {/* Logo */}
-            <div className="text-center mb-1">
-              <div className="text-[11px] font-mono tracking-[0.4em] text-blue-500/40 uppercase mb-2">SYSTEM ACCESS</div>
-              <div className="text-3xl font-black tracking-[0.15em]" style={{ color: '#3b82f6', textShadow: '0 0 30px rgba(59,130,246,0.7), 0 0 60px rgba(59,130,246,0.3)' }}>TICK</div>
-              <div className="mt-2 flex items-center justify-center gap-2">
-                <div className="h-px flex-1 bg-blue-500/20" />
-                <span className="text-[9px] font-mono tracking-[0.3em] text-blue-400/40 uppercase">
-                  {isSetup ? 'initial setup' : 'admin panel'}
-                </span>
-                <div className="h-px flex-1 bg-blue-500/20" />
-              </div>
-            </div>
-
-            {/* Durum bar */}
-            {loginAttempts > 0 && !loginBlocked && (
-              <div className="flex items-center gap-2 bg-yellow-500/5 border border-yellow-500/20 rounded-xl px-3 py-2">
-                <div className="w-1.5 h-1.5 rounded-full bg-yellow-400 animate-pulse" />
-                <span className="text-[10px] font-mono text-yellow-400/70">{loginAttempts} HATALI DENEME — {5 - loginAttempts} HAKKI KALDI</span>
-              </div>
-            )}
-            {loginBlocked && (
-              <div className="flex items-center gap-2 bg-red-500/10 border border-red-500/30 rounded-xl px-3 py-2">
-                <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
-                <span className="text-[10px] font-mono text-red-400">🔒 KİLİTLİ — 30 saniye bekleyin</span>
-              </div>
-            )}
-            {loginErr && !loginBlocked && (
-              <div className="flex items-start gap-2 bg-red-500/8 border border-red-500/25 rounded-xl px-3 py-2.5">
-                <span className="text-red-400 text-lg leading-none mt-0.5">⚠</span>
-                <span className="text-[11px] font-mono text-red-300/90 leading-relaxed">{loginErr}</span>
-              </div>
-            )}
-
-            {/* Alanlar */}
-            {isSetup ? (
-              <>
-                <div className="text-[10px] font-mono text-blue-300/50 bg-blue-500/5 border border-blue-500/15 rounded-xl px-3 py-2.5 leading-relaxed">
-                  ⚡ İlk kurulum: Panel şifrenizi belirleyin. Bu şifre sonraki tüm girişlerde sorulacak.
-                </div>
-                <NeonInput label="Yeni Şifre" type="password" value={setupPassword} onChange={e => setSetupPassword(e.target.value)} placeholder="En az 8 karakter" required disabled={loginLoading} />
-                <NeonInput label="Şifreyi Onayla" type="password" value={setupConfirm} onChange={e => setSetupConfirm(e.target.value)} placeholder="Tekrar girin" required disabled={loginLoading} />
-              </>
-            ) : (
-              <NeonInput label="Panel Şifresi" type="password" value={loginPassword} onChange={e => setLoginPassword(e.target.value)} placeholder="••••••••••••" required disabled={loginLoading || loginBlocked} autoFocus />
-            )}
-
-            {/* Giriş butonu */}
-            <button
-              type="submit"
-              disabled={loginLoading || loginBlocked}
-              className="py-3.5 rounded-xl font-black text-sm tracking-[0.2em] uppercase transition-all disabled:opacity-30 font-mono"
-              style={{
-                background: loginBlocked ? 'rgba(59,130,246,0.05)' : 'linear-gradient(135deg,rgba(29,78,216,0.9),rgba(37,99,235,0.9))',
-                color: loginBlocked ? '#3b82f6' : 'white',
-                boxShadow: loginBlocked ? 'none' : '0 0 24px rgba(59,130,246,0.35)',
-                border: '1px solid rgba(59,130,246,0.3)',
-              }}
-            >
-              {loginLoading ? (
-                <span className="flex items-center justify-center gap-2">
-                  <span className="w-3.5 h-3.5 border border-white/30 border-t-white rounded-full animate-spin" />
-                  DOĞRULANIYOR...
-                </span>
-              ) : loginBlocked ? '🔒 ERİŞİM ENGELLENDİ' : isSetup ? '⚡ ŞİFREYİ KAYDET' : '→ PANELİ AÇ'}
-            </button>
-          </form>
-
-          {/* Alt bilgi */}
-          <div className="mt-4 flex items-center justify-between px-1">
-            <div className="flex items-center gap-1.5">
-              <div className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
-              <span className="text-[9px] font-mono text-blue-500/30 tracking-widest">SECURE CONNECTION</span>
-            </div>
-            <span className="text-[9px] font-mono text-white/10 tracking-widest">YETKİSİZ ERİŞİM YASAKTIR</span>
-          </div>
+      {/* Kart */}
+      <form
+        onSubmit={handleLogin}
+        className={`relative w-full max-w-[340px] rounded-2xl p-8 flex flex-col gap-6${loginErr ? ' shake' : ''}`}
+        style={{ background:'rgba(0,2,18,0.97)', animation:'neonPulse 4s ease-in-out infinite, fadeUp 0.5s ease-out both' }}
+      >
+        {/* Başlık */}
+        <div className="text-center">
+          <p className="text-[10px] font-mono tracking-[0.45em] text-blue-600/50 uppercase mb-3">secure access</p>
+          <h1 className="text-[2.2rem] font-black tracking-[0.12em] leading-none"
+            style={{ color:'#3b82f6', textShadow:'0 0 28px rgba(59,130,246,0.8), 0 0 60px rgba(59,130,246,0.35)' }}>TICK</h1>
+          <p className="text-[10px] font-mono tracking-[0.3em] text-blue-400/30 uppercase mt-2">admin panel</p>
         </div>
-      </main>
-    );
-  }
+
+        {/* Hata */}
+        {loginErr && (
+          <div className="flex items-center gap-2.5 rounded-xl px-3.5 py-2.5"
+            style={{ background:'rgba(239,68,68,0.07)', border:'1px solid rgba(239,68,68,0.25)' }}>
+            <span className="text-red-500 text-base leading-none">⚠</span>
+            <span className="text-[11px] font-mono text-red-300/90">{loginErr}</span>
+          </div>
+        )}
+
+        {/* Şifre kutusu */}
+        <div>
+          <label className="block text-[10px] font-mono tracking-[0.35em] text-blue-400/40 uppercase mb-2">Şifre</label>
+          <input
+            type="password"
+            value={loginPassword}
+            onChange={e => { setLoginPassword(e.target.value); setLoginErr(''); }}
+            placeholder="••••••••••••"
+            required
+            autoFocus
+            disabled={loginLoading}
+            className="w-full rounded-xl px-4 py-3.5 text-sm text-white font-mono outline-none transition-all"
+            style={{ background:'rgba(255,255,255,0.04)', border:'1px solid rgba(59,130,246,0.28)', letterSpacing:'0.15em' }}
+            onFocus={e => { e.target.style.borderColor='rgba(59,130,246,0.75)'; e.target.style.boxShadow='0 0 16px rgba(59,130,246,0.18)'; }}
+            onBlur={e  => { e.target.style.borderColor='rgba(59,130,246,0.28)'; e.target.style.boxShadow='none'; }}
+          />
+        </div>
+
+        {/* Buton */}
+        <button
+          type="submit"
+          disabled={loginLoading}
+          className="py-3.5 rounded-xl font-black text-sm tracking-[0.25em] uppercase font-mono transition-all disabled:opacity-40"
+          style={{
+            background:'linear-gradient(135deg, #1e3a8a 0%, #1d4ed8 50%, #2563eb 100%)',
+            color:'#e0f2fe',
+            boxShadow:'0 0 24px rgba(37,99,235,0.4), inset 0 1px 0 rgba(255,255,255,0.08)',
+            border:'1px solid rgba(59,130,246,0.4)',
+          }}
+        >
+          {loginLoading
+            ? <span className="flex items-center justify-center gap-2"><span className="w-3.5 h-3.5 border border-blue-300/40 border-t-blue-200 rounded-full animate-spin" /> DOĞRULANIYOR</span>
+            : '→ PANELİ AÇ'}
+        </button>
+
+        {/* Alt bant */}
+        <div className="flex items-center justify-between -mt-2">
+          <div className="flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
+            <span className="text-[9px] font-mono text-blue-500/30 tracking-widest">ENCRYPTED</span>
+          </div>
+          <span className="text-[9px] font-mono text-white/8 tracking-widest">YETKİSİZ ERİŞİM YASAK</span>
+        </div>
+      </form>
+    </main>
+  );
 
   // ── Filtreli kullanıcılar ─────────────────────────────────
   const filteredUsers = users
