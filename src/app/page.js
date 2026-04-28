@@ -1984,31 +1984,43 @@ function Home() {
         initialPosDone = true;
       }
 
-      // Konum izleme - periodic updates instead of watchPosition
-      const locationInterval = window.setInterval(async () => {
-        try {
-          const position = await getCurrentPositionWithFallback({
-            enableHighAccuracy: true,
-            timeout: 10000
-          });
-          const coords = { lat: position.coords.latitude, lng: position.coords.longitude };
-          const now = Date.now();
-          if (sonKonumRef.current) {
-            const mesafe = getDistance(sonKonumRef.current.lat, sonKonumRef.current.lng, coords.lat, coords.lng);
-            if (mesafe < 5 && now - lastLocationUpsertAtRef.current < 25_000) {
-              sonKonumRef.current = coords;
-              setKonum(coords);
-              return;
+      // Konum izleme - watchPosition ile anlık ve yüksek hassasiyetli
+      if (Geolocation) {
+        // Capacitor: interval ile devam
+        const locationInterval = window.setInterval(async () => {
+          try {
+            const position = await getCurrentPositionWithFallback({ enableHighAccuracy: true, timeout: 10000 });
+            const coords = { lat: position.coords.latitude, lng: position.coords.longitude };
+            const now = Date.now();
+            if (sonKonumRef.current) {
+              const mesafe = getDistance(sonKonumRef.current.lat, sonKonumRef.current.lng, coords.lat, coords.lng);
+              if (mesafe < 5 && now - lastLocationUpsertAtRef.current < 25_000) { sonKonumRef.current = coords; setKonum(coords); return; }
             }
-          }
-          sonKonumRef.current = coords;
-          setKonum(coords);
-          await upsertLastSeen(coords);
-        } catch (e) {
-          // Silent fail for periodic updates
-        }
-      }, 5000);
-      watchId = locationInterval;
+            sonKonumRef.current = coords;
+            setKonum(coords);
+            await upsertLastSeen(coords);
+          } catch (e) {}
+        }, 5000);
+        watchId = locationInterval;
+      } else if (navigator.geolocation) {
+        // Browser: watchPosition ile anlık GPS
+        const wid = navigator.geolocation.watchPosition(
+          async (position) => {
+            const coords = { lat: position.coords.latitude, lng: position.coords.longitude };
+            const now = Date.now();
+            if (sonKonumRef.current) {
+              const mesafe = getDistance(sonKonumRef.current.lat, sonKonumRef.current.lng, coords.lat, coords.lng);
+              if (mesafe < 5 && now - lastLocationUpsertAtRef.current < 25_000) { sonKonumRef.current = coords; setKonum(coords); return; }
+            }
+            sonKonumRef.current = coords;
+            setKonum(coords);
+            await upsertLastSeen(coords);
+          },
+          (err) => console.log('watchPosition error:', err),
+          { enableHighAccuracy: true, maximumAge: 0, timeout: 15000 }
+        );
+        watchId = wid;
+      }
 
       // Heartbeat: kullanıcı hareket etmese bile görünür kalması için
       heartbeatTimer = window.setInterval(() => {
@@ -2019,7 +2031,10 @@ function Home() {
     initGeolocation();
 
     return () => {
-      if (watchId !== null) window.clearInterval(watchId);
+      if (watchId !== null) {
+        if (Geolocation) window.clearInterval(watchId);
+        else navigator.geolocation?.clearWatch(watchId);
+      }
       if (heartbeatTimer) window.clearInterval(heartbeatTimer);
       authSub.unsubscribe();
       window.removeEventListener('resize', setVH);

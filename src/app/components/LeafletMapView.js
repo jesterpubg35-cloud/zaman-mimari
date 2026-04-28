@@ -7,29 +7,48 @@ import 'leaflet/dist/leaflet.css';
 function SelfMarker({ lat, lng, color }) {
   const map = useMap();
   const markerRef = useRef(null);
+  const latRef = useRef(lat);
+  const lngRef = useRef(lng);
 
-  const icon = L.divIcon({
-    html: `<div style="width:14px;height:14px;border-radius:50%;background:${color};border:2.5px solid white;box-shadow:0 2px 6px rgba(0,0,0,0.5);"></div>`,
-    className: '',
-    iconSize: [14, 14],
-    iconAnchor: [7, 7],
-  });
-
+  // İlk mount: marker oluştur
   useEffect(() => {
     if (!lat || !lng) return;
+    latRef.current = lat;
+    lngRef.current = lng;
+
+    const icon = L.divIcon({
+      html: `<div style="width:14px;height:14px;border-radius:50%;background:${color};border:2.5px solid white;box-shadow:0 2px 6px rgba(0,0,0,0.5);"></div>`,
+      className: '',
+      iconSize: [14, 14],
+      iconAnchor: [7, 7],
+    });
+
     if (!markerRef.current) {
       markerRef.current = L.marker([lat, lng], {
         icon,
         interactive: false,
         keyboard: false,
-        zIndexOffset: 1000,
+        zIndexOffset: 9999,
+        bubblingMouseEvents: false,
       }).addTo(map);
-    } else {
+    }
+
+    return () => {};
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Konum güncellenince sadece setLatLng - icon rebuild yok, marker DOM'dan çıkmıyor
+  useEffect(() => {
+    if (!lat || !lng) return;
+    latRef.current = lat;
+    lngRef.current = lng;
+    if (markerRef.current) {
       markerRef.current.setLatLng([lat, lng]);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lat, lng]);
 
+  // Unmount
   useEffect(() => {
     return () => {
       if (markerRef.current) { markerRef.current.remove(); markerRef.current = null; }
