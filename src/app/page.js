@@ -258,6 +258,106 @@ const TRANSLATIONS = {
     emailChanged: 'E-posta değiştirildi!',
     codeSentToOld: 'Mevcut e-postanıza kod gönderildi',
     codeSentToNew: 'Yeni e-postanıza kod gönderildi',
+    postalCodePlaceholder: '34000',
+    adminSearchPlaceholder: 'İsim veya email ara...',
+    adminUsers: 'Kullanıcılar', adminTransactions: 'İşlemler',
+    adminBan: 'Banla', adminUnban: 'Banı Kaldır',
+    providerPanel: 'Hizmet Veren Paneli',
+    providerDesc: 'İş yaparak para kazanmak istiyorsan Stripe hesabın ile bağlan.',
+    providerWantWork: 'Çalışmak İstiyorum',
+    providerTotalEarnings: 'Toplam Kazanç',
+    providerStripeAccount: 'Stripe Hesabım',
+    providerStartEarning: 'Para Kazanmaya Başla',
+    providerConnectDesc: 'İş yaparak para kazanmak için Stripe hesabını bağla. Müşteriler ödeme yaptığında para direkt hesabına gider.',
+    providerHowItWorks: 'Nasıl Çalışır?',
+    providerStep1: '1️⃣ Butona bas, Stripe\'a git',
+    providerStep2: '2️⃣ Giriş yap veya hesap oluştur',
+    providerStep3: '3️⃣ İzin ver, geri dön',
+    providerStep4: '4️⃣ İş yap, para kazan! 🎉',
+    providerNoAccount: 'Stripe hesabım yok, önce oluşturmak istiyorum',
+    providerConnecting: '⏳ Yükleniyor...',
+    providerConnectBtn: '⚡ Stripe ile Bağlan',
+    providerConnectError: 'Önce giriş yapmalısın!',
+    providerConnectStart: '🔗 Stripe bağlantısı başlatılıyor...',
+    providerConnectErrMsg: 'Hata: ',
+    providerConnectNetErr: 'Bağlantı hatası: ',
+    providerConnected: 'Stripe Bağlı ✓',
+    providerRefresh: '↻ Yenile',
+    providerCommission: '%10 platform komisyonu uygulanır',
+    providerAvailable: 'Kullanılabilir Bakiye',
+    providerWithdrawable: 'Stripe hesabında çekilebilir',
+    providerPending: 'Bekleyen',
+    providerPendingDesc: 'Onay bekliyor',
+    providerTotalEarn: 'Toplam Kazanç',
+    providerAllTime: 'Tüm zamanlar',
+    providerHowStep1: '1️⃣ Müşteri işi başlattığında para Stripe\'ta dondurulur',
+    providerHowStep2: '2️⃣ İşi tamamla, kanıt fotoğrafı yükle',
+    providerHowStep3: '3️⃣ Müşteri onayladığında %90\'ı hesabına geçer',
+    providerHowStep4: '4️⃣ %10 platform komisyonu kesilir',
+    providerDashboard: 'Stripe Dashboard\'a Git →',
+    providerDisconnect: 'Bağlantıyı Kes',
+    providerDisconnected: 'Stripe bağlantısı kesildi.',
+    providerBalanceErr: 'Bakiye yüklenemedi',
+    historyTransactions: 'İşlemler',
+    historyNoTransactions: 'Henüz işlem bulunmuyor.',
+    historyDeposit: 'Para Yatırma',
+    historyWithdraw: 'Para Çekme',
+    historyCompletedJobs: 'Tamamlanan İşler',
+    historyNoJobs: 'Henüz tamamlanan iş bulunmuyor.',
+    historyJobPrefix: 'İş #',
+    historyNoDetail: 'Detay yok',
+    historyCompleted: 'Tamamlandı',
+    paymentBalance: 'Mevcut Bakiye',
+    paymentDeposit: 'Para Yatır',
+    paymentFeeInfo: 'İşlem ücreti: min 25 veya %5 (üstüne eklenir)',
+    paymentFee: 'İşlem ücreti:',
+    paymentTotal: 'Toplam ödenecek:',
+    paymentToWallet: 'Cüzdanınıza gelecek:',
+    paymentAmount: 'Miktar',
+    paymentByCard: 'Kart ile Öde',
+    paymentCardDetails: 'Kart bilgilerinizi girin:',
+    paymentCardNumber: 'Kart Numarası (4242 4242 4242 4242)',
+    paymentExpiry: 'AA/YY',
+    paymentComplete: 'Ödemeyi Tamamla',
+    paymentSuccess: 'Ödeme başarılı! {net}₺ bakiyenize eklendi (Komisyon: {commission}₺)',
+    paymentHistoryErr: 'Ödeme kaydedildi ancak geçmiş güncellenemedi',
+    transferTitle: 'Para Gönder',
+    transferFeeInfo: 'Transfer ücreti: min 20 veya %4 (üstüne eklenir)',
+    transferFee: 'Transfer ücreti:',
+    transferTotal: 'Toplam ödenecek:',
+    transferToReceiver: 'Alıcıya gelecek:',
+    transferPhone: 'Telefon numarası',
+    transferAmountPlaceholder: 'Gönderilecek miktar',
+    transferSending: 'Gönderiliyor...',
+    transferBtn: 'Para Gönder',
+    transferInsufficient: 'Yetersiz bakiye! (Komisyon dahil: {total}₺)',
+    transferSuccess: 'Para gönderildi! Alıcı {net}₺ aldı (Komisyon: {commission}₺)',
+    transferError: 'Transfer başarısız',
+    transferNetError: 'Transfer hatası',
+    markerLoading: 'Yükleniyor...',
+    markerAvg: '⭐ Ortalama',
+    markerReviews: '💬 Yorum',
+    markerCompleted: '✅ Tamamlanan',
+    markerOffer: 'Teklif Ver',
+    markerViewProfile: 'Profili Gör',
+    markerNoReviews: 'Henüz yorum yok',
+    chatReminder: 'Lütfen aldığınız veya teslim ettiğiniz paketlerin görsellerini hem iş başında hem de iş sonunda görsellerini atmayı unutmayınız.',
+    chatSecurePayment: '💳 Ödemeyi Güvenceye Al',
+    chatSecureHeld: '✓ Ödeme güvencede — iş onaylandığında hizmet verene aktarılır',
+    chatPaymentSafe: 'Para iş onaylanana kadar güvende tutulur',
+    chatTeslimAldim: '📥 Teslim Aldım',
+    chatTeslimEttim: '📤 Teslim Ettim',
+    photoLabelTitle: '📸 Fotoğraf Etiketi',
+    photoLabelDesc: 'Bu fotoğraf için bir etiket seç',
+    photoLabelReceived: '📥 Teslim Aldım',
+    photoLabelDelivered: '📤 Teslim Ettim',
+    photoLabelNone: 'Etiketsiz Gönder',
+    photoLabelCancel: 'İptal',
+    sessionError: 'Oturum yok/uyuşmuyor. Lütfen tekrar giriş yap.',
+    userNotFound: 'Kullanıcı bulunamadı',
+    unknownError: 'Bir hata oluştu: ',
+    goToLocation: 'Konumuma Git',
+    paymentSecured: '✅ Ödeme güvenceye alındı!',
     notifPanelTitle: 'Bildirimler',
     notifMarkRead: 'Tümünü okundu say',
     notifEmpty: 'Henüz bildirim yok',
@@ -422,6 +522,106 @@ const TRANSLATIONS = {
     emailChanged: 'Email changed!',
     codeSentToOld: 'Code sent to current email',
     codeSentToNew: 'Code sent to new email',
+    postalCodePlaceholder: '10001',
+    adminSearchPlaceholder: 'Search by name or email...',
+    adminUsers: 'Users', adminTransactions: 'Transactions',
+    adminBan: 'Ban', adminUnban: 'Unban',
+    providerPanel: 'Service Provider Panel',
+    providerDesc: 'Connect your Stripe account to start earning money.',
+    providerWantWork: 'I Want to Work',
+    providerTotalEarnings: 'Total Earnings',
+    providerStripeAccount: 'My Stripe Account',
+    providerStartEarning: 'Start Earning',
+    providerConnectDesc: 'Connect your Stripe account to earn money. Payments go directly to your account when customers pay.',
+    providerHowItWorks: 'How It Works?',
+    providerStep1: '1️⃣ Press the button, go to Stripe',
+    providerStep2: '2️⃣ Login or create an account',
+    providerStep3: '3️⃣ Allow access, return',
+    providerStep4: '4️⃣ Do jobs, earn money! 🎉',
+    providerNoAccount: 'I don\'t have a Stripe account, I want to create one first',
+    providerConnecting: '⏳ Loading...',
+    providerConnectBtn: '⚡ Connect with Stripe',
+    providerConnectError: 'You must be logged in first!',
+    providerConnectStart: '🔗 Starting Stripe connection...',
+    providerConnectErrMsg: 'Error: ',
+    providerConnectNetErr: 'Connection error: ',
+    providerConnected: 'Stripe Connected ✓',
+    providerRefresh: '↻ Refresh',
+    providerCommission: '10% platform commission applies',
+    providerAvailable: 'Available Balance',
+    providerWithdrawable: 'Withdrawable from Stripe',
+    providerPending: 'Pending',
+    providerPendingDesc: 'Awaiting approval',
+    providerTotalEarn: 'Total Earnings',
+    providerAllTime: 'All time',
+    providerHowStep1: '1️⃣ Payment is frozen in Stripe when customer starts a job',
+    providerHowStep2: '2️⃣ Complete the job, upload proof photo',
+    providerHowStep3: '3️⃣ When customer confirms, 90% goes to your account',
+    providerHowStep4: '4️⃣ 10% platform commission is deducted',
+    providerDashboard: 'Go to Stripe Dashboard →',
+    providerDisconnect: 'Disconnect',
+    providerDisconnected: 'Stripe disconnected.',
+    providerBalanceErr: 'Could not load balance',
+    historyTransactions: 'Transactions',
+    historyNoTransactions: 'No transactions yet.',
+    historyDeposit: 'Deposit',
+    historyWithdraw: 'Withdrawal',
+    historyCompletedJobs: 'Completed Jobs',
+    historyNoJobs: 'No completed jobs yet.',
+    historyJobPrefix: 'Job #',
+    historyNoDetail: 'No details',
+    historyCompleted: 'Completed',
+    paymentBalance: 'Current Balance',
+    paymentDeposit: 'Deposit',
+    paymentFeeInfo: 'Transaction fee: min 25 or 5% (added on top)',
+    paymentFee: 'Transaction fee:',
+    paymentTotal: 'Total to pay:',
+    paymentToWallet: 'To your wallet:',
+    paymentAmount: 'Amount',
+    paymentByCard: 'Pay by Card',
+    paymentCardDetails: 'Enter your card details:',
+    paymentCardNumber: 'Card Number (4242 4242 4242 4242)',
+    paymentExpiry: 'MM/YY',
+    paymentComplete: 'Complete Payment',
+    paymentSuccess: 'Payment successful! {net}₺ added to your balance (Commission: {commission}₺)',
+    paymentHistoryErr: 'Payment recorded but history could not be updated',
+    transferTitle: 'Send Money',
+    transferFeeInfo: 'Transfer fee: min 20 or 4% (added on top)',
+    transferFee: 'Transfer fee:',
+    transferTotal: 'Total to pay:',
+    transferToReceiver: 'Recipient receives:',
+    transferPhone: 'Phone number',
+    transferAmountPlaceholder: 'Amount to send',
+    transferSending: 'Sending...',
+    transferBtn: 'Send Money',
+    transferInsufficient: 'Insufficient balance! (Including commission: {total}₺)',
+    transferSuccess: 'Money sent! Recipient received {net}₺ (Commission: {commission}₺)',
+    transferError: 'Transfer failed',
+    transferNetError: 'Transfer error',
+    markerLoading: 'Loading...',
+    markerAvg: '⭐ Average',
+    markerReviews: '💬 Reviews',
+    markerCompleted: '✅ Completed',
+    markerOffer: 'Make Offer',
+    markerViewProfile: 'View Profile',
+    markerNoReviews: 'No reviews yet',
+    chatReminder: 'Please remember to send photos of packages you receive or deliver both at the start and end of the job.',
+    chatSecurePayment: '💳 Secure Payment',
+    chatSecureHeld: '✓ Payment is secured — will be released to provider upon job confirmation',
+    chatPaymentSafe: 'Money is held securely until job is confirmed',
+    chatTeslimAldim: '📥 Picked Up',
+    chatTeslimEttim: '📤 Delivered',
+    photoLabelTitle: '📸 Photo Label',
+    photoLabelDesc: 'Select a label for this photo',
+    photoLabelReceived: '📥 Picked Up',
+    photoLabelDelivered: '📤 Delivered',
+    photoLabelNone: 'Send Without Label',
+    photoLabelCancel: 'Cancel',
+    sessionError: 'No session / mismatch. Please log in again.',
+    userNotFound: 'User not found',
+    unknownError: 'An error occurred: ',
+    goToLocation: 'Go to My Location',
+    paymentSecured: '✅ Payment secured!',
     notifPanelTitle: 'Notifications',
     notifMarkRead: 'Mark all as read',
     notifEmpty: 'No notifications yet',
@@ -4332,9 +4532,9 @@ function Home() {
               
               {/* Hizmet Veren (Provider) Bölümü */}
               <div className={`rounded-3xl p-6 space-y-4 border ${isDarkMode ? 'bg-white/5 border-white/10' : 'bg-white border-black/10'}`}>
-                <h3 className={`font-bold text-sm uppercase ${isDarkMode ? 'text-white' : 'text-black'}`}>Hizmet Veren Paneli</h3>
+                <h3 className={`font-bold text-sm uppercase ${isDarkMode ? 'text-white' : 'text-black'}`}>{t.providerPanel}</h3>
                 <p className={`text-xs opacity-70 ${isDarkMode ? 'text-white' : 'text-black'}`}>
-                  İş yaparak para kazanmak istiyorsan Stripe hesabın ile bağlan.
+                  {t.providerDesc}
                 </p>
                 
                 {!isProvider ? (
@@ -4342,12 +4542,12 @@ function Home() {
                     onClick={() => setAktifPage('provider')}
                     className="w-full py-4 bg-gradient-to-r from-[#2ECC71] to-[#27ae60] text-black rounded-2xl font-black text-sm hover:scale-[1.02] transition-transform"
                   >
-                    💼 Çalışmak İstiyorum
+                    💼 {t.providerWantWork}
                   </button>
                 ) : (
                   <div className="space-y-3">
                     <div className={`p-4 rounded-2xl ${isDarkMode ? 'bg-white/10' : 'bg-gray-100'}`}>
-                      <p className={`text-xs opacity-60 ${isDarkMode ? 'text-white' : 'text-black'}`}>Toplam Kazanç</p>
+                      <p className={`text-xs opacity-60 ${isDarkMode ? 'text-white' : 'text-black'}`}>{t.providerTotalEarnings}</p>
                       <p className={`text-2xl font-black ${isDarkMode ? 'text-white' : 'text-black'}`}>{providerEarnings}₺</p>
                     </div>
                     <div className="flex gap-3">
@@ -4355,7 +4555,7 @@ function Home() {
                         onClick={() => setAktifPage('provider')}
                         className="flex-1 py-3 bg-[#2ECC71] text-black rounded-2xl font-bold text-sm"
                       >
-                        Stripe Hesabım
+                        {t.providerStripeAccount}
                       </button>
                     </div>
                   </div>
@@ -4379,9 +4579,9 @@ function Home() {
                 <div className="space-y-6">
                   {/* İşlemler Bölümü */}
                   <div>
-                    <h3 className={`font-bold text-sm uppercase mb-4 ${isDarkMode ? 'text-white' : 'text-black'}`}>İşlemler</h3>
+                    <h3 className={`font-bold text-sm uppercase mb-4 ${isDarkMode ? 'text-white' : 'text-black'}`}>{t.historyTransactions}</h3>
                     {userHistory.transactions.length === 0 ? (
-                      <p className={`text-sm opacity-60 ${isDarkMode ? 'text-white' : 'text-black'}`}>Henüz işlem bulunmuyor.</p>
+                      <p className={`text-sm opacity-60 ${isDarkMode ? 'text-white' : 'text-black'}`}>{t.historyNoTransactions}</p>
                     ) : (
                       <div className="space-y-3">
                         {userHistory.transactions.map((transaction, idx) => (
@@ -4393,7 +4593,7 @@ function Home() {
                                 </div>
                                 <div>
                                   <p className={`font-bold text-sm ${isDarkMode ? 'text-white' : 'text-black'}`}>
-                                    {transaction.type === 'deposit' ? 'Para Yatırma' : 'Para Çekme'}
+                                    {transaction.type === 'deposit' ? t.historyDeposit : t.historyWithdraw}
                                   </p>
                                   <p className="text-[10px] opacity-60">{new Date(transaction.created_at).toLocaleDateString('tr-TR')}</p>
                                 </div>
@@ -4411,20 +4611,20 @@ function Home() {
 
                   {/* Tamamlanan İşler Bölümü */}
                   <div>
-                    <h3 className={`font-bold text-sm uppercase mb-4 ${isDarkMode ? 'text-white' : 'text-black'}`}>Tamamlanan İşler</h3>
+                    <h3 className={`font-bold text-sm uppercase mb-4 ${isDarkMode ? 'text-white' : 'text-black'}`}>{t.historyCompletedJobs}</h3>
                     {userHistory.completedJobs.length === 0 ? (
-                      <p className={`text-sm opacity-60 ${isDarkMode ? 'text-white' : 'text-black'}`}>Henüz tamamlanan iş bulunmuyor.</p>
+                      <p className={`text-sm opacity-60 ${isDarkMode ? 'text-white' : 'text-black'}`}>{t.historyNoJobs}</p>
                     ) : (
                       <div className="space-y-3">
                         {userHistory.completedJobs.map((job, idx) => (
                           <div key={idx} className={`rounded-2xl p-4 border ${isDarkMode ? 'bg-white/5 border-white/10' : 'bg-gray-100 border-black/10'}`}>
                             <div className="flex items-center justify-between mb-2">
-                              <p className={`font-bold text-sm ${isDarkMode ? 'text-white' : 'text-black'}`}>İş #{job.id?.slice(0, 8)}</p>
+                              <p className={`font-bold text-sm ${isDarkMode ? 'text-white' : 'text-black'}`}>{t.historyJobPrefix}{job.id?.slice(0, 8)}</p>
                               <p className="text-[10px] opacity-60">{new Date(job.updated_at).toLocaleDateString('tr-TR')}</p>
                             </div>
-                            <p className={`text-xs mb-2 opacity-70 ${isDarkMode ? 'text-white' : 'text-black'}`}>{job.details || job.description || 'Detay yok'}</p>
+                            <p className={`text-xs mb-2 opacity-70 ${isDarkMode ? 'text-white' : 'text-black'}`}>{job.details || job.description || t.historyNoDetail}</p>
                             <div className="flex items-center justify-between">
-                              <span className={`text-[10px] px-2 py-1 rounded-full bg-[#2ECC71]/20 text-[#2ECC71]`}>Tamamlandı</span>
+                              <span className={`text-[10px] px-2 py-1 rounded-full bg-[#2ECC71]/20 text-[#2ECC71]`}>{t.historyCompleted}</span>
                               <p className={`font-bold text-sm ${isDarkMode ? 'text-white' : 'text-black'}`}>{job.price || 0}₺</p>
                             </div>
                           </div>
@@ -4446,26 +4646,26 @@ function Home() {
             <div className="flex-1 overflow-y-auto px-6 pb-10">
               {/* Bakiye Kartı */}
               <div className={`rounded-3xl p-6 mb-6 border ${isDarkMode ? 'bg-white/5 border-white/10' : 'bg-zinc-100 border-black/10'}`}>
-                <p className={`text-sm opacity-60 mb-1 ${isDarkMode ? 'text-white' : 'text-black'}`}>Mevcut Bakiye</p>
+                <p className={`text-sm opacity-60 mb-1 ${isDarkMode ? 'text-white' : 'text-black'}`}>{t.paymentBalance}</p>
                 <p className={`text-4xl font-black ${isDarkMode ? 'text-white' : 'text-black'}`}>{walletBalance}</p>
               </div>
 
               {/* Para Yatırma */}
               <div className={`rounded-3xl p-6 mb-6 border ${isDarkMode ? 'bg-white/5 border-white/10' : 'bg-zinc-100 border-black/10'}`}>
-                <h3 className={`font-bold text-sm uppercase mb-4 ${isDarkMode ? 'text-white' : 'text-black'}`}>Para Yatır</h3>
+                <h3 className={`font-bold text-sm uppercase mb-4 ${isDarkMode ? 'text-white' : 'text-black'}`}>{t.paymentDeposit}</h3>
                 
                 {/* Komisyon bilgisi */}
                 <div className={`mb-4 p-3 rounded-lg text-xs ${isDarkMode ? 'bg-white/5 text-white/70' : 'bg-zinc-200 text-black/70'}`}>
-                  <p>İşlem ücreti: min 25 veya %5 (üstüne eklenir)</p>
+                  <p>{t.paymentFeeInfo}</p>
                   {paymentAmount > 0 && (() => {
                     const amt = parseFloat(paymentAmount) || 0;
                     const commission = Math.max(25, amt * 0.05);
                     const total = amt + commission;
                     return (
                       <div className="mt-2 space-y-1">
-                        <p>İşlem ücreti: <span className="text-yellow-400">{commission.toFixed(2)}</span></p>
-                        <p>Toplam ödenecek: <span className="text-white font-bold">{total.toFixed(2)}</span></p>
-                        <p>Cüzdanınıza gelecek: <span className="text-[#2ECC71] font-bold">{amt.toFixed(2)}</span></p>
+                        <p>{t.paymentFee} <span className="text-yellow-400">{commission.toFixed(2)}</span></p>
+                        <p>{t.paymentTotal} <span className="text-white font-bold">{total.toFixed(2)}</span></p>
+                        <p>{t.paymentToWallet} <span className="text-[#2ECC71] font-bold">{amt.toFixed(2)}</span></p>
                       </div>
                     );
                   })()}
@@ -4475,7 +4675,7 @@ function Home() {
                   type="number"
                   value={paymentAmount}
                   onChange={(e) => setPaymentAmount(e.target.value)}
-                  placeholder="Miktar"
+                  placeholder={t.paymentAmount}
                   className={`w-full p-4 rounded-xl text-lg mb-4 outline-none border ${isDarkMode ? 'bg-white/10 text-white placeholder-gray-500 border-white/10' : 'bg-zinc-200 text-black border-black/20'}`}
                 />
                 <button
@@ -4486,22 +4686,22 @@ function Home() {
                   disabled={!paymentAmount || parseFloat(paymentAmount) <= 0}
                   className="w-full py-4 bg-[#2ECC71] text-black rounded-2xl font-bold text-sm disabled:opacity-50 active:scale-95 transition-transform"
                 >
-                  Kart ile Öde
+                  {t.paymentByCard}
                 </button>
 
                 {clientSecret && (
                   <div className="mt-4 p-4 rounded-xl border border-[#2ECC71]/30 bg-[#2ECC71]/5 space-y-3">
-                    <p className={`text-xs ${isDarkMode ? 'text-white' : 'text-black'}`}>Kart bilgilerinizi girin:</p>
+                    <p className={`text-xs ${isDarkMode ? 'text-white' : 'text-black'}`}>{t.paymentCardDetails}</p>
                     <input
                       type="text"
-                      placeholder="Kart Numarası (4242 4242 4242 4242)"
+                      placeholder={t.paymentCardNumber}
                       maxLength={19}
                       className={`w-full p-3 rounded-lg border text-sm outline-none ${isDarkMode ? 'bg-white/10 border-white/20 text-white placeholder-gray-500' : 'bg-white border-black/20 text-black'}`}
                     />
                     <div className="flex gap-3">
                       <input
                         type="text"
-                        placeholder="AA/YY"
+                        placeholder={t.paymentExpiry}
                         maxLength={5}
                         className={`flex-1 p-3 rounded-lg border text-sm outline-none ${isDarkMode ? 'bg-white/10 border-white/20 text-white placeholder-gray-500' : 'bg-white border-black/20 text-black'}`}
                       />
@@ -4518,9 +4718,9 @@ function Home() {
                       const total = amt + commission;
                       return (
                         <div className={`text-xs space-y-1 ${isDarkMode ? 'text-white/70' : 'text-black/70'}`}>
-                          <p>İşlem ücreti: <span className="text-yellow-400">{commission.toFixed(2)}</span></p>
-                          <p>Toplam ödenecek: <span className={`font-bold ${isDarkMode ? 'text-white' : 'text-black'}`}>{total.toFixed(2)}</span></p>
-                          <p>Cüzdanınıza gelecek: <span className="text-[#2ECC71] font-bold">{amt.toFixed(2)}</span></p>
+                          <p>{t.paymentFee} <span className="text-yellow-400">{commission.toFixed(2)}</span></p>
+                          <p>{t.paymentTotal} <span className={`font-bold ${isDarkMode ? 'text-white' : 'text-black'}`}>{total.toFixed(2)}</span></p>
+                          <p>{t.paymentToWallet} <span className="text-[#2ECC71] font-bold">{amt.toFixed(2)}</span></p>
                         </div>
                       );
                     })()}
@@ -4558,9 +4758,9 @@ function Home() {
                             }, ...prev.transactions]
                           }));
                           
-                          showToast(`Ödeme başarılı! ${net.toFixed(2)}₺ bakiyenize eklendi (Komisyon: ${commission.toFixed(2)}₺)`);
+                          showToast(t.paymentSuccess.replace('{net}', net.toFixed(2)).replace('{commission}', commission.toFixed(2)));
                         } catch (e) {
-                          showToast('Ödeme kaydedildi ancak geçmiş güncellenemedi');
+                          showToast(t.paymentHistoryErr);
                         }
                         
                         setClientSecret('');
@@ -4569,7 +4769,7 @@ function Home() {
                       }}
                       className="w-full py-3 bg-[#2ECC71] text-black rounded-xl font-bold text-sm active:scale-95 transition-transform"
                     >
-                      Ödemeyi Tamamla
+                      {t.paymentComplete}
                     </button>
                   </div>
                 )}
@@ -4577,20 +4777,20 @@ function Home() {
 
               {/* Para Gönder */}
               <div className={`rounded-3xl p-6 border ${isDarkMode ? 'bg-white/5 border-white/10' : 'bg-zinc-100 border-black/10'}`}>
-                <h3 className={`font-bold text-sm uppercase mb-4 ${isDarkMode ? 'text-white' : 'text-black'}`}>Para Gönder</h3>
+                <h3 className={`font-bold text-sm uppercase mb-4 ${isDarkMode ? 'text-white' : 'text-black'}`}>{t.transferTitle}</h3>
 
                 {/* Komisyon bilgisi */}
                 <div className={`mb-4 p-3 rounded-lg text-xs ${isDarkMode ? 'bg-white/5 text-white/70' : 'bg-zinc-200 text-black/70'}`}>
-                  <p>Transfer ücreti: min 20 veya %4 (üstüne eklenir)</p>
+                  <p>{t.transferFeeInfo}</p>
                   {transferAmount > 0 && (() => {
                     const amt = parseFloat(transferAmount) || 0;
                     const commission = Math.max(20, amt * 0.04);
                     const total = amt + commission;
                     return (
                       <div className="mt-2 space-y-1">
-                        <p>Transfer ücreti: <span className="text-yellow-400">{commission.toFixed(2)}</span></p>
-                        <p>Toplam ödenecek: <span className="text-white font-bold">{total.toFixed(2)}</span></p>
-                        <p>Alıcıya gelecek: <span className="text-[#2ECC71] font-bold">{amt.toFixed(2)}</span></p>
+                        <p>{t.transferFee} <span className="text-yellow-400">{commission.toFixed(2)}</span></p>
+                        <p>{t.transferTotal} <span className="text-white font-bold">{total.toFixed(2)}</span></p>
+                        <p>{t.transferToReceiver} <span className="text-[#2ECC71] font-bold">{amt.toFixed(2)}</span></p>
                       </div>
                     );
                   })()}
@@ -4600,14 +4800,14 @@ function Home() {
                   type="tel"
                   value={transferPhone}
                   onChange={(e) => setTransferPhone(e.target.value)}
-                  placeholder="Telefon numarası"
+                  placeholder={t.transferPhone}
                   className={`w-full p-4 rounded-xl text-sm mb-3 outline-none border ${isDarkMode ? 'bg-white/10 text-white placeholder-gray-500 border-white/10' : 'bg-white text-black border-black/20'}`}
                 />
                 <input
                   type="number"
                   value={transferAmount}
                   onChange={(e) => setTransferAmount(e.target.value)}
-                  placeholder={`Gönderilecek miktar (${transferCurrency})`}
+                  placeholder={`${t.transferAmountPlaceholder} (${transferCurrency})`}
                   className={`w-full p-4 rounded-xl text-sm mb-4 outline-none border ${isDarkMode ? 'bg-white/10 text-white placeholder-gray-500 border-white/10' : 'bg-white text-black border-black/20'}`}
                 />
                 <button
@@ -4617,7 +4817,7 @@ function Home() {
                     const commission = Math.max(20, amt * 0.04);
                     const totalNeeded = amt + commission;
                     if (totalNeeded > walletBalance) {
-                      showToast('Yetersiz bakiye! (Komisyon dahil: ' + totalNeeded.toFixed(2) + '₺)');
+                      showToast(t.transferInsufficient.replace('{total}', totalNeeded.toFixed(2)));
                       return;
                     }
                     setTransferLoading(true);
@@ -4650,15 +4850,15 @@ function Home() {
                           }, ...prev.transactions]
                         }));
                         
-                        showToast(`Para gönderildi! Alıcı ${receiverGets.toFixed(2)}₺ aldı (Komisyon: ${commission.toFixed(2)}₺)`);
+                        showToast(t.transferSuccess.replace('{net}', receiverGets.toFixed(2)).replace('{commission}', commission.toFixed(2)));
                         setWalletBalance(prev => prev - totalNeeded);
                         setTransferPhone('');
                         setTransferAmount('');
                       } else {
-                        showToast(data.error || 'Transfer başarısız');
+                        showToast(data.error || t.transferError);
                       }
                     } catch (e) {
-                      showToast('Transfer hatası');
+                      showToast(t.transferNetError);
                     } finally {
                       setTransferLoading(false);
                     }
@@ -4666,7 +4866,7 @@ function Home() {
                   disabled={transferLoading || !transferPhone || !transferAmount}
                   className="w-full py-4 bg-[#2ECC71] text-black rounded-2xl font-bold text-sm disabled:opacity-50 active:scale-95 transition-transform"
                 >
-                  {transferLoading ? 'Gönderiliyor...' : 'Para Gönder'}
+                  {transferLoading ? t.transferSending : t.transferBtn}
                 </button>
               </div>
             </div>
@@ -4676,7 +4876,7 @@ function Home() {
           <div className={`fixed inset-0 z-[6000] flex flex-col ${isDarkMode ? 'bg-[#0F0F0F]' : 'bg-white'}`}>
             <div className="flex items-center gap-4 p-6 pt-12">
               <button onClick={() => setAktifPage('account')} className={`text-2xl ${isDarkMode ? 'text-white' : 'text-black'}`}>←</button>
-              <h2 className={`font-black text-xl uppercase ${isDarkMode ? 'text-white' : 'text-black'}`}>Hizmet Veren Paneli</h2>
+              <h2 className={`font-black text-xl uppercase ${isDarkMode ? 'text-white' : 'text-black'}`}>{t.providerPanel}</h2>
             </div>
             <div className="flex-1 overflow-y-auto px-6 pb-10">
               {!stripeConnected ? (
@@ -4687,11 +4887,10 @@ function Home() {
                       <div className="w-16 h-16 bg-[#635BFF]/20 rounded-full flex items-center justify-center mx-auto mb-3">
                         <span className="text-3xl">💳</span>
                       </div>
-                      <h3 className={`font-bold text-lg ${isDarkMode ? 'text-white' : 'text-black'}`}>Para Kazanmaya Başla</h3>
+                      <h3 className={`font-bold text-lg ${isDarkMode ? 'text-white' : 'text-black'}`}>{t.providerStartEarning}</h3>
                     </div>
                     <p className={`text-sm opacity-70 text-center mb-4 ${isDarkMode ? 'text-white' : 'text-black'}`}>
-                      İş yaparak para kazanmak için Stripe hesabını bağla. 
-                      Müşteriler ödeme yaptığında para direkt hesabına gider.
+                      {t.providerConnectDesc}
                     </p>
                   </div>
 
@@ -4699,12 +4898,12 @@ function Home() {
                   <button
                     onClick={async () => {
                       if (!user?.id) {
-                        showToast('Önce giriş yapmalısın!');
+                        showToast(t.providerConnectError);
                         return;
                       }
                       
                       setProviderLoading(true);
-                      showToast('🔗 Stripe bağlantısı başlatılıyor...');
+                      showToast(t.providerConnectStart);
                       
                       try {
                         const { data: { session: sessStr } } = await supabase.auth.getSession();
@@ -4720,10 +4919,10 @@ function Home() {
                           // Stripe OAuth sayfasına yönlendir
                           window.location.href = data.url;
                         } else {
-                          showToast('Hata: ' + (data.error || 'Bilinmeyen hata'));
+                          showToast(t.providerConnectErrMsg + (data.error || t.unknownError));
                         }
                       } catch (e) {
-                        showToast('Bağlantı hatası: ' + e.message);
+                        showToast(t.providerConnectNetErr + e.message);
                       } finally {
                         setProviderLoading(false);
                       }
@@ -4732,18 +4931,18 @@ function Home() {
                     className="w-full py-5 bg-[#635BFF] text-white rounded-2xl font-black text-lg hover:scale-[1.02] transition-transform shadow-lg shadow-[#635BFF]/30 disabled:opacity-50"
                   >
                     <span className="flex items-center justify-center gap-2">
-                      {providerLoading ? '⏳ Yükleniyor...' : <><span>⚡</span> Stripe ile Bağlan</>}
+                      {providerLoading ? t.providerConnecting : <><span>⚡</span> {t.providerConnectBtn.replace('⚡ ', '')}</>}
                     </span>
                   </button>
 
                   {/* Nasıl Çalışır - Sadeleştirilmiş */}
                   <div className={`rounded-2xl p-4 ${isDarkMode ? 'bg-white/5' : 'bg-gray-50'}`}>
-                    <p className={`text-xs opacity-60 mb-2 ${isDarkMode ? 'text-white' : 'text-black'}`}>Nasıl Çalışır?</p>
+                    <p className={`text-xs opacity-60 mb-2 ${isDarkMode ? 'text-white' : 'text-black'}`}>{t.providerHowItWorks}</p>
                     <div className="space-y-2 text-xs opacity-70">
-                      <p>1️⃣ Butona bas, Stripe'a git</p>
-                      <p>2️⃣ Giriş yap veya hesap oluştur</p>
-                      <p>3️⃣ İzin ver, geri dön</p>
-                      <p>4️⃣ İş yap, para kazan! 🎉</p>
+                      <p>{t.providerStep1}</p>
+                      <p>{t.providerStep2}</p>
+                      <p>{t.providerStep3}</p>
+                      <p>{t.providerStep4}</p>
                     </div>
                   </div>
 
@@ -4753,7 +4952,7 @@ function Home() {
                       onClick={() => window.open('https://stripe.com', '_blank')}
                       className={`text-xs underline opacity-50 ${isDarkMode ? 'text-white' : 'text-black'}`}
                     >
-                      Stripe hesabım yok, önce oluşturmak istiyorum
+                      {t.providerNoAccount}
                     </button>
                   </div>
                 </div>
@@ -4764,7 +4963,7 @@ function Home() {
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-3">
                         <div className="w-3 h-3 bg-[#2ECC71] rounded-full animate-pulse"></div>
-                        <p className={`font-bold ${isDarkMode ? 'text-white' : 'text-black'}`}>Stripe Bağlı ✓</p>
+                        <p className={`font-bold ${isDarkMode ? 'text-white' : 'text-black'}`}>{t.providerConnected}</p>
                       </div>
                       <button
                         onClick={async () => {
@@ -4777,56 +4976,56 @@ function Home() {
                             const data = await res.json();
                             if (data && !data.error) setProviderBalance(data);
                           } catch (e) {
-                            showToast('Bakiye yüklenemedi');
+                            showToast(t.providerBalanceErr);
                           } finally {
                             setBalanceLoading(false);
                           }
                         }}
                         className="text-xs text-[#635BFF] font-bold"
                       >
-                        {balanceLoading ? '⏳' : '↻ Yenile'}
+                        {balanceLoading ? '⏳' : t.providerRefresh}
                       </button>
                     </div>
                     <p className={`text-xs opacity-50 ${isDarkMode ? 'text-white' : 'text-black'}`}>
-                      %10 platform komisyonu uygulanır
+                      {t.providerCommission}
                     </p>
                   </div>
 
                   {/* Bakiye Kartları */}
                   <div className="grid grid-cols-1 gap-3">
                     <div className={`rounded-2xl p-5 border ${isDarkMode ? 'bg-[#2ECC71]/10 border-[#2ECC71]/20' : 'bg-[#2ECC71]/10 border-[#2ECC71]/30'}`}>
-                      <p className="text-xs font-bold text-[#2ECC71] uppercase mb-1">Kullanılabilir Bakiye</p>
+                      <p className="text-xs font-bold text-[#2ECC71] uppercase mb-1">{t.providerAvailable}</p>
                       <p className={`text-3xl font-black ${isDarkMode ? 'text-white' : 'text-black'}`}>
                         {balanceLoading ? '...' : `₺${providerBalance.available.toFixed(2)}`}
                       </p>
-                      <p className="text-[10px] opacity-50 mt-1">Stripe hesabında çekilebilir</p>
+                      <p className="text-[10px] opacity-50 mt-1">{t.providerWithdrawable}</p>
                     </div>
                     <div className="grid grid-cols-2 gap-3">
                       <div className={`rounded-2xl p-4 border ${isDarkMode ? 'bg-white/5 border-white/10' : 'bg-gray-100 border-black/10'}`}>
-                        <p className="text-[10px] font-bold opacity-60 uppercase mb-1">Bekleyen</p>
+                        <p className="text-[10px] font-bold opacity-60 uppercase mb-1">{t.providerPending}</p>
                         <p className={`text-xl font-black ${isDarkMode ? 'text-white' : 'text-black'}`}>
                           {balanceLoading ? '...' : `₺${providerBalance.pending.toFixed(2)}`}
                         </p>
-                        <p className="text-[9px] opacity-40 mt-1">Onay bekliyor</p>
+                        <p className="text-[9px] opacity-40 mt-1">{t.providerPendingDesc}</p>
                       </div>
                       <div className={`rounded-2xl p-4 border ${isDarkMode ? 'bg-white/5 border-white/10' : 'bg-gray-100 border-black/10'}`}>
-                        <p className="text-[10px] font-bold opacity-60 uppercase mb-1">Toplam Kazanç</p>
+                        <p className="text-[10px] font-bold opacity-60 uppercase mb-1">{t.providerTotalEarn}</p>
                         <p className={`text-xl font-black ${isDarkMode ? 'text-white' : 'text-black'}`}>
                           {balanceLoading ? '...' : `₺${providerBalance.total.toFixed(2)}`}
                         </p>
-                        <p className="text-[9px] opacity-40 mt-1">Tüm zamanlar</p>
+                        <p className="text-[9px] opacity-40 mt-1">{t.providerAllTime}</p>
                       </div>
                     </div>
                   </div>
 
                   {/* Komisyon Bilgisi */}
                   <div className={`rounded-2xl p-4 ${isDarkMode ? 'bg-white/5' : 'bg-gray-50'}`}>
-                    <p className={`text-xs font-bold mb-2 ${isDarkMode ? 'text-white' : 'text-black'}`}>Nasıl Çalışır?</p>
+                    <p className={`text-xs font-bold mb-2 ${isDarkMode ? 'text-white' : 'text-black'}`}>{t.providerHowItWorks}</p>
                     <div className="space-y-1.5 text-[11px] opacity-60">
-                      <p>1️⃣ Müşteri işi başlattığında para Stripe'ta dondurulur</p>
-                      <p>2️⃣ İşi tamamla, kanıt fotoğrafı yükle</p>
-                      <p>3️⃣ Müşteri onayladığında %90'ı hesabına geçer</p>
-                      <p>4️⃣ %10 platform komisyonu kesilir</p>
+                      <p>{t.providerHowStep1}</p>
+                      <p>{t.providerHowStep2}</p>
+                      <p>{t.providerHowStep3}</p>
+                      <p>{t.providerHowStep4}</p>
                     </div>
                   </div>
 
@@ -4835,7 +5034,7 @@ function Home() {
                     onClick={() => window.open('https://dashboard.stripe.com', '_blank')}
                     className="w-full py-4 bg-[#635BFF] text-white rounded-2xl font-bold text-sm hover:scale-[1.02] transition-transform"
                   >
-                    Stripe Dashboard'a Git →
+                    {t.providerDashboard}
                   </button>
 
                   {/* Bağlantıyı Kes */}
@@ -4843,11 +5042,11 @@ function Home() {
                     onClick={() => {
                       setStripeConnected(false);
                       setIsProvider(false);
-                      showToast('Stripe bağlantısı kesildi.');
+                      showToast(t.providerDisconnected);
                     }}
                     className="w-full py-3 bg-red-500/10 text-red-500 rounded-2xl font-bold text-sm"
                   >
-                    Bağlantıyı Kes
+                    {t.providerDisconnect}
                   </button>
                 </div>
               )}
@@ -4883,7 +5082,7 @@ function Home() {
                 const uRoles = u.roles || [u.user_role];
                 const color = getRoleColor(uRoles);
                 const glow = getRoleGlow(uRoles);
-                const roleLabels = { kurye: 'Kurye', emanetci: 'Emanetçi', siraci: 'Sıra Bekle', hepsi: 'Hepsi', musteri: 'Müşteri' };
+                const roleLabels = { kurye: t.courier, emanetci: t.emanci, siraci: t.waiter, hepsi: t.all, musteri: t.customer };
                 const primaryRole = getPrimaryRole(u);
 
                 return (
@@ -4899,7 +5098,7 @@ function Home() {
                           {roleLabels[primaryRole] || primaryRole}
                         </span>
                       </div>
-                      {markerSheetLoading && <div className="text-[#2ECC71] text-xs animate-pulse">Yükleniyor...</div>}
+                      {markerSheetLoading && <div className="text-[#2ECC71] text-xs animate-pulse">{t.markerLoading}</div>}
                     </div>
 
                     {/* İstatistikler */}
@@ -4909,15 +5108,15 @@ function Home() {
                           <p className="text-xl font-black" style={{ color }}>
                             {stats.avgRating > 0 ? stats.avgRating.toFixed(1) : '—'}
                           </p>
-                          <p className={`text-[10px] opacity-50 ${isDarkMode ? 'text-white' : 'text-black'}`}>⭐ Ortalama</p>
+                          <p className={`text-[10px] opacity-50 ${isDarkMode ? 'text-white' : 'text-black'}`}>{t.markerAvg}</p>
                         </div>
                         <div className={`rounded-2xl p-3 text-center ${isDarkMode ? 'bg-white/5' : 'bg-gray-100'}`}>
                           <p className="text-xl font-black" style={{ color }}>{stats.reviews.length}</p>
-                          <p className={`text-[10px] opacity-50 ${isDarkMode ? 'text-white' : 'text-black'}`}>💬 Yorum</p>
+                          <p className={`text-[10px] opacity-50 ${isDarkMode ? 'text-white' : 'text-black'}`}>{t.markerReviews}</p>
                         </div>
                         <div className={`rounded-2xl p-3 text-center ${isDarkMode ? 'bg-white/5' : 'bg-gray-100'}`}>
                           <p className="text-xl font-black" style={{ color }}>{stats.completedCount}</p>
-                          <p className={`text-[10px] opacity-50 ${isDarkMode ? 'text-white' : 'text-black'}`}>✅ Tamamlanan</p>
+                          <p className={`text-[10px] opacity-50 ${isDarkMode ? 'text-white' : 'text-black'}`}>{t.markerCompleted}</p>
                         </div>
                       </div>
                     )}
@@ -4939,7 +5138,7 @@ function Home() {
                       </div>
                     )}
                     {stats && stats.reviews.length === 0 && (
-                      <p className={`text-xs opacity-40 text-center ${isDarkMode ? 'text-white' : 'text-black'}`}>Henüz yorum yok</p>
+                      <p className={`text-xs opacity-40 text-center ${isDarkMode ? 'text-white' : 'text-black'}`}>{t.markerNoReviews}</p>
                     )}
 
                     {/* Butonlar */}
@@ -4949,13 +5148,13 @@ function Home() {
                         className="py-3 rounded-2xl font-black text-sm text-black active:scale-95 transition-transform"
                         style={{ backgroundColor: color, boxShadow: glow }}
                       >
-                        Teklif Ver
+                        {t.markerOffer}
                       </button>
                       <button
                         onClick={async () => { setMarkerSheet(null); await handleProfilAc(u); setShowProfileModal(true); }}
                         className={`py-3 rounded-2xl font-black text-sm active:scale-95 transition-transform border ${isDarkMode ? 'bg-white/5 text-white border-white/10' : 'bg-gray-100 text-black border-black/10'}`}
                       >
-                        Profili Gör
+                        {t.markerViewProfile}
                       </button>
                     </div>
                   </div>
@@ -4977,7 +5176,7 @@ function Home() {
               setShowPaymentModal(false);
               setPaymentDone(true);
               setAktifIs(prev => prev ? { ...prev, payment_status: 'held' } : prev);
-              showToast('✅ Ödeme güvenceye alındı!');
+              showToast(t.paymentSecured);
             }}
           />
         )}
@@ -4985,7 +5184,7 @@ function Home() {
           onClick={konumaGit}
           className={`fixed z-[3100] w-10 h-10 rounded-xl flex items-center justify-center shadow-lg active:scale-95 transition-transform ${isDarkMode ? 'bg-white/10 border border-white/10 backdrop-blur-md' : 'bg-white border border-black/10 shadow'}`}
           style={{ bottom: '260px', right: '16px' }}
-          title="Konumuma Git"
+          title={t.goToLocation}
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2ECC71" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="12" cy="12" r="3"/>
@@ -5049,7 +5248,7 @@ function Home() {
             {/* SABİT HATIRLATMA MESAJI - DARALTILMIŞ */}
             <div className="mx-auto my-2 px-6 py-4 bg-[#2ECC71]/10 border border-[#2ECC71]/30 rounded-3xl backdrop-blur-xl shadow-lg z-[8000] max-w-[85%]">
               <p className="text-[#2ECC71] text-[10px] font-black leading-relaxed text-center uppercase italic tracking-widest">
-                Lütfen aldığınız veya teslim ettiğiniz paketlerin görsellerini hem iş başında hem de iş sonunda görsellerini atmayı unutmayınız.
+                {t.chatReminder}
               </p>
             </div>
 
@@ -5060,16 +5259,16 @@ function Home() {
                   onClick={() => setShowPaymentModal(true)}
                   className="w-full py-3 bg-[#635BFF] text-white rounded-2xl font-black text-sm uppercase tracking-wide flex items-center justify-center gap-2 shadow-lg shadow-[#635BFF]/20"
                 >
-                  💳 Ödemeyi Güvenceye Al · {aktifIs.price}
+                  {t.chatSecurePayment} · {aktifIs.price}
                 </button>
                 <p className="text-[10px] text-center opacity-40 mt-1">
-                  Para iş onaylanana kadar güvende tutulur
+                  {t.chatPaymentSafe}
                 </p>
               </div>
             )}
             {(paymentDone || aktifIs?.payment_status === 'held') && (
               <div className="mx-4 my-2 py-2 px-4 rounded-2xl bg-[#2ECC71]/10 border border-[#2ECC71]/30 text-center">
-                <p className="text-[#2ECC71] text-[11px] font-bold">✓ Ödeme güvencede — iş onaylandığında hizmet verene aktarılır</p>
+                <p className="text-[#2ECC71] text-[11px] font-bold">{t.chatSecureHeld}</p>
               </div>
             )}
 
@@ -5099,7 +5298,7 @@ function Home() {
                            <div className="px-3 py-2 border-t border-white/10 space-y-0.5">
                              {m.metadata.label && (
                                <p className="text-[10px] font-black uppercase tracking-wide">
-                                 {m.metadata.label === 'teslim_aldim' ? '📥 Teslim Aldım' : m.metadata.label === 'teslim_ettim' ? '📤 Teslim Ettim' : ''}
+                                 {m.metadata.label === 'teslim_aldim' ? t.chatTeslimAldim : m.metadata.label === 'teslim_ettim' ? t.chatTeslimEttim : ''}
                                </p>
                              )}
                              {m.metadata.sent_at && (
@@ -5305,7 +5504,7 @@ function Home() {
                               error: 'No Supabase session (auth.uid() is null)',
                             },
                           });
-                          showToast('Oturum yok/uyuşmuyor. Lütfen tekrar giriş yap.');
+                          showToast(t.sessionError);
                           return;
                         }
 
@@ -5354,11 +5553,11 @@ function Home() {
                             error: msg,
                           },
                         });
-                        showToast('Bir hata oluştu: ' + msg);
+                        showToast(t.unknownError + msg);
                       }
                     } else {
                       console.log('User yok!');
-                      showToast('Kullanıcı bulunamadı');
+                      showToast(t.userNotFound);
                     }
                   }}
                   disabled={tempSelectedRoles.length === 0}
@@ -5464,32 +5663,32 @@ function Home() {
         {photoLabelModal && (
           <div className="fixed inset-0 z-[9600] flex items-end justify-center bg-black/70 backdrop-blur-md p-4">
             <div className={`w-full max-w-sm rounded-3xl p-6 mb-4 ${isDarkMode ? 'bg-[#1a1a1a]' : 'bg-white'}`}>
-              <h3 className={`font-black text-lg text-center mb-1 ${isDarkMode ? 'text-white' : 'text-black'}`}>📸 Fotoğraf Etiketi</h3>
-              <p className={`text-center text-xs mb-5 opacity-50 ${isDarkMode ? 'text-white' : 'text-black'}`}>Bu fotoğraf için bir etiket seç</p>
+              <h3 className={`font-black text-lg text-center mb-1 ${isDarkMode ? 'text-white' : 'text-black'}`}>{t.photoLabelTitle}</h3>
+              <p className={`text-center text-xs mb-5 opacity-50 ${isDarkMode ? 'text-white' : 'text-black'}`}>{t.photoLabelDesc}</p>
               <div className="flex flex-col gap-3">
                 <button
                   onClick={() => handleFotoGonderWithLabel('teslim_aldim')}
                   className="py-4 rounded-2xl bg-blue-500/20 border border-blue-500/40 text-blue-400 font-black text-sm"
                 >
-                  📥 Teslim Aldım
+                  {t.photoLabelReceived}
                 </button>
                 <button
                   onClick={() => handleFotoGonderWithLabel('teslim_ettim')}
                   className="py-4 rounded-2xl bg-[#2ECC71]/20 border border-[#2ECC71]/40 text-[#2ECC71] font-black text-sm"
                 >
-                  📤 Teslim Ettim
+                  {t.photoLabelDelivered}
                 </button>
                 <button
                   onClick={() => handleFotoGonderWithLabel(null)}
                   className={`py-3 rounded-2xl font-bold text-sm ${isDarkMode ? 'bg-white/10 text-white/60' : 'bg-gray-100 text-gray-500'}`}
                 >
-                  Etiketsiz Gönder
+                  {t.photoLabelNone}
                 </button>
                 <button
                   onClick={() => { setPhotoLabelModal(false); setPendingPhotoFile(null); }}
                   className="py-2 text-xs text-red-400 font-bold"
                 >
-                  İptal
+                  {t.photoLabelCancel}
                 </button>
               </div>
             </div>
