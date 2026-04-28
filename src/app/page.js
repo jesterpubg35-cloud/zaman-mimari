@@ -27,17 +27,20 @@ const loadLibraries = async () => {
 };
 
 // Supabase client
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://tyjkwnmanagviijwjmqm.supabase.co',
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'sb_publishable_dSFyLYmA5rhQLF0nI2GENQ_P6Xe5UWb',
-  {
-    auth: {
-      autoRefreshToken: true,
-      persistSession: true,
-      detectSessionInUrl: true
-    },
-  }
-);
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+if (!supabaseUrl || !supabaseKey) {
+  console.error('KRİTİK HATA: .env.local dosyasındaki anahtarlar okunamadı. NEXT_PUBLIC_SUPABASE_URL veya NEXT_PUBLIC_SUPABASE_ANON_KEY eksik.');
+}
+
+const supabase = createClient(supabaseUrl, supabaseKey, {
+  auth: {
+    autoRefreshToken: true,
+    persistSession: true,
+    detectSessionInUrl: true
+  },
+});
 
 // Simple Pigeon Maps component (no dynamic import needed)
 const roleOrder = ['kurye', 'emanetci', 'siraci', 'hepsi'];
