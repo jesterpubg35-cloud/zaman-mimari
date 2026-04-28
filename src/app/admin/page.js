@@ -24,7 +24,7 @@ async function sha256hex(str) {
 
 async function apiFetch(adminKey, type, extra = '') {
   const res = await fetch(`/api/admin/users?type=${type}${extra}`, {
-    headers: { 'x-admin-key': adminKey },
+    headers: { 'x-admin-key': adminKey, 'Authorization': `Bearer ${adminKey}` },
     cache: 'no-store',
   });
   return res.json().catch(() => ({}));
@@ -33,7 +33,7 @@ async function apiFetch(adminKey, type, extra = '') {
 async function apiPost(adminKey, body) {
   const res = await fetch('/api/admin/users', {
     method: 'POST',
-    headers: { 'x-admin-key': adminKey, 'Content-Type': 'application/json' },
+    headers: { 'x-admin-key': adminKey, 'Authorization': `Bearer ${adminKey}`, 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
   });
   return res.json().catch(() => ({}));

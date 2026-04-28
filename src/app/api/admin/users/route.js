@@ -10,9 +10,11 @@ const getClients = async (req) => {
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !anonKey || !serviceKey) return { error: 'Server env missing' };
 
-  // Panel şifre hash'i ile doğrulama (token'sız giriş)
+  // Panel şifre hash'i ile doğrulama (header veya Authorization Bearer)
   const adminKey = req.headers.get('x-admin-key') || '';
-  if (adminKey && adminKey === ADMIN_PANEL_KEY) {
+  const bearerToken = (req.headers.get('authorization') || '').replace(/^bearer /i, '').trim();
+  const candidateKey = adminKey || bearerToken;
+  if (candidateKey && candidateKey === ADMIN_PANEL_KEY) {
     const adminClient = createClient(url, serviceKey, { auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false } });
     return { adminClient, uid: 'admin' };
   }
