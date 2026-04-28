@@ -143,14 +143,47 @@ export default function AdminDashboard() {
   const [notifOpen, setNotifOpen] = useState(false);
   const rtNotifId = useRef(0);
 
+  // Aktivite çekmecesi — panele özel
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [drawerLogs, setDrawerLogs] = useState([]);
+  const [drawerLoading, setDrawerLoading] = useState(false);
+
   const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(''), 3000); };
 
   const pushNotif = (icon, title, detail) => {
     const id = ++rtNotifId.current;
     setRtNotifs(prev => [{ id, icon, title, detail, ts: new Date() }, ...prev].slice(0, 50));
-    // 6 sn sonra otomatik kapat (sadece görsel bildirim, liste kalır)
     setTimeout(() => setRtNotifs(prev => prev.map(n => n.id === id ? { ...n, fading: true } : n)), 5500);
   };
+
+  // Sekmeye göre çekmece logları yükle
+  const loadDrawerLogs = useCallback(async () => {
+    if (!adminKey || !drawerOpen) return;
+    setDrawerLoading(true);
+    // Sekmeye göre log tipi belirle
+    const logTypeMap = {
+      dashboard: 'all',
+      users: 'user_actions',
+      disputes: 'reports',
+      reviews: 'reviews',
+      financial: 'financial',
+      notifications: 'announcements',
+      radar: 'security',
+      growth: 'referrals',
+      suggestions: 'suggestions',
+      attempts: 'login_attempts',
+      admin_logs: 'system'
+    };
+    const type = logTypeMap[tab] || 'all';
+    const data = await apiFetch(adminKey, 'logs', `&log_type=${type}`);
+    setDrawerLogs(data.logs || []);
+    setDrawerLoading(false);
+  }, [adminKey, drawerOpen, tab]);
+
+  // Çekmece açılınca/sekme değişince logları yükle
+  useEffect(() => {
+    if (drawerOpen) loadDrawerLogs();
+  }, [drawerOpen, tab, loadDrawerLogs]);
 
   // ── Auth kontrolü ───────────────────────────────────────
   useEffect(() => {
@@ -601,6 +634,19 @@ export default function AdminDashboard() {
               <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
               <span className="text-[11px] text-zinc-500 font-bold">Canlı</span>
             </div>
+            {/* Aktiviteler çekmecesi butonu */}
+            <button
+              onClick={() => setDrawerOpen(o => !o)}
+              className={`relative w-9 h-9 rounded-xl border flex items-center justify-center transition ${drawerOpen ? 'bg-emerald-500/20 border-emerald-500/50' : 'bg-zinc-900 border-zinc-800 hover:border-zinc-600'}`}
+            >
+              <span className="text-base">📋</span>
+              {drawerLogs.length > 0 && (
+                <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-blue-500 text-white text-[9px] font-black flex items-center justify-center">
+                  {drawerLogs.length > 9 ? '9+' : drawerLogs.length}
+                </span>
+              )}
+            </button>
+
             {/* Bildirim zili */}
             <div className="relative">
               <button
@@ -658,6 +704,11 @@ export default function AdminDashboard() {
           <Tab active={tab === 'address_history'} onClick={() => setTab('address_history')}>📍 Adres Geçmişi</Tab>
           <Tab active={tab === 'admin_logs'} onClick={() => setTab('admin_logs')}>📶 Admin Logları</Tab>
         </div>
+
+        {/* Ana içerik + Çekmece layout */}
+        <div className="flex gap-6">
+          {/* Sol: Ana içerik */}
+          <div className={`transition-all duration-300 ${drawerOpen ? 'flex-1 pr-4' : 'w-full'}`}>
 
         {/* ── DASHBOARD ── */}
         {tab === 'dashboard' && (
@@ -1188,7 +1239,68 @@ export default function AdminDashboard() {
           </div>
         )}
 
-      </div>
+          </div>{/* Sol içerik kapanışı */}
+
+          {/* Sağ: Aktivite Çekmecesi */}
+          {drawerOpen && (
+            <div className="w-80 flex-shrink-0 bg-zinc-900/50 border-l border-zinc-800 rounded-2xl p-4 h-fit max-h-[calc(100vh-140px)] overflow-y-auto">
+              <div className="flex items-center justify-between mb-4 pb-3 border-b border-zinc-800">
+                <span className="text-[11px] font-black text-zinc-400 uppercase tracking-widest">
+                  {tab === 'dashboard' && '📊 Genel Aktivite'}
+                  {tab === 'users' && '👤 Kullanıcı İşlemleri'}
+                  {tab === 'disputes' && '⚠️ İtiraz & Raporlar'}
+                  {tab === 'reviews' && '💬 Yorum İşlemleri'}
+                  {tab === 'financial' && '💰 Finansal Hareketler'}
+                  {tab === 'notifications' && '📢 Bildirim Geçmişi'}
+                  {tab === 'radar' && '🛡️ Güvenlik Olayları'}
+                  {tab === 'growth' && '📈 Büyüme & Referanslar'}
+                  {tab === 'suggestions' && '💡 Öneri Geçmişi'}
+                  {tab === 'attempts' && '🔐 Giriş Denemeleri'}
+                  {tab === 'address_history' && '📍 Adres Değişiklikleri'}
+                  {tab === 'admin_logs' && '📶 Sistem Logları'}
+                </span>
+                <button onClick={() => setDrawerOpen(false)} className="text-zinc-500 hover:text-white text-lg">×</button>
+              </div>
+
+              {drawerLoading ? (
+                <div className="py-8 text-center">
+                  <div className="w-5 h-5 border-2 border-zinc-600 border-t-emerald-500 rounded-full animate-spin mx-auto mb-2" />
+                  <span className="text-[11px] text-zinc-500">Yükleniyor...</span>
+                </div>
+              ) : drawerLogs.length === 0 ? (
+                <div className="py-8 text-center text-zinc-600 text-sm">
+                  Bu sekme için henüz kayıt yok.
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {drawerLogs.map((log, idx) => (
+                    <div key={idx} className="bg-zinc-950/50 rounded-xl p-3 border border-zinc-800/50">
+                      <div className="flex items-start justify-between gap-2">
+                        <p className="text-[11px] font-bold text-white">{log.event_type || log.action || 'Olay'}</p>
+                        <span className="text-[9px] text-zinc-600 font-mono flex-shrink-0">
+                          {log.created_at ? new Date(log.created_at).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }) : ''}
+                        </span>
+                      </div>
+                      <p className="text-[10px] text-zinc-500 mt-1 truncate">{log.detail || log.description || log.email || '-'}</p>
+                      {log.ip_address && (
+                        <p className="text-[9px] text-zinc-700 font-mono mt-1">IP: {log.ip_address}</p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <button
+                onClick={loadDrawerLogs}
+                className="w-full mt-4 py-2 bg-zinc-800 hover:bg-zinc-700 rounded-xl text-[11px] font-bold text-zinc-400 transition"
+              >
+                Yenile
+              </button>
+            </div>
+          )}
+        </div>{/* Ana wrapper kapanışı */}
+
+      </div>{/* max-w-7xl container kapanışı */}
     </main>
   );
 }

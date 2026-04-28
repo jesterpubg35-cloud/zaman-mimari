@@ -238,6 +238,38 @@ export async function GET(req) {
       return NextResponse.json({ history: data || [] });
     }
 
+    // ── logs (çekmece için panele özel loglar) ─────────────────
+    if (type === 'logs') {
+      const logType = searchParams.get('log_type') || 'all';
+      let logs = [];
+
+      if (logType === 'all' || logType === 'system') {
+        const { data } = await adminClient.from('admin_logs').select('*').order('created_at', { ascending: false }).limit(50);
+        logs = [...logs, ...(data || []).map(l => ({ ...l, source: 'admin_logs' }))];
+      }
+      if (logType === 'all' || logType === 'login_attempts') {
+        const { data } = await adminClient.from('admin_login_attempts').select('*').order('attempted_at', { ascending: false }).limit(50);
+        logs = [...logs, ...(data || []).map(l => ({ ...l, created_at: l.attempted_at, source: 'login_attempts' }))];
+      }
+      if (logType === 'all' || logType === 'user_actions') {
+        // Kullanıcı ban/verify işlemleri admin_logs'tan filtrelenir
+        const { data } = await adminClient.from('admin_logs').select('*').ilike('detail', '%kullanıcı%').order('created_at', { ascending: false }).limit(30);
+        logs = [...logs, ...(data || []).map(l => ({ ...l, source: 'user_actions' }))];
+      }
+      if (logType === 'financial') {
+        const { data } = await adminClient.from('transactions').select('*, profilkisi(name)').order('created_at', { ascending: false }).limit(30);
+        logs = [...logs, ...(data || []).map(t => ({ event_type: t.type, detail: `₺${t.amount} - ${t.profilkisi?.name || '-'}`, created_at: t.created_at, source: 'transactions' }))];
+      }
+      if (logType === 'reports') {
+        const { data } = await adminClient.from('reports').select('*, reporter:reporter_id(name), reported:reported_id(name)').order('created_at', { ascending: false }).limit(30);
+        logs = [...logs, ...(data || []).map(r => ({ event_type: 'Rapor', detail: `${r.reporter?.name} → ${r.reported?.name}: ${r.reason}`, created_at: r.created_at, source: 'reports' }))];
+      }
+
+      // Tüm logları tarihe göre sırala
+      logs.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+      return NextResponse.json({ logs: logs.slice(0, 50) });
+    }
+
     // ── users (default) ───────────────────────────────────────
     const { data: users, error: usersErr } = await adminClient
       .from('profilkisi')
