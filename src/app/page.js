@@ -378,6 +378,14 @@ const TRANSLATIONS = {
     notifBrowserUnsupported: 'Tarayıcınız bildirimleri desteklemiyor',
     notifGranted: 'Bildirimler açıldı ✓',
     notifDenied: 'Bildirim izni reddedildi',
+    regAgreement1Pre: "'",
+    regAgreement1Link: 'Kullanıcı Sözleşmesi',
+    regAgreement1Post: "'ni okudum ve kabul ediyorum.",
+    regAgreement2Pre: "'",
+    regAgreement2Link: 'Gizlilik Politikası ve KVKK Metni',
+    regAgreement2Post: "'ni okudum ve kabul ediyorum.",
+    regMustAccept: 'Devam etmek için sözleşmeleri kabul etmelisiniz.',
+    regContractAccept: 'Okudum, Kabul Ediyorum',
     contractUser: 'Kullanıcı Sözleşmesi',
     contractPrivacy: 'Gizlilik Politikası',
     contractCookie: 'Çerez Politikası',
@@ -642,6 +650,14 @@ const TRANSLATIONS = {
     notifBrowserUnsupported: 'Your browser does not support notifications',
     notifGranted: 'Notifications enabled ✓',
     notifDenied: 'Notification permission denied',
+    regAgreement1Pre: "'",
+    regAgreement1Link: 'User Agreement',
+    regAgreement1Post: "' — I have read and accept.",
+    regAgreement2Pre: "'",
+    regAgreement2Link: 'Privacy Policy & GDPR',
+    regAgreement2Post: "' — I have read and accept.",
+    regMustAccept: 'You must accept the agreements to continue.',
+    regContractAccept: 'I have read and accept',
     contractUser: 'User Agreement',
     contractPrivacy: 'Privacy Policy',
     contractCookie: 'Cookie Policy',
@@ -1261,6 +1277,9 @@ function Home() {
   const [loginSmsCode, setLoginSmsCode] = useState('');
   const [loginSmsSent, setLoginSmsSent] = useState(false);
   const [tempPasswordConfirm, setTempPasswordConfirm] = useState('');
+  const [acceptedUserAgreement, setAcceptedUserAgreement] = useState(false);
+  const [acceptedPrivacyPolicy, setAcceptedPrivacyPolicy] = useState(false);
+  const [regContractModal, setRegContractModal] = useState(null);
   const [tempBirthDate, setTempBirthDate] = useState('');
   const [tempCountry, setTempCountry] = useState('Türkiye');
   const [tempRole, setTempRole] = useState('musteri');
@@ -3780,10 +3799,46 @@ function Home() {
                   </div>
                 </div>
 
+                {/* Zorunlu Onay Kutucukları */}
+                <div className="space-y-3 mt-2">
+                  <label className="flex items-start gap-3 cursor-pointer select-none">
+                    <div
+                      onClick={() => setAcceptedUserAgreement(v => !v)}
+                      className={`mt-0.5 flex-shrink-0 w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${acceptedUserAgreement ? 'bg-[#2ECC71] border-[#2ECC71]' : 'border-white/30 bg-white/5'}`}
+                    >
+                      {acceptedUserAgreement && <svg width="11" height="8" viewBox="0 0 11 8" fill="none"><path d="M1 4L4 7L10 1" stroke="black" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+                    </div>
+                    <span className="text-[11px] text-white/50 leading-relaxed">
+                      {t.regAgreement1Pre}
+                      <button type="button" onClick={() => setRegContractModal('user')} className="text-[#2ECC71] underline underline-offset-2 font-bold">{t.regAgreement1Link}</button>
+                      {t.regAgreement1Post}
+                    </span>
+                  </label>
+                  <label className="flex items-start gap-3 cursor-pointer select-none">
+                    <div
+                      onClick={() => setAcceptedPrivacyPolicy(v => !v)}
+                      className={`mt-0.5 flex-shrink-0 w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${acceptedPrivacyPolicy ? 'bg-[#2ECC71] border-[#2ECC71]' : 'border-white/30 bg-white/5'}`}
+                    >
+                      {acceptedPrivacyPolicy && <svg width="11" height="8" viewBox="0 0 11 8" fill="none"><path d="M1 4L4 7L10 1" stroke="black" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+                    </div>
+                    <span className="text-[11px] text-white/50 leading-relaxed">
+                      {t.regAgreement2Pre}
+                      <button type="button" onClick={() => setRegContractModal('privacy')} className="text-[#2ECC71] underline underline-offset-2 font-bold">{t.regAgreement2Link}</button>
+                      {t.regAgreement2Post}
+                    </span>
+                  </label>
+                </div>
+
                 <button 
-                  onClick={handleRegister}
-                  disabled={authLoading}
-                  className={`w-full py-5 bg-[#2ECC71] text-black font-black rounded-[24px] uppercase italic tracking-widest mt-4 transition-all active:scale-95 shadow-[0_0_20px_rgba(46,204,113,0.3)] ${authLoading ? 'opacity-50 cursor-wait' : ''}`}
+                  onClick={() => {
+                    if (!acceptedUserAgreement || !acceptedPrivacyPolicy) {
+                      showToast(t.regMustAccept);
+                      return;
+                    }
+                    handleRegister();
+                  }}
+                  disabled={authLoading || !acceptedUserAgreement || !acceptedPrivacyPolicy}
+                  className={`w-full py-5 bg-[#2ECC71] text-black font-black rounded-[24px] uppercase italic tracking-widest mt-4 transition-all active:scale-95 shadow-[0_0_20px_rgba(46,204,113,0.3)] ${(authLoading || !acceptedUserAgreement || !acceptedPrivacyPolicy) ? 'opacity-40 cursor-not-allowed' : ''}`}
                 >
                   {authLoading ? '...' : t.registerBtn}
                 </button>
@@ -4059,6 +4114,42 @@ function Home() {
                 )}
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Kayıt Sözleşme Okuma Modalı */}
+      {regContractModal && (
+        <div className="fixed inset-0 z-[13000] flex items-end justify-center bg-black/80 backdrop-blur-sm p-0">
+          <div className="w-full max-w-lg bg-[#141414] border border-white/10 rounded-t-[32px] flex flex-col max-h-[85vh] shadow-2xl">
+            <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-white/10 flex-shrink-0">
+              <p className="text-white font-black uppercase tracking-widest text-sm">
+                {regContractModal === 'user' ? t.contractUser : t.contractPrivacy}
+              </p>
+              <button
+                onClick={() => setRegContractModal(null)}
+                className="text-white/50 text-2xl leading-none hover:text-white transition-colors"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="overflow-y-auto flex-1 px-6 py-5">
+              <p className="text-white/60 text-xs leading-relaxed whitespace-pre-line">
+                {regContractModal === 'user' ? t.contractUserText : t.contractPrivacyText}
+              </p>
+            </div>
+            <div className="px-6 py-4 border-t border-white/10 flex-shrink-0">
+              <button
+                onClick={() => {
+                  if (regContractModal === 'user') setAcceptedUserAgreement(true);
+                  else setAcceptedPrivacyPolicy(true);
+                  setRegContractModal(null);
+                }}
+                className="w-full py-4 bg-[#2ECC71] text-black font-black rounded-2xl uppercase tracking-widest text-sm active:scale-95 transition-transform"
+              >
+                {t.regContractAccept}
+              </button>
+            </div>
           </div>
         </div>
       )}
