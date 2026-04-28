@@ -42,6 +42,8 @@ const supabase = createClient(supabaseUrl, supabaseKey, {
   },
 });
 
+const MIN_TRANSACTION_AMOUNT = 100; // TL — ileride bu değeri değiştirerek taban fiyatı güncelleyebilirsiniz
+
 // Simple Pigeon Maps component (no dynamic import needed)
 const roleOrder = ['kurye', 'emanetci', 'siraci', 'hepsi'];
 const getRoleColor = (roles) => {
@@ -202,6 +204,10 @@ const TRANSLATIONS = {
     completedJobs: 'Tamamlanan İş', avgRating: 'Ort. Puan',
     userUnavailable: 'Kullanıcı şu an müsait değil',
     outOfRadius: 'Hizmet alanı dışında', userBlocked: 'Bu kullanıcıyla iletişim kurulamaz',
+    minAmountError: `Minimum işlem tutarı ${MIN_TRANSACTION_AMOUNT} TL'dir`,
+    minAmountHint: `En az ${MIN_TRANSACTION_AMOUNT} TL girilmelidir`,
+    offerPriceMin: `${MIN_TRANSACTION_AMOUNT} TL ve üzeri`,
+
     supportQ1: 'Eşyam zarar görürse platform tazminat öder mi?',
     supportA1: 'Platform, hizmet veren ile hizmet alan arasında aracılık yapan teknolojik bir altyapıdır. Kullanıcı Sözleşmesi uyarınca platformun mali sorumluluğu, yalnızca ilgili işlemden tahsil edilen komisyon tutarıyla sınırlıdır; eşya bedeli, kayıp maliyeti veya gecikmeden doğan zarar için tazminat ödenmez. Bununla birlikte, uyuşmazlık durumunda teslim fotoğrafları ve sohbet kayıtları delil olarak yetkili mercilerle paylaşılır.',
     supportQ2: 'Uygulama dışında ödeme yapabilir miyim?',
@@ -478,6 +484,10 @@ const TRANSLATIONS = {
     completedJobs: 'Completed Jobs', avgRating: 'Avg Rating',
     userUnavailable: 'User is not available',
     outOfRadius: 'Out of service radius', userBlocked: 'Cannot contact this user',
+    minAmountError: `Minimum transaction amount is ${MIN_TRANSACTION_AMOUNT} TL`,
+    minAmountHint: `Minimum ${MIN_TRANSACTION_AMOUNT} TL required`,
+    offerPriceMin: `${MIN_TRANSACTION_AMOUNT} TL or more`,
+
     supportQ1: 'If my item is damaged, does the platform compensate me?',
     supportA1: 'The platform is a technological intermediary between service providers and recipients. Under the User Agreement, the platform\'s financial liability is strictly limited to the commission amount collected for that transaction — no compensation is paid for item value, loss costs, or delays. However, in case of a dispute, delivery photos and chat records will be shared with the relevant authorities as evidence.',
     supportQ2: 'Can I make payments outside the app?',
@@ -3110,6 +3120,9 @@ function Home() {
   const handleTalepGonder = async () => {
     if (!seciliKisi || !user) return;
     if (myBlocksRef.current.has(seciliKisi.user_id) || blockedByOthersRef.current.has(seciliKisi.user_id)) return showToast(t.userBlocked);
+    if (teklifFiyat && parseFloat(teklifFiyat) < MIN_TRANSACTION_AMOUNT) {
+      return showToast(t.minAmountError);
+    }
     // Optimistic: UI'ı hemen kapat
     const savedKisi = seciliKisi;
     const savedDetay = isDetayi;
@@ -5305,7 +5318,7 @@ function Home() {
                   <div className="flex-1"><h3 className={`font-black text-xl uppercase italic ${isDarkMode ? 'text-white' : 'text-black'}`}>{seciliKisi.name}</h3><p className="text-[10px] font-bold text-[#2ECC71] uppercase">{t[seciliKisi.user_role === 'musteri' ? 'customer' : seciliKisi.user_role === 'emanetci' ? 'emanci' : seciliKisi.user_role === 'kurye' ? 'courier' : 'waiter']}</p></div>
                 </div>
                 {!aktifIs && (
-                  <><div className="space-y-3 mb-4"><input value={isDetayi} onChange={(e) => setIsDetayi(e.target.value)} placeholder={t.jobDetail} className={`w-full p-4 rounded-2xl border border-transparent outline-none focus:border-[#2ECC71] text-sm ${isDarkMode ? 'bg-gray-500/5 text-white placeholder-gray-500' : 'bg-gray-100 text-black'}`} /><div className="relative"><input type="number" value={teklifFiyat} onChange={(e) => setTeklifFiyat(e.target.value)} placeholder={t.offerPrice} className={`w-full p-4 rounded-2xl border border-transparent outline-none focus:border-[#2ECC71] text-sm ${isDarkMode ? 'bg-gray-500/5 text-white placeholder-gray-500' : 'bg-gray-100 text-black'}`} />{calcSuggestedPrice(getDistance(konum?.lat, konum?.lng, seciliKisi.lat, seciliKisi.lng), seciliKisi.user_role) && !teklifFiyat && <button onClick={() => setTeklifFiyat(String(calcSuggestedPrice(getDistance(konum?.lat, konum?.lng, seciliKisi.lat, seciliKisi.lng), seciliKisi.user_role)))} className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-[#2ECC71] bg-[#2ECC71]/10 px-2 py-1 rounded-lg">{t.priceSuggestion}: ₺{calcSuggestedPrice(getDistance(konum?.lat, konum?.lng, seciliKisi.lat, seciliKisi.lng), seciliKisi.user_role)}</button>}</div></div><button onClick={handleTalepGonder} disabled={talepGonderiliyor} className="w-full py-5 rounded-[24px] bg-[#2ECC71] text-black font-black text-lg uppercase italic disabled:opacity-60">{talepGonderiliyor ? t.sending : t.sendJob}</button></>
+                  <><div className="space-y-3 mb-4"><input value={isDetayi} onChange={(e) => setIsDetayi(e.target.value)} placeholder={t.jobDetail} className={`w-full p-4 rounded-2xl border border-transparent outline-none focus:border-[#2ECC71] text-sm ${isDarkMode ? 'bg-gray-500/5 text-white placeholder-gray-500' : 'bg-gray-100 text-black'}`} /><div className="relative"><input type="number" value={teklifFiyat} onChange={(e) => setTeklifFiyat(e.target.value)} placeholder={t.offerPriceMin} className={`w-full p-4 rounded-2xl border outline-none focus:border-[#2ECC71] text-sm transition-colors ${teklifFiyat && parseFloat(teklifFiyat) < MIN_TRANSACTION_AMOUNT ? 'border-red-500/60 focus:border-red-500' : 'border-transparent'} ${isDarkMode ? 'bg-gray-500/5 text-white placeholder-gray-500' : 'bg-gray-100 text-black'}`} />{teklifFiyat && parseFloat(teklifFiyat) < MIN_TRANSACTION_AMOUNT && <p className="text-red-400 text-[10px] font-bold mt-1 ml-1">{t.minAmountHint}</p>}{!teklifFiyat && calcSuggestedPrice(getDistance(konum?.lat, konum?.lng, seciliKisi.lat, seciliKisi.lng), seciliKisi.user_role) && !teklifFiyat && <button onClick={() => setTeklifFiyat(String(calcSuggestedPrice(getDistance(konum?.lat, konum?.lng, seciliKisi.lat, seciliKisi.lng), seciliKisi.user_role)))} className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-[#2ECC71] bg-[#2ECC71]/10 px-2 py-1 rounded-lg">{t.priceSuggestion}: ₺{calcSuggestedPrice(getDistance(konum?.lat, konum?.lng, seciliKisi.lat, seciliKisi.lng), seciliKisi.user_role)}</button>}</div></div><button onClick={handleTalepGonder} disabled={talepGonderiliyor || (teklifFiyat && parseFloat(teklifFiyat) < MIN_TRANSACTION_AMOUNT)} className={`w-full py-5 rounded-[24px] bg-[#2ECC71] text-black font-black text-lg uppercase italic transition-opacity ${talepGonderiliyor || (teklifFiyat && parseFloat(teklifFiyat) < MIN_TRANSACTION_AMOUNT) ? 'opacity-40 cursor-not-allowed' : ''}`}>{talepGonderiliyor ? t.sending : t.sendJob}</button></>
                 )}
                 {aktifIs && (aktifIs.sender_id === seciliKisi.user_id || aktifIs.receiver_id === seciliKisi.user_id) && <button onClick={() => setChatAcik(true)} className="w-full py-4 rounded-[24px] bg-[#e67e22] text-white font-black text-sm uppercase mt-2">💬 {t.chat}</button>}
               </div>
