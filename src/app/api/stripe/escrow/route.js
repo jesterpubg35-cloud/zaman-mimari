@@ -4,6 +4,8 @@ import { createClient } from '@supabase/supabase-js';
 import { verifyAuth, limiter } from '../../_lib/auth';
 
 const PLATFORM_COMMISSION = 0.10; // %10
+// Para birimi kasıtlı olarak TRY'de sabitlenmiştir.
+// Uluslararası kartlar Stripe tarafından otomatik çevrilir; kur riski bankaya aittir.
 
 const getStripe = () => {
   const key = process.env.STRIPE_SECRET_KEY;

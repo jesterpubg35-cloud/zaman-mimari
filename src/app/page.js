@@ -356,8 +356,10 @@ const TRANSLATIONS = {
     markerNoReviews: 'Henüz yorum yok',
     chatReminder: 'Lütfen aldığınız veya teslim ettiğiniz paketlerin görsellerini hem iş başında hem de iş sonunda görsellerini atmayı unutmayınız.',
     chatSecurePayment: '💳 Ödemeyi Güvenceye Al',
-    chatSecureHeld: '✓ Ödeme güvencede — iş onaylandığında hizmet verene aktarılır',
+    chatSecureHeld: '✓ Ödeme güvencede — iş onaylanığında hizmet verene aktarılır',
     chatPaymentSafe: 'Para iş onaylanana kadar güvende tutulur',
+    intlCardNote: 'Ödemeler Türk Lirası (₺) üzerinden işlenir. Uluslararası kartlar banka döviz kuru üzerinden otomatik çevrilir.',
+    budgetIntlNote: 'Fiyatlar ₺ TL cinsindendir. Uluslararası kartlar bankanızın döviz kuru üzerinden çevrilir.',
     chatTeslimAldim: '📥 Teslim Aldım',
     chatTeslimEttim: '📤 Teslim Ettim',
     photoLabelTitle: '📸 Fotoğraf Etiketi',
@@ -638,6 +640,8 @@ const TRANSLATIONS = {
     chatSecurePayment: '💳 Secure Payment',
     chatSecureHeld: '✓ Payment is secured — will be released to provider upon job confirmation',
     chatPaymentSafe: 'Money is held securely until job is confirmed',
+    intlCardNote: 'Payments are processed in Turkish Lira (₺). International card issuers will automatically convert this to your local currency at their current exchange rate.',
+    budgetIntlNote: 'Prices are in ₺ TRY. International cards are converted by your bank at their current exchange rate.',
     chatTeslimAldim: '📥 Picked Up',
     chatTeslimEttim: '📤 Delivered',
     photoLabelTitle: '📸 Photo Label',
@@ -5318,7 +5322,7 @@ function Home() {
                   <div className="flex-1"><h3 className={`font-black text-xl uppercase italic ${isDarkMode ? 'text-white' : 'text-black'}`}>{seciliKisi.name}</h3><p className="text-[10px] font-bold text-[#2ECC71] uppercase">{t[seciliKisi.user_role === 'musteri' ? 'customer' : seciliKisi.user_role === 'emanetci' ? 'emanci' : seciliKisi.user_role === 'kurye' ? 'courier' : 'waiter']}</p></div>
                 </div>
                 {!aktifIs && (
-                  <><div className="space-y-3 mb-4"><input value={isDetayi} onChange={(e) => setIsDetayi(e.target.value)} placeholder={t.jobDetail} className={`w-full p-4 rounded-2xl border border-transparent outline-none focus:border-[#2ECC71] text-sm ${isDarkMode ? 'bg-gray-500/5 text-white placeholder-gray-500' : 'bg-gray-100 text-black'}`} /><div className="relative"><input type="number" value={teklifFiyat} onChange={(e) => setTeklifFiyat(e.target.value)} placeholder={t.offerPriceMin} className={`w-full p-4 rounded-2xl border outline-none focus:border-[#2ECC71] text-sm transition-colors ${teklifFiyat && parseFloat(teklifFiyat) < MIN_TRANSACTION_AMOUNT ? 'border-red-500/60 focus:border-red-500' : 'border-transparent'} ${isDarkMode ? 'bg-gray-500/5 text-white placeholder-gray-500' : 'bg-gray-100 text-black'}`} />{teklifFiyat && parseFloat(teklifFiyat) < MIN_TRANSACTION_AMOUNT && <p className="text-red-400 text-[10px] font-bold mt-1 ml-1">{t.minAmountHint}</p>}{!teklifFiyat && calcSuggestedPrice(getDistance(konum?.lat, konum?.lng, seciliKisi.lat, seciliKisi.lng), seciliKisi.user_role) && !teklifFiyat && <button onClick={() => setTeklifFiyat(String(calcSuggestedPrice(getDistance(konum?.lat, konum?.lng, seciliKisi.lat, seciliKisi.lng), seciliKisi.user_role)))} className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-[#2ECC71] bg-[#2ECC71]/10 px-2 py-1 rounded-lg">{t.priceSuggestion}: ₺{calcSuggestedPrice(getDistance(konum?.lat, konum?.lng, seciliKisi.lat, seciliKisi.lng), seciliKisi.user_role)}</button>}</div></div><button onClick={handleTalepGonder} disabled={talepGonderiliyor || (teklifFiyat && parseFloat(teklifFiyat) < MIN_TRANSACTION_AMOUNT)} className={`w-full py-5 rounded-[24px] bg-[#2ECC71] text-black font-black text-lg uppercase italic transition-opacity ${talepGonderiliyor || (teklifFiyat && parseFloat(teklifFiyat) < MIN_TRANSACTION_AMOUNT) ? 'opacity-40 cursor-not-allowed' : ''}`}>{talepGonderiliyor ? t.sending : t.sendJob}</button></>
+                  <><div className="space-y-3 mb-4"><input value={isDetayi} onChange={(e) => setIsDetayi(e.target.value)} placeholder={t.jobDetail} className={`w-full p-4 rounded-2xl border border-transparent outline-none focus:border-[#2ECC71] text-sm ${isDarkMode ? 'bg-gray-500/5 text-white placeholder-gray-500' : 'bg-gray-100 text-black'}`} /><div className="relative"><input type="number" value={teklifFiyat} onChange={(e) => setTeklifFiyat(e.target.value)} placeholder={t.offerPriceMin} className={`w-full p-4 rounded-2xl border outline-none focus:border-[#2ECC71] text-sm transition-colors ${teklifFiyat && parseFloat(teklifFiyat) < MIN_TRANSACTION_AMOUNT ? 'border-red-500/60 focus:border-red-500' : 'border-transparent'} ${isDarkMode ? 'bg-gray-500/5 text-white placeholder-gray-500' : 'bg-gray-100 text-black'}`} />{teklifFiyat && parseFloat(teklifFiyat) < MIN_TRANSACTION_AMOUNT && <p className="text-red-400 text-[10px] font-bold mt-1 ml-1">{t.minAmountHint}</p>}{!teklifFiyat && calcSuggestedPrice(getDistance(konum?.lat, konum?.lng, seciliKisi.lat, seciliKisi.lng), seciliKisi.user_role) && !teklifFiyat && <button onClick={() => setTeklifFiyat(String(calcSuggestedPrice(getDistance(konum?.lat, konum?.lng, seciliKisi.lat, seciliKisi.lng), seciliKisi.user_role)))} className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-[#2ECC71] bg-[#2ECC71]/10 px-2 py-1 rounded-lg">{t.priceSuggestion}: ₺{calcSuggestedPrice(getDistance(konum?.lat, konum?.lng, seciliKisi.lat, seciliKisi.lng), seciliKisi.user_role)}</button>}</div></div><button onClick={handleTalepGonder} disabled={talepGonderiliyor || (teklifFiyat && parseFloat(teklifFiyat) < MIN_TRANSACTION_AMOUNT)} className={`w-full py-5 rounded-[24px] bg-[#2ECC71] text-black font-black text-lg uppercase italic transition-opacity ${talepGonderiliyor || (teklifFiyat && parseFloat(teklifFiyat) < MIN_TRANSACTION_AMOUNT) ? 'opacity-40 cursor-not-allowed' : ''}`}>{talepGonderiliyor ? t.sending : t.sendJob}</button><p className="text-[9px] text-center opacity-25 mt-2 leading-relaxed">{t.budgetIntlNote}</p></>
                 )}
                 {aktifIs && (aktifIs.sender_id === seciliKisi.user_id || aktifIs.receiver_id === seciliKisi.user_id) && <button onClick={() => setChatAcik(true)} className="w-full py-4 rounded-[24px] bg-[#e67e22] text-white font-black text-sm uppercase mt-2">💬 {t.chat}</button>}
               </div>
@@ -5378,6 +5382,9 @@ function Home() {
                 </button>
                 <p className="text-[10px] text-center opacity-40 mt-1">
                   {t.chatPaymentSafe}
+                </p>
+                <p className="text-[9px] text-center opacity-25 mt-0.5 leading-relaxed px-2">
+                  {t.intlCardNote}
                 </p>
               </div>
             )}
