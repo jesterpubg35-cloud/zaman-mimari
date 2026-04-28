@@ -8,18 +8,21 @@ function SelfMarker({ lat, lng, color }) {
   const map = useMap();
   const markerRef = useRef(null);
 
+  const icon = L.divIcon({
+    html: `<div style="width:14px;height:14px;border-radius:50%;background:${color};border:2.5px solid white;box-shadow:0 2px 6px rgba(0,0,0,0.5);"></div>`,
+    className: '',
+    iconSize: [14, 14],
+    iconAnchor: [7, 7],
+  });
+
   useEffect(() => {
     if (!lat || !lng) return;
-
     if (!markerRef.current) {
-      markerRef.current = L.circleMarker([lat, lng], {
-        radius: 8,
-        fillColor: color,
-        fillOpacity: 1,
-        color: 'white',
-        weight: 2,
+      markerRef.current = L.marker([lat, lng], {
+        icon,
         interactive: false,
-        pane: 'markerPane',
+        keyboard: false,
+        zIndexOffset: 1000,
       }).addTo(map);
     } else {
       markerRef.current.setLatLng([lat, lng]);
@@ -29,10 +32,7 @@ function SelfMarker({ lat, lng, color }) {
 
   useEffect(() => {
     return () => {
-      if (markerRef.current) {
-        markerRef.current.remove();
-        markerRef.current = null;
-      }
+      if (markerRef.current) { markerRef.current.remove(); markerRef.current = null; }
     };
   }, []);
 
