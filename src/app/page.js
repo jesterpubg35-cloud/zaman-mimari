@@ -4199,12 +4199,8 @@ function Home() {
           </svg>
         );
 
-        const ListGroup = ({ children }) => (
-          <div className={`mx-4 rounded-2xl overflow-hidden ${listBg}`}>{children}</div>
-        );
-
-        const ListRow = ({ label, sub, onClick, last }) => (
-          <button onClick={onClick} className={`w-full flex items-center px-4 py-3.5 gap-3 active:opacity-60 transition-opacity ${!last ? `border-b ${divider}` : ''}`}>
+        const ListRow = ({ label, sub, onClick }) => (
+          <button onClick={onClick} className={`w-full flex items-center px-4 py-3.5 gap-3 mx-4 rounded-2xl active:opacity-60 transition-opacity ${listBg}`} style={{width: 'calc(100% - 2rem)'}}>
             <div className="flex-1 text-left">
               <p className={`text-sm ${textPrimary}`}>{label}</p>
               {sub && <p className={`text-[11px] mt-0.5 ${textSub}`}>{sub}</p>}
@@ -4236,13 +4232,11 @@ function Home() {
         if (settingsSubPage === 'contracts') return (
           <div className={`fixed inset-0 z-[6100] flex flex-col ${bg}`}>
             <PageHeader title="Sözleşmeler" onBack={() => setSettingsSubPage(null)} />
-            <div className="flex-1 overflow-y-auto pt-6 pb-10">
-              <ListGroup>
-                {contracts.map((c, i) => (
-                  <ListRow key={c.key} label={c.title} last={i === contracts.length - 1}
-                    onClick={() => { setActiveContract(c); setSettingsSubPage('contract-detail'); }} />
-                ))}
-              </ListGroup>
+            <div className="flex-1 overflow-y-auto pt-4 pb-10 space-y-2">
+              {contracts.map((c) => (
+                <ListRow key={c.key} label={c.title}
+                  onClick={() => { setActiveContract(c); setSettingsSubPage('contract-detail'); }} />
+              ))}
             </div>
           </div>
         );
@@ -4251,17 +4245,15 @@ function Home() {
         if (settingsSubPage === 'language') return (
           <div className={`fixed inset-0 z-[6100] flex flex-col ${bg}`}>
             <PageHeader title="Uygulama Dili" onBack={() => setSettingsSubPage(null)} />
-            <div className="flex-1 overflow-y-auto pt-6 pb-10">
-              <ListGroup>
-                {Object.entries(TRANSLATIONS).map(([code, tl], i, arr) => (
-                  <button key={code} onClick={() => { handleLangChange(code); setSettingsSubPage(null); }}
-                    className={`w-full flex items-center gap-3 px-4 py-3.5 active:opacity-60 transition-opacity ${i < arr.length - 1 ? `border-b ${divider}` : ''}`}>
-                    <span className="text-base">{tl.flag}</span>
-                    <span className={`flex-1 text-left text-sm ${lang === code ? 'text-[#2ECC71] font-semibold' : textPrimary}`}>{tl.name}</span>
-                    {lang === code && <span className="text-[#2ECC71] text-sm font-bold">✓</span>}
-                  </button>
-                ))}
-              </ListGroup>
+            <div className="flex-1 overflow-y-auto pt-4 pb-10 space-y-2">
+              {Object.entries(TRANSLATIONS).map(([code, tl]) => (
+                <button key={code} onClick={() => { handleLangChange(code); setSettingsSubPage(null); }}
+                  className={`w-full flex items-center gap-3 px-4 py-3.5 mx-4 rounded-2xl active:opacity-60 transition-opacity ${lang === code ? 'border border-[#2ECC71]/30' : ''} ${listBg}`} style={{width: 'calc(100% - 2rem)'}}>
+                  <span className="text-base">{tl.flag}</span>
+                  <span className={`flex-1 text-left text-sm ${lang === code ? 'text-[#2ECC71] font-semibold' : textPrimary}`}>{tl.name}</span>
+                  {lang === code && <span className="text-[#2ECC71] text-sm font-bold">✓</span>}
+                </button>
+              ))}
             </div>
           </div>
         );
@@ -4302,12 +4294,10 @@ function Home() {
         return (
           <div className={`fixed inset-0 z-[6000] flex flex-col ${bg}`}>
             <PageHeader title="Ayarlar" onBack={() => { setAktifPage('menu'); setSettingsSubPage(null); }} />
-            <div className="flex-1 overflow-y-auto pt-6 pb-10">
-              <ListGroup>
-                <ListRow label="Uygulama Dili" sub={`${TRANSLATIONS[lang]?.flag} ${TRANSLATIONS[lang]?.name}`} onClick={() => setSettingsSubPage('language')} />
-                <ListRow label="Anlık Bildirimler" sub={notifStatus} onClick={() => setSettingsSubPage('notifications')} />
-                <ListRow label="Sözleşmeler" onClick={() => setSettingsSubPage('contracts')} last />
-              </ListGroup>
+            <div className="flex-1 overflow-y-auto pt-4 pb-10 space-y-2">
+              <ListRow label="Uygulama Dili" sub={`${TRANSLATIONS[lang]?.flag} ${TRANSLATIONS[lang]?.name}`} onClick={() => setSettingsSubPage('language')} />
+              <ListRow label="Anlık Bildirimler" sub={notifStatus} onClick={() => setSettingsSubPage('notifications')} />
+              <ListRow label="Sözleşmeler" onClick={() => setSettingsSubPage('contracts')} />
             </div>
           </div>
         );
