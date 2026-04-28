@@ -4166,22 +4166,47 @@ function Home() {
 
       {aktifPage === 'settings' && (() => {
         const contracts = [
-          { key: 'user', title: 'Kullanıcı Sözleşmesi', text: `İşbu Kullanıcı Sözleşmesi, platform ile kullanıcı arasındaki karşılıklı hak ve yükümlülükleri belirler.\n\nPlatformun Rolü: Platform, hizmet veren (kurye, emanetçi, sıra bekleyen) ile hizmet alanı buluşturan bir 'Aracı Hizmet Sağlayıcı'dır. Platform, kullanıcılar arasında gerçekleşen hizmetin kalitesinden, doğruluğundan veya tarafların davranışlarından doğrudan sorumlu tutulamaz.\n\nHizmet İlişkisi: Kullanıcılar, platform üzerinden bir işlem başlattıklarında, hukuki ilişki doğrudan hizmet veren ile hizmet alan arasında kurulur. Platform, sadece bu sürecin güvenli bir şekilde takip edilmesini sağlayan teknolojik altyapıyı sunar.\n\nSorumluluk Sınırları: Kullanıcılar tarafından paylaşılan bilgilerin doğruluğu kullanıcının sorumluluğundadır. Platform, mücbir sebepler veya teknik aksaklıklar nedeniyle oluşabilecek kesintilerden sorumlu tutulamaz. Kullanıcı, hesabı üzerinden yapılan tüm işlemlerden bizzat sorumludur.` },
-          { key: 'privacy', title: 'Gizlilik Politikası', text: `Kişisel verilerinizin güvenliği bizim için önceliklidir. 6698 sayılı KVKK kapsamında verileriniz şu şekilde işlenmektedir:\n\nToplanan Veriler: Uygulamanın çalışması için ad-soyad, e-posta, telefon numarası ve konum verileriniz toplanır. Hizmet doğrulaması için çekilen teslimat fotoğrafları sistemimizde güvenli bir şekilde saklanır.\n\nVeri İşleme Amacı: Konum verileriniz sadece harita üzerinde görünürlük sağlamak ve doğru hizmet eşleşmesi yapmak için kullanılır. Fotoğraflar, olası anlaşmazlıklarda kanıt sunmak amacıyla kayıt altına alınır.\n\nÜçüncü Taraflarla Paylaşım: Verileriniz asla reklam amacıyla üçüncü taraflara satılmaz. Sadece ödeme işlemleri için Stripe ve veritabanı yönetimi için Supabase gibi güvenilir altyapı sağlayıcıları ile paylaşılır.\n\nKullanıcı Hakları: Kullanıcılar, diledikleri zaman hesaplarını silme veya verilerinin işlenmesi hakkında bilgi alma hakkına sahiptir.` },
-          { key: 'cookie', title: 'Çerez Politikası', text: `Uygulamamız, size daha hızlı ve kişiselleştirilmiş bir deneyim sunmak için modern depolama teknolojilerini kullanır.\n\nKullanım Amacı: Oturum bilgilerinizin hatırlanması, tema tercihiniz (koyu/açık mod) ve uygulama içi performans ayarlarınız için yerel depolama (localStorage) kullanılır.\n\nTakip ve Reklam: Uygulamamızda üçüncü taraf reklam takibi yapılmamaktadır. Kullanılan çerezler ve depolama birimleri tamamen işlevseldir.\n\nKontrol Sizde: Tarayıcı ayarlarınızdan veya uygulama içinden çıkış yaparak bu verileri temizleyebilirsiniz.` },
-          { key: 'terms', title: 'Hizmet Şartları', text: `Hizmet alırken ve verirken uyulması gereken temel kurallar şunlardır:\n\nEmanet Hizmeti: Emanet bırakılan eşyaların yasalara uygun olması zorunludur. Emanetçi, eşyayı teslim aldığı andaki durumuyla korumakla yükümlüdür. Teslim alma ve teslim etme anında çekilen fotoğraflar, eşyanın durumuna dair kesin kanıt sayılır.\n\nSıra Bekleme: Sıra bekleyen kullanıcı, belirlenen saatte ve yerde bulunmak zorundadır. Görevin iptali veya gecikme durumunda platformun belirlediği ceza/iade politikaları geçerli olur.\n\nÖdeme Kuralları: Tüm ödemeler platformun güvenli ödeme altyapısı (Stripe) üzerinden yapılmalıdır. Platform dışı ödeme yapılması durumunda oluşabilecek zararlardan platform sorumlu değildir.\n\nİptal ve İade: Hizmet başladıktan sonra yapılan iptallerde, hizmet verenin emeğini korumak adına kısmi kesinti yapılabilir.` },
+          {
+            key: 'user',
+            title: 'Kullanıcı Sözleşmesi',
+            text: `1. Taraflar ve Kapsam\n\nİşbu Kullanıcı Sözleşmesi ("Sözleşme"), Platform ile Kullanıcı arasındaki karşılıklı hak ve yükümlülükleri düzenler. Platforma üye olan veya hizmetlerinden faydalanan her gerçek kişi, işbu Sözleşme'yi okumuş, anlamış ve kabul etmiş sayılır.\n\n2. Platformun Rolü ve Aracılık Hizmeti\n\nPlatform, hizmet veren (kurye, emanetçi, sıra bekleyen) ile hizmet alanı bir araya getiren teknolojik bir aracı altyapıdır. Platform, bir "Aracı Hizmet Sağlayıcı" sıfatıyla hareket eder ve taraflar arasında kurulan hukuki ilişkinin doğrudan tarafı değildir. Kullanıcılar arasındaki hizmet ilişkisi, münhasıran bu taraflar arasında kurulur.\n\n3. Sorumluluk Sınırı\n\nPlatformun herhangi bir uyuşmazlık, kayıp veya zarar durumundaki mali sorumluluğu; yalnızca o işlemden tahsil edilen hizmet bedeli (komisyon) tutarıyla sınırlıdır. Platform, hiçbir koşulda eşya bedelini, kayıp maliyetini, gecikmeden doğan zararı veya üçüncü şahısların kusurlarından kaynaklanan herhangi bir tazminatı ödemekle yükümlü değildir.\n\n4. Kullanıcının İbrası\n\nKullanıcı; hırsızlık, fiziksel hasar, gecikme, hizmet ifa etmeme veya üçüncü şahısların herhangi bir kusuru nedeniyle doğabilecek tüm hukuki ve cezai taleplerden, Platform'u, yöneticilerini, çalışanlarını ve hissedarlarını geri dönülemez biçimde ibra ettiğini ve bu konularda hiçbir hukuki yola başvurmayacağını peşinen kabul ve taahhüt eder.\n\n5. Bağımsız Yüklenici Statüsü\n\nPlatform üzerinden hizmet veren tüm bireyler (kurye, emanetçi, sıra bekleyen vb.) bağımsız birer yüklenicidir. Bu kişiler Platform'un çalışanı, temsilcisi veya alt yüklenicisi değildir. Taraflar arasındaki ilişki bir iş akdine ya da vekâlet sözleşmesine dayanmamakta olup münhasıran aracılık hizmetine ilişkindir.\n\n6. Delil Sözleşmesi\n\nTaraflar, Platform üzerinden gerçekleştirilen işlemlere ait uygulama kayıtlarının, konum verilerinin ve teslim/tesellüm anında çekilen fotoğrafların; 6100 sayılı Hukuk Muhakemeleri Kanunu'nun 193. maddesi çerçevesinde kesin delil niteliği taşıdığını ve bu belgeler hakkında "senetle ispat" kurallarının uygulanacağını kabul eder.\n\n7. Yasaklı İçerik ve Cezai Sorumluluk\n\nKurye veya emanet kapsamında taşınan ya da bırakılan eşyanın içeriğinin yasalara uygunluğundan tamamen "Hizmet Alan" sorumludur. Platform'un söz konusu içeriği denetleme yükümlülüğü bulunmamaktadır. Yasadışı madde, kaçak eşya veya yasak içerik taşındığının tespiti halinde Platform, ilgili tüm kişisel ve işlem verilerini derhal yetkili adli makamlar ile paylaşır ve bu konuda hiçbir hukuki sorumluluğu kabul etmez.`,
+          },
+          {
+            key: 'privacy',
+            title: 'Gizlilik Politikası',
+            text: `1. Veri Sorumlusu\n\nPlatform, 6698 sayılı Kişisel Verilerin Korunması Kanunu ("KVKK") kapsamında veri sorumlusu sıfatıyla hareket etmektedir.\n\n2. Toplanan Kişisel Veriler\n\nAd-soyad, e-posta adresi, telefon numarası ve konum bilgisi; hizmetin ifası için zorunlu veriler olup üyelik sürecinde toplanır. Teslimat ve teslim alma anlarında çekilen fotoğraflar, platform altyapısında şifreli olarak saklanır.\n\n3. Veri İşleme Amaçları\n\nKonum verisi yalnızca harita üzerinde eşleşme sağlamak amacıyla kullanılır. Fotoğraflar münhasıran uyuşmazlık süreçlerinde delil niteliğinde kullanılmak üzere muhafaza edilir. Verileriniz reklam, profilleme veya üçüncü taraf pazarlaması amacıyla kullanılmaz.\n\n4. Veri Paylaşımı\n\nKişisel veriler; ödeme altyapısı için Stripe, veritabanı yönetimi için Supabase ile yalnızca hizmetin ifasına yönelik ölçüde paylaşılır. Bunun dışında hiçbir üçüncü tarafa aktarılmaz. Yasal zorunluluk veya mahkeme/savcılık kararı halinde yetkili makamlarla paylaşım yapılabilir.\n\n5. Delil Amaçlı Veri Saklama\n\nTeslim fotoğrafları ve konum kayıtları; olası hukuki uyuşmazlıklarda 6100 sayılı HMK uyarınca kesin delil olarak kullanılabilmesi amacıyla belirlenen yasal süreler boyunca saklanır. Bu veriler, ilgili uyuşmazlık çözüme kavuşturulana kadar silinmez.\n\n6. Kullanıcı Hakları\n\nKVKK'nın 11. maddesi uyarınca; verilerinize erişme, düzeltme, silme veya işlenmesine itiraz etme haklarına sahipsiniz. Taleplerinizi platform içi iletişim kanalları aracılığıyla iletebilirsiniz.`,
+          },
+          {
+            key: 'cookie',
+            title: 'Çerez Politikası',
+            text: `1. Kullanılan Depolama Teknolojileri\n\nPlatform, çerez (cookie) yerine tarayıcı yerel depolama alanını (localStorage) kullanır. Bu depolama yalnızca oturum yönetimi, tema tercihi ve dil seçimi gibi işlevsel amaçlarla sınırlıdır.\n\n2. Reklam ve İzleme\n\nPlatformda üçüncü taraf reklam ağlarına veya davranışsal izleme araçlarına yer verilmemektedir. Depolanan hiçbir veri, kullanıcı profili oluşturma amacıyla işlenmez.\n\n3. Veri Kontrolü\n\nTarayıcı ayarlarından veya uygulama oturumunu kapatarak yerel depolama verilerini temizleyebilirsiniz. Bu işlem, sonraki girişlerde yeniden kimlik doğrulaması yapmanızı gerektirir.\n\n4. Üçüncü Taraf İçerikleri\n\nHarita görüntüleme için kullanılan harici katman sağlayıcıları (Google Maps, CARTO) kendi gizlilik politikalarını uygular. Platform bu sağlayıcıların veri işleme pratiklerinden sorumlu değildir.`,
+          },
+          {
+            key: 'terms',
+            title: 'Hizmet Şartları',
+            text: `1. Genel Yükümlülükler\n\nPlatform üzerinden hizmet alan veya veren tüm kullanıcılar, işbu Hizmet Şartları'na uymakla yükümlüdür. Şartlara aykırı davranış, hesabın askıya alınması veya kalıcı olarak kapatılması sonucunu doğurabilir.\n\n2. Emanet Hizmeti\n\nEmanet bırakılan eşyaların içeriği ve yasallığı tamamen "Hizmet Alan"ın sorumluluğundadır. Emanetçi, eşyayı teslim aldığı andaki durumuyla korumakla yükümlüdür. Teslim alma ve teslim etme anında platforma yüklenen fotoğraflar HMK m.193 uyarınca kesin delil sayılır.\n\n3. Yasaklı İçerik\n\nYasadışı madde, kaçak eşya veya herhangi bir yasal düzenlemeyle yasaklanmış içerik taşınması ya da emanete bırakılması kesinlikle yasaktır. Bu durumun tespitinde Platform, kullanıcı ve işlem verilerini derhal adli makamlara iletir; hiçbir hukuki sorumluluk kabul etmez.\n\n4. Sıra Bekleme Hizmeti\n\nSıra bekleyen kullanıcı, belirlenen saatte ve konumda hazır bulunmakla yükümlüdür. Gecikme veya görevin yerine getirilememesi durumunda Platform'un belirlediği ceza ve kısmi iade politikaları uygulanır.\n\n5. Ödeme Kuralları\n\nTüm ödemeler, Platform'un güvenli ödeme altyapısı üzerinden yapılmak zorundadır. Platform dışı gerçekleştirilen ödemelerden doğan zararlar Platform'un sorumluluğu dışındadır ve bu işlemler garanti kapsamına alınmaz.\n\n6. Sorumluluk Sınırı\n\nPlatform'un herhangi bir anlaşmazlıktaki azami mali sorumluluğu, ilgili işlemden tahsil edilen hizmet komisyonu tutarıyla sınırlıdır. Eşya değeri, kâr kaybı veya dolaylı zararlar bu limit dışındadır.\n\n7. İptal ve İade\n\nHizmet ifa edilmeye başlandıktan sonra yapılan iptallerde, hizmet verenin emeğini koruma amacıyla kısmi kesinti uygulanabilir. Anlaşmazlık durumunda Platform yönetimi nihai karara yetkilidir.`,
+          },
         ];
 
-        const bg = isDarkMode ? 'bg-[#0F0F0F]' : 'bg-zinc-100';
-        const cardBg = isDarkMode ? 'bg-[#1A1A1A]' : 'bg-white';
+        const bg = isDarkMode ? 'bg-[#0F0F0F]' : 'bg-[#F2F2F7]';
+        const listBg = isDarkMode ? 'bg-[#1C1C1E]' : 'bg-white';
         const textPrimary = isDarkMode ? 'text-white' : 'text-black';
         const textSub = isDarkMode ? 'text-white/40' : 'text-black/40';
-        const chevron = <svg width="7" height="12" viewBox="0 0 7 12" fill="none"><path d="M1 1l5 5-5 5" stroke={isDarkMode ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.3)'} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>;
+        const divider = isDarkMode ? 'border-white/8' : 'border-black/8';
+        const chevron = (
+          <svg width="7" height="12" viewBox="0 0 7 12" fill="none">
+            <path d="M1 1l5 5-5 5" stroke={isDarkMode ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.25)'} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        );
 
-        const SettingsRow = ({ label, sub, onClick }) => (
-          <button onClick={onClick} className={`w-full flex items-center gap-4 px-4 py-4 ${cardBg} rounded-2xl`}>
+        const ListGroup = ({ children }) => (
+          <div className={`mx-4 rounded-2xl overflow-hidden ${listBg}`}>{children}</div>
+        );
+
+        const ListRow = ({ label, sub, onClick, last }) => (
+          <button onClick={onClick} className={`w-full flex items-center px-4 py-3.5 gap-3 active:opacity-60 transition-opacity ${!last ? `border-b ${divider}` : ''}`}>
             <div className="flex-1 text-left">
-              <p className={`text-sm font-semibold ${textPrimary}`}>{label}</p>
+              <p className={`text-sm ${textPrimary}`}>{label}</p>
               {sub && <p className={`text-[11px] mt-0.5 ${textSub}`}>{sub}</p>}
             </div>
             {chevron}
@@ -4189,11 +4214,11 @@ function Home() {
         );
 
         const PageHeader = ({ title, onBack }) => (
-          <div className="flex items-center gap-3 px-5 pt-14 pb-4">
-            <button onClick={onBack} className={`w-8 h-8 flex items-center justify-center rounded-full ${isDarkMode ? 'bg-white/10' : 'bg-black/10'}`}>
-              <svg width="8" height="13" viewBox="0 0 8 13" fill="none"><path d="M7 1L2 6.5 7 12" stroke={isDarkMode ? 'white' : 'black'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+          <div className={`flex items-center pt-14 pb-3 px-4 border-b ${divider}`}>
+            <button onClick={onBack} className={`flex items-center gap-1 text-sm font-medium ${isDarkMode ? 'text-white/60' : 'text-black/60'} mr-3`}>
+              <svg width="8" height="13" viewBox="0 0 8 13" fill="none"><path d="M7 1L2 6.5 7 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
             </button>
-            <h2 className={`font-black text-base ${textPrimary}`}>{title}</h2>
+            <h2 className={`font-semibold text-base ${textPrimary}`}>{title}</h2>
           </div>
         );
 
@@ -4201,8 +4226,8 @@ function Home() {
         if (settingsSubPage === 'contract-detail' && activeContract) return (
           <div className={`fixed inset-0 z-[6200] flex flex-col ${bg}`}>
             <PageHeader title={activeContract.title} onBack={() => setSettingsSubPage('contracts')} />
-            <div className={`flex-1 overflow-y-auto px-5 pb-10`}>
-              <p className={`text-sm leading-relaxed whitespace-pre-line ${textPrimary} opacity-80`}>{activeContract.text}</p>
+            <div className="flex-1 overflow-y-auto px-5 pt-5 pb-12">
+              <p className={`text-[13px] leading-relaxed whitespace-pre-line ${textPrimary} opacity-75`}>{activeContract.text}</p>
             </div>
           </div>
         );
@@ -4211,10 +4236,13 @@ function Home() {
         if (settingsSubPage === 'contracts') return (
           <div className={`fixed inset-0 z-[6100] flex flex-col ${bg}`}>
             <PageHeader title="Sözleşmeler" onBack={() => setSettingsSubPage(null)} />
-            <div className="flex-1 overflow-y-auto px-5 pb-10 space-y-2">
-              {contracts.map(c => (
-                <SettingsRow key={c.key} label={c.title} onClick={() => { setActiveContract(c); setSettingsSubPage('contract-detail'); }} />
-              ))}
+            <div className="flex-1 overflow-y-auto pt-6 pb-10">
+              <ListGroup>
+                {contracts.map((c, i) => (
+                  <ListRow key={c.key} label={c.title} last={i === contracts.length - 1}
+                    onClick={() => { setActiveContract(c); setSettingsSubPage('contract-detail'); }} />
+                ))}
+              </ListGroup>
             </div>
           </div>
         );
@@ -4223,15 +4251,17 @@ function Home() {
         if (settingsSubPage === 'language') return (
           <div className={`fixed inset-0 z-[6100] flex flex-col ${bg}`}>
             <PageHeader title="Uygulama Dili" onBack={() => setSettingsSubPage(null)} />
-            <div className="flex-1 overflow-y-auto px-5 pb-10 space-y-2">
-              {Object.entries(TRANSLATIONS).map(([code, tl]) => (
-                <button key={code} onClick={() => { handleLangChange(code); setSettingsSubPage(null); }}
-                  className={`w-full flex items-center gap-4 px-4 py-4 rounded-2xl ${lang === code ? 'bg-[#2ECC71]/15 border border-[#2ECC71]/30' : cardBg}`}>
-                  <span className="text-lg">{tl.flag}</span>
-                  <span className={`flex-1 text-left text-sm font-semibold ${lang === code ? 'text-[#2ECC71]' : textPrimary}`}>{tl.name}</span>
-                  {lang === code && <span className="text-[#2ECC71] text-xs font-black">✓</span>}
-                </button>
-              ))}
+            <div className="flex-1 overflow-y-auto pt-6 pb-10">
+              <ListGroup>
+                {Object.entries(TRANSLATIONS).map(([code, tl], i, arr) => (
+                  <button key={code} onClick={() => { handleLangChange(code); setSettingsSubPage(null); }}
+                    className={`w-full flex items-center gap-3 px-4 py-3.5 active:opacity-60 transition-opacity ${i < arr.length - 1 ? `border-b ${divider}` : ''}`}>
+                    <span className="text-base">{tl.flag}</span>
+                    <span className={`flex-1 text-left text-sm ${lang === code ? 'text-[#2ECC71] font-semibold' : textPrimary}`}>{tl.name}</span>
+                    {lang === code && <span className="text-[#2ECC71] text-sm font-bold">✓</span>}
+                  </button>
+                ))}
+              </ListGroup>
             </div>
           </div>
         );
@@ -4240,50 +4270,44 @@ function Home() {
         if (settingsSubPage === 'notifications') return (
           <div className={`fixed inset-0 z-[6100] flex flex-col ${bg}`}>
             <PageHeader title="Anlık Bildirimler" onBack={() => setSettingsSubPage(null)} />
-            <div className="flex-1 px-5 pb-10 space-y-4">
-              <p className={`text-xs ${textSub} mt-2`}>İş teklifleri, mesajlar ve önemli güncellemeler için anlık bildirim alın.</p>
-              <div className={`flex items-center justify-between px-4 py-4 rounded-2xl ${cardBg}`}>
-                <div>
-                  <p className={`text-sm font-semibold ${textPrimary}`}>Anlık Bildirimleri Al</p>
-                  <p className={`text-[11px] mt-0.5 ${textSub}`}>
-                    {typeof window !== 'undefined' && 'Notification' in window
-                      ? Notification.permission === 'granted' ? 'Açık' : Notification.permission === 'denied' ? 'Reddedildi' : 'İzin bekleniyor'
-                      : 'Desteklenmiyor'}
-                  </p>
+            <div className="flex-1 pt-6 px-4 pb-10 space-y-3">
+              <p className={`text-xs px-1 mb-1 ${textSub}`}>İş teklifleri ve mesajlar için bildirim alın.</p>
+              <div className={`rounded-2xl ${listBg} overflow-hidden`}>
+                <div className={`flex items-center px-4 py-3.5 gap-3`}>
+                  <div className="flex-1">
+                    <p className={`text-sm ${textPrimary}`}>Anlık Bildirimleri Al</p>
+                    <p className={`text-[11px] mt-0.5 ${textSub}`}>
+                      {typeof window !== 'undefined' && 'Notification' in window
+                        ? Notification.permission === 'granted' ? 'Açık' : Notification.permission === 'denied' ? 'Reddedildi — tarayıcı ayarlarından değiştirin' : 'İzin verilmedi'
+                        : 'Bu cihazda desteklenmiyor'}
+                    </p>
+                  </div>
+                  <button onClick={async () => {
+                    if (!('Notification' in window)) return showToast('Tarayıcınız bildirimleri desteklemiyor');
+                    const perm = await Notification.requestPermission();
+                    if (perm === 'granted') showToast('Bildirimler açıldı ✓');
+                    else showToast('Bildirim izni reddedildi');
+                    setSettingsSubPage('notifications');
+                  }} className={`w-11 h-6 rounded-full flex-shrink-0 transition-colors relative ${typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted' ? 'bg-[#2ECC71]' : isDarkMode ? 'bg-white/20' : 'bg-black/15'}`}>
+                    <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-all ${typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted' ? 'right-0.5' : 'left-0.5'}`}></div>
+                  </button>
                 </div>
-                <button onClick={async () => {
-                  if (!('Notification' in window)) return showToast('Tarayıcınız bildirimleri desteklemiyor');
-                  const perm = await Notification.requestPermission();
-                  if (perm === 'granted') showToast('Bildirimler açıldı ✓');
-                  else showToast('Bildirim izni reddedildi');
-                  setSettingsSubPage('notifications');
-                }} className={`w-11 h-6 rounded-full transition-colors relative ${typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted' ? 'bg-[#2ECC71]' : 'bg-white/20'}`}>
-                  <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full transition-all shadow ${typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted' ? 'right-0.5' : 'left-0.5'}`}></div>
-                </button>
               </div>
             </div>
           </div>
         );
 
         // Sayfa 1: Ana Ayarlar
+        const notifStatus = typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted' ? 'Açık' : 'Kapalı';
         return (
           <div className={`fixed inset-0 z-[6000] flex flex-col ${bg}`}>
             <PageHeader title="Ayarlar" onBack={() => { setAktifPage('menu'); setSettingsSubPage(null); }} />
-            <div className="flex-1 overflow-y-auto px-5 pb-10 space-y-2 pt-2">
-              <SettingsRow
-                label="Uygulama Dili"
-                sub={`${TRANSLATIONS[lang]?.flag} ${TRANSLATIONS[lang]?.name}`}
-                onClick={() => setSettingsSubPage('language')}
-              />
-              <SettingsRow
-                label="Anlık Bildirimler"
-                sub={typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted' ? 'Açık' : 'Kapalı'}
-                onClick={() => setSettingsSubPage('notifications')}
-              />
-              <SettingsRow
-                label="Sözleşmeler"
-                onClick={() => setSettingsSubPage('contracts')}
-              />
+            <div className="flex-1 overflow-y-auto pt-6 pb-10">
+              <ListGroup>
+                <ListRow label="Uygulama Dili" sub={`${TRANSLATIONS[lang]?.flag} ${TRANSLATIONS[lang]?.name}`} onClick={() => setSettingsSubPage('language')} />
+                <ListRow label="Anlık Bildirimler" sub={notifStatus} onClick={() => setSettingsSubPage('notifications')} />
+                <ListRow label="Sözleşmeler" onClick={() => setSettingsSubPage('contracts')} last />
+              </ListGroup>
             </div>
           </div>
         );
