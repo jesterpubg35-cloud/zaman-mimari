@@ -174,6 +174,15 @@ const TRANSLATIONS = {
     guideDisclaimer: '⚠️ Bu hizmet profesyonel rehberlik lisansı gerektirebilir. Tüm yasal sorumluluk hizmet verene aittir; platform yalnızca aracı sıfatıyla hareket eder.',
 
     wantToWork: 'Çalışmak İstiyorum',
+    onboardingTitle: 'Hizmet Vermeye Başla',
+    onboardingStep1Title: '1. Profilini Güçlendir',
+    onboardingStep1Desc: 'Müşterilerin sana güvenmesi için uzmanlık alanlarını ve dillerini profilinden düzenle.',
+    onboardingStep2Title: '2. Ödeme Yöntemini Bağla',
+    onboardingStep2Desc: 'Kazançlarını çekebilmek için güvenli Stripe altyapısını bağlaman gerekiyor.',
+    onboardingStep3Title: '3. İş Almaya Başla',
+    onboardingStep3Desc: 'Tebrikler! Artık gelen taleplere teklif verebilir veya pazarlık yapabilirsin.',
+    onboardingCta: 'Hemen Başla ve Stripe\u2019ı Bağla',
+    onboardingCtaConnected: 'Aktif Talepleri Gör',
     selectRoles: 'Roller Seçin',
     workingAs: 'olarak çalışıyorsunuz',
     save: 'Kaydet',
@@ -239,6 +248,9 @@ const TRANSLATIONS = {
     supportA4: 'Müşteri ödemeyi uygulama içinden yaptığında tutar platforma emanet olarak alınır ve dondurulur. Hizmet tamamlanıp her iki taraf da onayladığında ödeme otomatik olarak hizmet verene aktarılır. Onay verilmezse işlem incelemeye alınır; delil fotoğrafları bu süreçte belirleyicidir.',
     supportQ5: 'Anlaşmazlık yaşarsam ne yapmalıyım?',
     supportA5: 'Sohbet ekranındaki teslim fotoğrafları ve mesaj geçmişi resmi delil niteliğindedir. Uyuşmazlık durumunda önce karşı tarafla iletişim kurmanız, çözüm sağlanamıyorsa destek kanalımız üzerinden başvurmanız gerekir. Platform, kayıtlardaki verileri yetkili makamlarla paylaşmakla yükümlüdür.',
+    supportQ6: 'Nasıl para kazanırım?',
+    supportA6: 'Hizmet veren olarak platforma katılmak çok kolay! Profil sayfandaki "Hizmet Veren Paneli" bölümüne git ve "Çalışmak İstiyorum" butonuna bas. Karşına çıkan 3 adımlı rehber seni yönlendirecek.',
+    supportQ6Cta: 'Adım adım rehberi gör →',
     customer: 'Müşteri', emanci: 'EMANETÇİ', courier: 'KURYE', waiter: 'SIRA BEKLE',
     voiceMsg: 'Sesli Mesaj', voiceMsgSend: 'Sesli Mesaj Gönder',
     recording: 'Kayıt yapılıyor...', recordStop: 'Durdur',
@@ -479,6 +491,15 @@ const TRANSLATIONS = {
     guideDisclaimer: '⚠️ This service may require a professional guiding license. All legal liability rests solely with the service provider; the platform acts solely as an intermediary.',
 
     wantToWork: 'I Want to Work',
+    onboardingTitle: 'Start Providing Services',
+    onboardingStep1Title: '1. Strengthen Your Profile',
+    onboardingStep1Desc: 'Edit your specialties and languages in your profile so customers can trust you.',
+    onboardingStep2Title: '2. Connect Your Payment Method',
+    onboardingStep2Desc: 'You need to connect the secure Stripe infrastructure to withdraw your earnings.',
+    onboardingStep3Title: '3. Start Getting Jobs',
+    onboardingStep3Desc: 'Congratulations! You can now make offers or negotiate on incoming requests.',
+    onboardingCta: 'Get Started & Connect Stripe',
+    onboardingCtaConnected: 'View Active Requests',
     selectRoles: 'Select Roles',
     workingAs: 'working as',
     save: 'Save',
@@ -540,6 +561,9 @@ const TRANSLATIONS = {
     supportA4: 'When a customer makes a payment through the app, the amount is held in escrow by the platform and frozen. Once the service is completed and both parties confirm, the payment is automatically released to the service provider. If confirmation is withheld, the transaction is reviewed — delivery photos are decisive in this process.',
     supportQ5: 'What should I do if I have a dispute?',
     supportA5: 'Delivery photos and message history in the chat screen are official evidence. In case of a dispute, you should first contact the other party. If no resolution is reached, you must submit a request through our support channel. The platform is obligated to share the recorded data with the relevant authorities.',
+    supportQ6: 'How do I earn money?',
+    supportA6: 'Joining the platform as a service provider is easy! Go to the "Service Provider Panel" section on your profile page and tap "I Want to Work". The 3-step guide that appears will walk you through everything.',
+    supportQ6Cta: 'See the step-by-step guide →',
     customer: 'Customer', emanci: 'CUSTODIAN', courier: 'COURIER', waiter: 'WAIT IN LINE',
     voiceMsg: 'Voice Message', voiceMsgSend: 'Send Voice Message',
     recording: 'Recording...', recordStop: 'Stop',
@@ -1583,6 +1607,7 @@ function Home() {
   const [transferLoading, setTransferLoading] = useState(false);
 
   // Hizmet Veren (Provider) state'leri
+  const [showProviderOnboarding, setShowProviderOnboarding] = useState(false);
   const [isProvider, setIsProvider] = useState(false);
   const [stripeConnected, setStripeConnected] = useState(false);
   const [providerEarnings, setProviderEarnings] = useState(0);
@@ -4676,7 +4701,18 @@ function Home() {
       {aktifPage === 'support' && (
           <div className={`fixed inset-0 z-[6000] flex flex-col ${isDarkMode ? 'bg-[#0F0F0F]' : 'bg-zinc-200'}`}>
             <div className="flex items-center gap-4 p-6 pt-12"><button onClick={() => setAktifPage('menu')} className={`text-2xl ${isDarkMode ? 'text-white' : 'text-black'}`}>←</button><h2 className={`font-black text-xl uppercase ${isDarkMode ? 'text-white' : 'text-black'}`}>{t.support}</h2></div>
-            <div className="flex-1 overflow-y-auto px-6 pb-10">{[1, 2, 3, 4, 5].map(i => <Accordion key={i} title={t[`supportQ${i}`]} dark={isDarkMode}>{t[`supportA${i}`]}</Accordion>)}</div>
+            <div className="flex-1 overflow-y-auto px-6 pb-10">
+              {[1, 2, 3, 4, 5].map(i => <Accordion key={i} title={t[`supportQ${i}`]} dark={isDarkMode}>{t[`supportA${i}`]}</Accordion>)}
+              <Accordion title={t.supportQ6} dark={isDarkMode}>
+                <div>{t.supportA6}</div>
+                <button
+                  onClick={() => { setAktifPage('account'); setTimeout(() => setShowProviderOnboarding(true), 300); }}
+                  className="mt-3 inline-block text-[#2ECC71] font-black text-xs underline"
+                >
+                  {t.supportQ6Cta}
+                </button>
+              </Accordion>
+            </div>
           </div>
         )}
         {aktifPage === 'account' && (
@@ -4852,7 +4888,7 @@ function Home() {
                 
                 {!isProvider ? (
                   <button 
-                    onClick={() => setAktifPage('provider')}
+                    onClick={() => setShowProviderOnboarding(true)}
                     className="w-full py-4 bg-gradient-to-r from-[#2ECC71] to-[#27ae60] text-black rounded-2xl font-black text-sm hover:scale-[1.02] transition-transform"
                   >
                     💼 {t.providerWantWork}
@@ -5217,6 +5253,55 @@ function Home() {
                   {transferLoading ? t.transferSending : t.transferBtn}
                 </button>
               </div>
+            </div>
+          </div>
+        )}
+        {showProviderOnboarding && (
+          <div className="fixed inset-0 z-[9000] flex items-end justify-center bg-black/70 backdrop-blur-sm" onClick={() => setShowProviderOnboarding(false)}>
+            <div
+              onClick={e => e.stopPropagation()}
+              className={`w-full max-w-md rounded-t-3xl p-6 pb-10 space-y-5 ${isDarkMode ? 'bg-[#111]' : 'bg-white'}`}
+            >
+              {/* Handle */}
+              <div className="flex justify-center mb-1">
+                <div className={`w-10 h-1 rounded-full ${isDarkMode ? 'bg-white/20' : 'bg-black/20'}`} />
+              </div>
+
+              <h2 className={`font-black text-xl text-center ${isDarkMode ? 'text-white' : 'text-black'}`}>{t.onboardingTitle}</h2>
+
+              {/* 3 Adım */}
+              <div className="space-y-3">
+                {[
+                  { icon: '👤', title: t.onboardingStep1Title, desc: t.onboardingStep1Desc, color: 'bg-blue-500/15 border-blue-500/30' },
+                  { icon: '💳', title: t.onboardingStep2Title, desc: t.onboardingStep2Desc, color: 'bg-[#635BFF]/15 border-[#635BFF]/30' },
+                  { icon: '🚀', title: t.onboardingStep3Title, desc: t.onboardingStep3Desc, color: 'bg-[#2ECC71]/15 border-[#2ECC71]/30' },
+                ].map(({ icon, title, desc, color }) => (
+                  <div key={title} className={`flex items-start gap-3 p-4 rounded-2xl border ${color}`}>
+                    <span className="text-2xl flex-shrink-0">{icon}</span>
+                    <div>
+                      <p className={`font-black text-sm ${isDarkMode ? 'text-white' : 'text-black'}`}>{title}</p>
+                      <p className={`text-xs mt-0.5 leading-relaxed ${isDarkMode ? 'text-white/60' : 'text-black/60'}`}>{desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* CTA Butonu */}
+              {stripeConnected ? (
+                <button
+                  onClick={() => { setShowProviderOnboarding(false); setAktifPage('map'); }}
+                  className="w-full py-4 bg-gradient-to-r from-[#2ECC71] to-[#27ae60] text-black rounded-2xl font-black text-sm"
+                >
+                  🚀 {t.onboardingCtaConnected}
+                </button>
+              ) : (
+                <button
+                  onClick={() => { setShowProviderOnboarding(false); setAktifPage('provider'); }}
+                  className="w-full py-4 bg-[#635BFF] text-white rounded-2xl font-black text-sm shadow-lg shadow-[#635BFF]/30 hover:scale-[1.02] transition-transform"
+                >
+                  ⚡ {t.onboardingCta}
+                </button>
+              )}
             </div>
           </div>
         )}
