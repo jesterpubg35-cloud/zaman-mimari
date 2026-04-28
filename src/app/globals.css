@@ -107,9 +107,15 @@ button:active, a:active, [role="button"]:active {
 }
 
 /* Leaflet zoom sırasında marker kaymasını önle */
-.leaflet-zoom-anim .leaflet-marker-pane > * {
+.leaflet-zoom-anim .leaflet-marker-pane > *,
+.leaflet-zoom-anim .leaflet-overlay-pane > *,
+.leaflet-zoom-anim .leaflet-shadow-pane > * {
   transition: none !important;
-  will-change: transform;
+  animation: none !important;
+}
+.leaflet-marker-icon,
+.leaflet-marker-shadow {
+  transition: none !important;
 }
 
 /* Leaflet Map düzeltmeleri */

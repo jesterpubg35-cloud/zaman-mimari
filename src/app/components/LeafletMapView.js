@@ -7,24 +7,17 @@ import 'leaflet/dist/leaflet.css';
 function SelfMarker({ lat, lng, color }) {
   const map = useMap();
   const markerRef = useRef(null);
-  const latRef = useRef(lat);
-  const lngRef = useRef(lng);
 
-  // İlk mount: marker oluştur
   useEffect(() => {
-    if (!lat || !lng) return;
-    latRef.current = lat;
-    lngRef.current = lng;
-
-    const icon = L.divIcon({
-      html: `<div style="width:14px;height:14px;border-radius:50%;background:${color};border:2.5px solid white;box-shadow:0 2px 6px rgba(0,0,0,0.5);"></div>`,
-      className: '',
-      iconSize: [14, 14],
-      iconAnchor: [7, 7],
-    });
-
+    // Marker henüz yoksa oluştur (sadece bir kez)
     if (!markerRef.current) {
-      markerRef.current = L.marker([lat, lng], {
+      const icon = L.divIcon({
+        html: `<div style="width:14px;height:14px;border-radius:50%;background:${color};border:2.5px solid white;box-shadow:0 2px 6px rgba(0,0,0,0.5);"></div>`,
+        className: '',
+        iconSize: [14, 14],
+        iconAnchor: [7, 7],
+      });
+      markerRef.current = L.marker([lat || 0, lng || 0], {
         icon,
         interactive: false,
         keyboard: false,
@@ -33,27 +26,22 @@ function SelfMarker({ lat, lng, color }) {
       }).addTo(map);
     }
 
-    return () => {};
+    // Cleanup: sadece component tamamen unmount olunca
+    return () => {
+      if (markerRef.current) {
+        markerRef.current.remove();
+        markerRef.current = null;
+      }
+    };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, []); // [] → sadece mount/unmount, ASLA yeniden çalışmaz
 
-  // Konum güncellenince sadece setLatLng - icon rebuild yok, marker DOM'dan çıkmıyor
+  // Konum değişince sadece setLatLng - yeni marker oluşturma
   useEffect(() => {
-    if (!lat || !lng) return;
-    latRef.current = lat;
-    lngRef.current = lng;
-    if (markerRef.current) {
+    if (markerRef.current && lat && lng) {
       markerRef.current.setLatLng([lat, lng]);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lat, lng]);
-
-  // Unmount
-  useEffect(() => {
-    return () => {
-      if (markerRef.current) { markerRef.current.remove(); markerRef.current = null; }
-    };
-  }, []);
 
   return null;
 }
@@ -153,8 +141,8 @@ export default function LeafletMapView({
         <TileLayer url={tileUrl} attribution={tileAttrib} maxZoom={22} />
         <MapRefSetter mapRef={mapRef} />
 
-        {/* Kendi marker'ı - doğrudan Leaflet API ile, zoom/pan'de kaymasın */}
-        {lat && lng && <SelfMarker lat={lat} lng={lng} color={selfColor} />}
+        {/* Kendi marker'ı - koşulsuz render, içeride guard var, duplicate olmaz */}
+        <SelfMarker lat={lat} lng={lng} color={selfColor} />
 
         {/* Diğer kullanıcı marker'ları */}
         {(others || []).map((u) => {
