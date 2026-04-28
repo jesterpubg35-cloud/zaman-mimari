@@ -4,48 +4,6 @@ import { MapContainer, TileLayer, Marker, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
-function SelfMarker({ lat, lng, color }) {
-  const map = useMap();
-  const markerRef = useRef(null);
-
-  useEffect(() => {
-    // Marker henüz yoksa oluştur (sadece bir kez)
-    if (!markerRef.current) {
-      const icon = L.divIcon({
-        html: `<div style="width:14px;height:14px;border-radius:50%;background:${color};border:2.5px solid white;box-shadow:0 2px 6px rgba(0,0,0,0.5);"></div>`,
-        className: '',
-        iconSize: [14, 14],
-        iconAnchor: [7, 7],
-      });
-      markerRef.current = L.marker([lat || 0, lng || 0], {
-        icon,
-        interactive: false,
-        keyboard: false,
-        zIndexOffset: 9999,
-        bubblingMouseEvents: false,
-      }).addTo(map);
-    }
-
-    // Cleanup: sadece component tamamen unmount olunca
-    return () => {
-      if (markerRef.current) {
-        markerRef.current.remove();
-        markerRef.current = null;
-      }
-    };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // [] → sadece mount/unmount, ASLA yeniden çalışmaz
-
-  // Konum değişince sadece setLatLng - yeni marker oluşturma
-  useEffect(() => {
-    if (markerRef.current && lat && lng) {
-      markerRef.current.setLatLng([lat, lng]);
-    }
-  }, [lat, lng]);
-
-  return null;
-}
-
 // Leaflet default icon fix
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -63,11 +21,51 @@ function createDivIcon(html, size = 28) {
   });
 }
 
-function MapRefSetter({ mapRef }) {
+// Marker'ı doğrudan map instance üzerinde yönet - React render döngüsünden bağımsız
+// selfMarkerRef: module seviyesinde tek instance garantisi
+let _selfMarker = null;
+
+function MapRefSetter({ mapRef, lat, lng, color }) {
   const map = useMap();
+
   useEffect(() => {
     if (mapRef) mapRef.current = map;
-  }, [map, mapRef]);
+
+    // Var olan marker'ı temizle (önceki map instance'ından kalabilir)
+    if (_selfMarker) {
+      _selfMarker.remove();
+      _selfMarker = null;
+    }
+
+    if (lat && lng) {
+      const icon = L.divIcon({
+        html: `<div style="width:14px;height:14px;border-radius:50%;background:${color};border:2.5px solid white;box-shadow:0 2px 6px rgba(0,0,0,0.5);"></div>`,
+        className: '',
+        iconSize: [14, 14],
+        iconAnchor: [7, 7],
+      });
+      _selfMarker = L.marker([lat, lng], {
+        icon,
+        interactive: false,
+        keyboard: false,
+        zIndexOffset: 9999,
+        bubblingMouseEvents: false,
+      }).addTo(map);
+    }
+
+    return () => {
+      if (_selfMarker) { _selfMarker.remove(); _selfMarker = null; }
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [map]); // sadece map değişince yeniden oluştur
+
+  // Konum değişince sadece setLatLng
+  useEffect(() => {
+    if (_selfMarker && lat && lng) {
+      _selfMarker.setLatLng([lat, lng]);
+    }
+  }, [lat, lng]);
+
   return null;
 }
 
@@ -139,10 +137,7 @@ export default function LeafletMapView({
         touchZoom={true}
       >
         <TileLayer url={tileUrl} attribution={tileAttrib} maxZoom={22} />
-        <MapRefSetter mapRef={mapRef} />
-
-        {/* Kendi marker'ı - koşulsuz render, içeride guard var, duplicate olmaz */}
-        <SelfMarker lat={lat} lng={lng} color={selfColor} />
+        <MapRefSetter mapRef={mapRef} lat={lat} lng={lng} color={selfColor} />
 
         {/* Diğer kullanıcı marker'ları */}
         {(others || []).map((u) => {
