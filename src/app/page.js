@@ -3996,20 +3996,6 @@ function Home() {
               </div>
             )}
 
-            <div className="pt-2">
-              <div className="flex items-center gap-3 my-3">
-                <div className="h-px bg-white/10 flex-1" />
-                <div className="text-[10px] font-black uppercase tracking-widest text-white/30">veya</div>
-                <div className="h-px bg-white/10 flex-1" />
-              </div>
-              <button
-                onClick={handleGoogleLogin}
-                disabled={authLoading}
-                className={`w-full py-4 rounded-[24px] border border-white/10 bg-white/5 text-white font-black uppercase tracking-widest text-[11px] flex items-center justify-center gap-3 shadow-sm hover:bg-white/10 transition active:scale-95 ${authLoading ? 'opacity-50 cursor-wait' : ''}`}
-              >
-                🌐 Google ile Giriş Yap
-              </button>
-            </div>
           </div>
         </div>
       </div>
