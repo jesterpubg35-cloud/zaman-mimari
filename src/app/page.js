@@ -45,13 +45,14 @@ const supabase = createClient(supabaseUrl, supabaseKey, {
 const MIN_TRANSACTION_AMOUNT = 100; // TL — ileride bu değeri değiştirerek taban fiyatı güncelleyebilirsiniz
 
 // Simple Pigeon Maps component (no dynamic import needed)
-const roleOrder = ['kurye', 'emanetci', 'siraci', 'hepsi'];
+const roleOrder = ['kurye', 'emanetci', 'siraci', 'rehber', 'hepsi'];
 const getRoleColor = (roles) => {
   if (!roles || roles.length === 0) return '#6b7280';
   if (roles.includes('hepsi')) return '#bf00ff';   // neon mor
   if (roles.includes('kurye')) return '#00ff88';   // neon yeşil
   if (roles.includes('siraci')) return '#ff6a00';  // neon turuncu
   if (roles.includes('emanetci')) return '#00cfff'; // neon mavi
+  if (roles.includes('rehber')) return '#f59e0b';  // neon amber
   return '#6b7280';
 };
 
@@ -61,12 +62,13 @@ const getRoleGlow = (roles) => {
   if (roles.includes('kurye')) return '0 0 10px #00ff88, 0 0 20px #00ff8888';
   if (roles.includes('siraci')) return '0 0 10px #ff6a00, 0 0 20px #ff6a0088';
   if (roles.includes('emanetci')) return '0 0 10px #00cfff, 0 0 20px #00cfff88';
+  if (roles.includes('rehber')) return '0 0 10px #f59e0b, 0 0 20px #f59e0b88';
   return 'none';
 };
 
 const getPrimaryRole = (u) => {
   const roles = u?.roles || [u?.user_role];
-  const order = ['kurye', 'emanetci', 'siraci', 'hepsi'];
+  const order = ['kurye', 'emanetci', 'siraci', 'rehber', 'hepsi'];
   for (const r of order) if (roles?.includes(r)) return r;
   return 'musteri';
 };
@@ -159,9 +161,18 @@ const TRANSLATIONS = {
     support: 'Destek', payment: 'Ödeme', history: 'Geçmiş',
     settings: 'Ayarlar', darkTheme: 'Koyu Tema', logout: 'Çıkış Yap',
     myAccount: 'Hesabım ▶',
-    fastCourier: 'HIZLI KURYE', custodian: 'EMANETÇİ', waitInLine: 'SIRA BEKLE',
-    courierDesc: 'Paket taşır', custodianDesc: 'Emanet kabul eder', waitDesc: 'Sizin yerinize bekler',
+    fastCourier: 'HIZLI KURYE', custodian: 'EMANETÇİ', waitInLine: 'SIRA BEKLE', guide: 'REHBER',
+    courierDesc: 'Paket taşır', custodianDesc: 'Emanet kabul eder', waitDesc: 'Sizin yerinize bekler', guideDesc: 'Yol gösterir ve eşlik eder',
     all: 'HEPSİ', allDesc: 'Tüm çalışanları gör',
+    guideLanguages: 'Konuştuğu Diller',
+    guideLanguagesPlaceholder: 'Örn: Türkçe, İngilizce, Almanca',
+    guideSpecialties: 'Uzmanlık Alanları',
+    guideSpecialtiesPlaceholder: 'Örn: Tarihi Alanlar, Doğa Yürüyüşleri, Şehir Turu',
+    guideProfileSection: 'Rehberlik Bilgileri',
+    guideSave: 'Rehber Profilini Kaydet',
+    guideSaved: 'Rehber profili kaydedildi!',
+    guideDisclaimer: '⚠️ Bu hizmet profesyonel rehberlik lisansı gerektirebilir. Tüm yasal sorumluluk hizmet verene aittir; platform yalnızca aracı sıfatıyla hareket eder.',
+
     wantToWork: 'Çalışmak İstiyorum',
     selectRoles: 'Roller Seçin',
     workingAs: 'olarak çalışıyorsunuz',
@@ -408,7 +419,7 @@ const TRANSLATIONS = {
     contractUserText: `1. Taraflar ve Kapsam\n\nİşbu Kullanıcı Sözleşmesi ("Sözleşme"), Platform ile Kullanıcı arasındaki karşılıklı hak ve yükümlülükleri düzenler. Platforma üye olan veya hizmetlerinden faydalanan her gerçek kişi, işbu Sözleşme'yi okumuş, anlamış ve kabul etmiş sayılır.\n\n2. Platformun Rolü ve Aracılık Hizmeti\n\nPlatform, hizmet veren (kurye, emanetçi, sıra bekleyen) ile hizmet alanı bir araya getiren teknolojik bir aracı altyapıdır. Platform, bir "Aracı Hizmet Sağlayıcı" sıfatıyla hareket eder ve taraflar arasında kurulan hukuki ilişkinin doğrudan tarafı değildir.\n\n3. Sorumluluk Sınırı\n\nPlatformun herhangi bir uyuşmazlık, kayıp veya zarar durumundaki mali sorumluluğu; yalnızca o işlemden tahsil edilen hizmet bedeli (komisyon) tutarıyla sınırlıdır. Platform, hiçbir koşulda eşya bedelini, kayıp maliyetini, gecikmeden doğan zararı ödemekle yükümlü değildir.\n\n4. Kullanıcının İbrası\n\nKullanıcı; hırsızlık, fiziksel hasar, gecikme veya üçüncü şahısların herhangi bir kusuru nedeniyle doğabilecek tüm hukuki ve cezai taleplerden Platform'u geri dönülemez biçimde ibra eder.\n\n5. Bağımsız Yüklenici Statüsü\n\nPlatform üzerinden hizmet veren tüm bireyler bağımsız birer yüklenicidir. Bu kişiler Platform'un çalışanı, temsilcisi veya alt yüklenicisi değildir.\n\n6. Delil Sözleşmesi\n\nPlatform üzerinden çekilen fotoğraflar ve konum kayıtları, 6100 sayılı HMK m.193 uyarınca kesin delil niteliğindedir.\n\n7. Yasaklı İçerik\n\nEmanet veya kurye paketinin içeriğinden tamamen Hizmet Alan sorumludur. Yasadışı içerik durumunda veriler doğrudan adli makamlarla paylaşılır.`,
     contractPrivacyText: `1. Veri Sorumlusu\n\nPlatform, 6698 sayılı KVKK kapsamında veri sorumlusu sıfatıyla hareket etmektedir.\n\n2. Toplanan Kişisel Veriler\n\nAd-soyad, e-posta, telefon numarası ve konum bilgisi toplanır. Teslim fotoğrafları şifreli olarak saklanır.\n\n3. Veri İşleme Amaçları\n\nKonum verisi yalnızca harita eşleşmesi için kullanılır. Verileriniz reklam amacıyla kullanılmaz.\n\n4. Veri Paylaşımı\n\nVeriler; Stripe ve Supabase ile yalnızca hizmet ifasına yönelik ölçüde paylaşılır. Yasal zorunluluk halinde yetkili makamlarla paylaşılabilir.\n\n5. Kullanıcı Hakları\n\nKVKK m.11 uyarınca verilerinize erişme, düzeltme veya silme hakkına sahipsiniz.`,
     contractCookieText: `1. Kullanılan Teknolojiler\n\nPlatform, çerez yerine localStorage kullanır. Yalnızca oturum, tema ve dil tercihleri için kullanılır.\n\n2. Reklam ve İzleme\n\nÜçüncü taraf reklam veya izleme aracı kullanılmamaktadır.\n\n3. Veri Kontrolü\n\nOturumu kapatarak yerel depolama verilerini temizleyebilirsiniz.`,
-    contractTermsText: `1. Genel Yükümlülükler\n\nTüm kullanıcılar işbu Hizmet Şartları'na uymakla yükümlüdür.\n\n2. Emanet Hizmeti\n\nEmanet eşyanın içeriği ve yasallığı Hizmet Alan'ın sorumluluğundadır. Teslim fotoğrafları HMK m.193 uyarınca kesin delil sayılır.\n\n3. Yasaklı İçerik\n\nYasadışı içerik taşınması yasaktır. Tespit durumunda veriler adli makamlara iletilir.\n\n4. Sıra Bekleme\n\nSıra bekleyen kullanıcı belirlenen saatte hazır bulunmak zorundadır.\n\n5. Ödeme Kuralları\n\nTüm ödemeler platform altyapısı üzerinden yapılmalıdır. Platform dışı ödemeler garanti kapsamı dışındadır.\n\n6. Sorumluluk Sınırı\n\nPlatform'un azami mali sorumluluğu ilgili işlemin komisyon tutarıyla sınırlıdır.\n\n7. İptal ve İade\n\nHizmet başladıktan sonraki iptallerde kısmi kesinti uygulanabilir.`,
+    contractTermsText: `1. Genel Yükümlülükler\n\nTüm kullanıcılar işbu Hizmet Şartları'na uymakla yükümlüdür.\n\n2. Emanet Hizmeti\n\nEmanet eşyanın içeriği ve yasallığı Hizmet Alan'ın sorumluluğundadır. Teslim fotoğrafları HMK m.193 uyarınca kesin delil sayılır.\n\n3. Yasaklı İçerik\n\nYasadışı içerik taşınması yasaktır. Tespit durumunda veriler adli makamlara iletilir.\n\n4. Sıra Bekleme\n\nSıra bekleyen kullanıcı belirlenen saatte hazır bulunmak zorundadır.\n\n5. Ödeme Kuralları\n\nTüm ödemeler platform altyapısı üzerinden yapılmalıdır. Platform dışı ödemeler garanti kapsamı dışındadır.\n\n6. Sorumluluk Sınırı\n\nPlatform'un azami mali sorumluluğu ilgili işlemin komisyon tutarıyla sınırlıdır.\n\n7. İptal ve İade\n\nHizmet başladıktan sonraki iptallerde kısmi kesinti uygulanabilir.\n\n8. Rehberlik Hizmetleri (Özel Hüküm)\n\nPlatform üzerinden sunulan rehberlik hizmetleri profesyonel tur rehberliği lisansı gerektirebilir. Bu hizmeti sunan kişi; yasal zorunluluklara uygunluk, lisans/sertifika gereklilikleri ve hizmet sırasında meydana gelen tüm kaza, kayıp veya uyuşmazlıklardan münferiden sorumludur. Platform bu hizmet türünde yalnızca aracı sıfatıyla hareket eder; hiçbir mülkiyet, mali veya hukuki sorumluluk üstlenmez.`,
   },
   en: {
     name: 'English', flag: '🇬🇧',
@@ -445,9 +456,18 @@ const TRANSLATIONS = {
     support: 'Support', payment: 'Payment', history: 'History',
     settings: 'Settings', darkTheme: 'Dark Theme', logout: 'Logout',
     myAccount: 'My Account ▶',
-    fastCourier: 'FAST COURIER', custodian: 'CUSTODIAN', waitInLine: 'WAIT IN LINE',
-    courierDesc: 'Delivers packages', custodianDesc: 'Accepts deposits', waitDesc: 'Waits in line for you',
+    fastCourier: 'FAST COURIER', custodian: 'CUSTODIAN', waitInLine: 'WAIT IN LINE', guide: 'GUIDE',
+    courierDesc: 'Delivers packages', custodianDesc: 'Accepts deposits', waitDesc: 'Waits in line for you', guideDesc: 'Guides and accompanies',
     all: 'ALL', allDesc: 'View all workers',
+    guideLanguages: 'Languages Spoken',
+    guideLanguagesPlaceholder: 'e.g. Turkish, English, German',
+    guideSpecialties: 'Areas of Expertise',
+    guideSpecialtiesPlaceholder: 'e.g. Historical Sites, Nature Hikes, City Tour',
+    guideProfileSection: 'Guide Profile',
+    guideSave: 'Save Guide Profile',
+    guideSaved: 'Guide profile saved!',
+    guideDisclaimer: '⚠️ This service may require a professional guiding license. All legal liability rests solely with the service provider; the platform acts solely as an intermediary.',
+
     wantToWork: 'I Want to Work',
     selectRoles: 'Select Roles',
     workingAs: 'working as',
@@ -690,7 +710,7 @@ const TRANSLATIONS = {
     contractUserText: `1. Parties and Scope\n\nThis User Agreement ("Agreement") governs the mutual rights and obligations between the Platform and the User. Any individual who registers or uses the Platform's services is deemed to have read, understood, and accepted this Agreement.\n\n2. Platform Role\n\nThe Platform is a technological intermediary that connects service providers (couriers, custodians, queue waiters) with service recipients. The Platform acts as an "Intermediary Service Provider" and is not a direct party to the legal relationship between users.\n\n3. Limitation of Liability\n\nThe Platform's financial liability in any dispute is limited solely to the service fee (commission) collected for that transaction. The Platform is not obligated to pay for item value, loss costs, or damages arising from delays.\n\n4. User Release\n\nThe User irrevocably releases the Platform, its managers, employees, and shareholders from all legal and criminal claims arising from theft, physical damage, delay, or any fault of third parties.\n\n5. Independent Contractor Status\n\nAll individuals providing services through the Platform are independent contractors. They are not employees, representatives, or sub-contractors of the Platform.\n\n6. Evidence Agreement\n\nPhotographs and location records taken through the Platform constitute conclusive evidence under applicable civil procedure law.\n\n7. Prohibited Content\n\nThe Service Recipient is solely responsible for the contents of any package or deposit. In case of illegal content, data will be shared directly with judicial authorities.`,
     contractPrivacyText: `1. Data Controller\n\nThe Platform acts as data controller under applicable personal data protection laws.\n\n2. Collected Personal Data\n\nFull name, email, phone number, and location data are collected. Delivery photos are stored securely.\n\n3. Data Processing Purposes\n\nLocation data is used solely for map matching. Your data is never used for advertising.\n\n4. Data Sharing\n\nData is shared with Stripe and Supabase only to the extent necessary for service delivery. Sharing with authorities may occur under legal obligation.\n\n5. User Rights\n\nYou have the right to access, correct, or delete your personal data upon request.`,
     contractCookieText: `1. Storage Technologies\n\nThe Platform uses localStorage instead of cookies, limited to session management, theme, and language preferences.\n\n2. Advertising and Tracking\n\nNo third-party advertising or behavioral tracking tools are used.\n\n3. Data Control\n\nYou can clear local storage data by logging out of the application.`,
-    contractTermsText: `1. General Obligations\n\nAll users are obligated to comply with these Terms of Service.\n\n2. Custodian Service\n\nThe Service Recipient is responsible for the contents and legality of deposited items. Delivery photos constitute conclusive evidence under applicable law.\n\n3. Prohibited Content\n\nTransporting illegal content is strictly prohibited. Data will be forwarded to judicial authorities upon detection.\n\n4. Queue Waiting Service\n\nThe queue waiter must be present at the specified time and location.\n\n5. Payment Rules\n\nAll payments must be made through the Platform's infrastructure. Payments made outside the Platform are not covered.\n\n6. Limitation of Liability\n\nThe Platform's maximum financial liability is limited to the commission amount of the relevant transaction.\n\n7. Cancellation and Refund\n\nPartial deductions may apply for cancellations after service has commenced.`,
+    contractTermsText: `1. General Obligations\n\nAll users are obligated to comply with these Terms of Service.\n\n2. Custodian Service\n\nThe Service Recipient is responsible for the contents and legality of deposited items. Delivery photos constitute conclusive evidence under applicable law.\n\n3. Prohibited Content\n\nTransporting illegal content is strictly prohibited. Data will be forwarded to judicial authorities upon detection.\n\n4. Queue Waiting Service\n\nThe queue waiter must be present at the specified time and location.\n\n5. Payment Rules\n\nAll payments must be made through the Platform's infrastructure. Payments made outside the Platform are not covered.\n\n6. Limitation of Liability\n\nThe Platform's maximum financial liability is limited to the commission amount of the relevant transaction.\n\n7. Cancellation and Refund\n\nPartial deductions may apply for cancellations after service has commenced.\n\n8. Guide Services (Special Provision)\n\nGuide services offered through the Platform may require a professional tour guide license. The individual providing this service bears sole responsibility for compliance with all applicable laws, licensing requirements, and any accident, loss, or dispute arising during service delivery. The Platform acts solely as an intermediary for this service type and assumes no ownership, financial, or legal liability.`,
   },
 };
 
@@ -700,11 +720,12 @@ const HIZMETLER = {
   emanetci: { id: 'emanetci', emoji: '💼' },
   kurye: { id: 'kurye', emoji: '📦' },
   siraci: { id: 'siraci', emoji: '⏳' },
+  rehber: { id: 'rehber', emoji: '🦭' },
   hepsi: { id: 'hepsi', emoji: '🌍' },
 };
 
-const PRICE_PER_KM = { kurye: 15, emanetci: 10, siraci: 8, musteri: 5 };
-const BASE_PRICE = { kurye: 30, emanetci: 20, siraci: 15, musteri: 10 };
+const PRICE_PER_KM = { kurye: 15, emanetci: 10, siraci: 8, rehber: 20, musteri: 5 };
+const BASE_PRICE = { kurye: 30, emanetci: 20, siraci: 15, rehber: 50, musteri: 10 };
 
 const OFFER_TIMEOUT_MS = 5 * 60 * 1000;
 const LOCATION_STALE_MS = 30 * 60 * 1000; // 30 dakika - kullanıcılar arka planda da bir süre görünsün
@@ -1398,6 +1419,11 @@ function Home() {
     }
   });
   
+  // Rehber profil alanları
+  const [guideLanguages, setGuideLanguages] = useState('');
+  const [guideSpecialties, setGuideSpecialties] = useState('');
+  const [guideSaveLoading, setGuideSaveLoading] = useState(false);
+
   // Email değiştirme
   const [newEmail, setNewEmail] = useState('');
   const [oldEmailCode, setOldEmailCode] = useState('');
@@ -1909,6 +1935,8 @@ function Home() {
         setAddressDistrict(profile.district || '');
         setAddressNeighborhood(profile.neighborhood || '');
         setAddressPostalCode(profile.postal_code || '');
+        setGuideLanguages(profile.guide_languages || '');
+        setGuideSpecialties(profile.guide_specialties || '');
         
         // Rol bilgilerini set et
         const userRoles = rolesForUser;
@@ -2910,6 +2938,25 @@ function Home() {
       alert(t.errorOccurred + ': ' + (err.message || 'Bilinmeyen hata'));
     } finally {
       setProfileEditLoading(false);
+    }
+  };
+
+  const handleSaveGuideProfile = async () => {
+    if (!user?.id) return;
+    setGuideSaveLoading(true);
+    try {
+      const guideData = { guide_languages: guideLanguages, guide_specialties: guideSpecialties };
+      const { error } = await supabase.from('profilkisi').update(guideData).eq('user_id', user.id);
+      if (error) throw error;
+      const updatedUser = { ...user, ...guideData };
+      setUser(updatedUser);
+      localStorage.setItem('radar_user', JSON.stringify(updatedUser));
+      showToast(t.guideSaved);
+    } catch (err) {
+      console.error('Save guide profile error:', err);
+      alert(t.errorOccurred + ': ' + (err.message || 'Bilinmeyen hata'));
+    } finally {
+      setGuideSaveLoading(false);
     }
   };
 
@@ -4680,6 +4727,41 @@ function Home() {
                   </div>
                 )}
               </div>
+
+              {/* Rehberlik Profil Bölümü - sadece rehber rolündeyse göster */}
+              {user?.roles?.includes('rehber') && (
+                <div className={`rounded-3xl p-6 space-y-4 border ${isDarkMode ? 'bg-amber-500/5 border-amber-500/20' : 'bg-amber-50 border-amber-200'}`}>
+                  <h3 className="font-bold text-sm uppercase text-amber-500">{t.guideProfileSection} 🦭</h3>
+                  <p className="text-[10px] text-amber-500/70 leading-relaxed">{t.guideDisclaimer}</p>
+                  <div className="space-y-1">
+                    <p className={`text-[10px] font-bold uppercase ${isDarkMode ? 'text-white/40' : 'text-black/40'}`}>{t.guideLanguages}</p>
+                    <input
+                      type="text"
+                      value={guideLanguages}
+                      onChange={(e) => setGuideLanguages(e.target.value)}
+                      placeholder={t.guideLanguagesPlaceholder}
+                      className={`w-full p-3 rounded-xl text-sm outline-none border ${isDarkMode ? 'bg-white/10 text-white placeholder-gray-500 border-white/10' : 'bg-white text-black border-amber-200 placeholder-gray-400'}`}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <p className={`text-[10px] font-bold uppercase ${isDarkMode ? 'text-white/40' : 'text-black/40'}`}>{t.guideSpecialties}</p>
+                    <input
+                      type="text"
+                      value={guideSpecialties}
+                      onChange={(e) => setGuideSpecialties(e.target.value)}
+                      placeholder={t.guideSpecialtiesPlaceholder}
+                      className={`w-full p-3 rounded-xl text-sm outline-none border ${isDarkMode ? 'bg-white/10 text-white placeholder-gray-500 border-white/10' : 'bg-white text-black border-amber-200 placeholder-gray-400'}`}
+                    />
+                  </div>
+                  <button
+                    onClick={handleSaveGuideProfile}
+                    disabled={guideSaveLoading}
+                    className="w-full py-3 bg-amber-500 text-black rounded-2xl font-bold text-sm disabled:opacity-50"
+                  >
+                    {guideSaveLoading ? '...' : t.guideSave}
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -5319,7 +5401,7 @@ function Home() {
               <div className="animate-in fade-in slide-in-from-bottom-4">
                 <div className="flex items-center gap-4 mb-4">
                   <button onClick={() => handleProfilAc(seciliKisi)} className="w-16 h-16 bg-gray-500/10 rounded-3xl flex items-center justify-center text-4xl">{HIZMETLER[seciliKisi.user_role]?.emoji || '👤'}</button>
-                  <div className="flex-1"><h3 className={`font-black text-xl uppercase italic ${isDarkMode ? 'text-white' : 'text-black'}`}>{seciliKisi.name}</h3><p className="text-[10px] font-bold text-[#2ECC71] uppercase">{t[seciliKisi.user_role === 'musteri' ? 'customer' : seciliKisi.user_role === 'emanetci' ? 'emanci' : seciliKisi.user_role === 'kurye' ? 'courier' : 'waiter']}</p></div>
+                  <div className="flex-1"><h3 className={`font-black text-xl uppercase italic ${isDarkMode ? 'text-white' : 'text-black'}`}>{seciliKisi.name}</h3><p className="text-[10px] font-bold text-[#2ECC71] uppercase">{t[seciliKisi.user_role === 'musteri' ? 'customer' : seciliKisi.user_role === 'emanetci' ? 'emanci' : seciliKisi.user_role === 'kurye' ? 'courier' : seciliKisi.user_role === 'rehber' ? 'guide' : 'waiter']}</p></div>
                 </div>
                 {!aktifIs && (
                   <><div className="space-y-3 mb-4"><input value={isDetayi} onChange={(e) => setIsDetayi(e.target.value)} placeholder={t.jobDetail} className={`w-full p-4 rounded-2xl border border-transparent outline-none focus:border-[#2ECC71] text-sm ${isDarkMode ? 'bg-gray-500/5 text-white placeholder-gray-500' : 'bg-gray-100 text-black'}`} /><div className="relative"><input type="number" value={teklifFiyat} onChange={(e) => setTeklifFiyat(e.target.value)} placeholder={t.offerPriceMin} className={`w-full p-4 rounded-2xl border outline-none focus:border-[#2ECC71] text-sm transition-colors ${teklifFiyat && parseFloat(teklifFiyat) < MIN_TRANSACTION_AMOUNT ? 'border-red-500/60 focus:border-red-500' : 'border-transparent'} ${isDarkMode ? 'bg-gray-500/5 text-white placeholder-gray-500' : 'bg-gray-100 text-black'}`} />{teklifFiyat && parseFloat(teklifFiyat) < MIN_TRANSACTION_AMOUNT && <p className="text-red-400 text-[10px] font-bold mt-1 ml-1">{t.minAmountHint}</p>}{!teklifFiyat && calcSuggestedPrice(getDistance(konum?.lat, konum?.lng, seciliKisi.lat, seciliKisi.lng), seciliKisi.user_role) && !teklifFiyat && <button onClick={() => setTeklifFiyat(String(calcSuggestedPrice(getDistance(konum?.lat, konum?.lng, seciliKisi.lat, seciliKisi.lng), seciliKisi.user_role)))} className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-[#2ECC71] bg-[#2ECC71]/10 px-2 py-1 rounded-lg">{t.priceSuggestion}: ₺{calcSuggestedPrice(getDistance(konum?.lat, konum?.lng, seciliKisi.lat, seciliKisi.lng), seciliKisi.user_role)}</button>}</div></div><button onClick={handleTalepGonder} disabled={talepGonderiliyor || (teklifFiyat && parseFloat(teklifFiyat) < MIN_TRANSACTION_AMOUNT)} className={`w-full py-5 rounded-[24px] bg-[#2ECC71] text-black font-black text-lg uppercase italic transition-opacity ${talepGonderiliyor || (teklifFiyat && parseFloat(teklifFiyat) < MIN_TRANSACTION_AMOUNT) ? 'opacity-40 cursor-not-allowed' : ''}`}>{talepGonderiliyor ? t.sending : t.sendJob}</button><p className="text-[9px] text-center opacity-25 mt-2 leading-relaxed">{t.budgetIntlNote}</p></>
@@ -5333,6 +5415,7 @@ function Home() {
                     { key: 'kurye', emoji: '🚗', label: t.fastCourier, desc: t.courierDesc },
                     { key: 'emanetci', emoji: '💼', label: t.custodian, desc: t.custodianDesc },
                     { key: 'siraci', emoji: '⏱', label: t.waitInLine, desc: t.waitDesc },
+                    { key: 'rehber', emoji: '🦭', label: t.guide, desc: t.guideDesc },
                     { key: 'hepsi', emoji: '🌍', label: t.all, desc: t.allDesc }
                   ].map(({ key, emoji, label, desc }) => (
                     <div
@@ -5560,6 +5643,7 @@ function Home() {
                   { key: 'kurye', emoji: '📦', label: t.courier, color: '#fbbf24' },
                   { key: 'emanetci', emoji: '💼', label: t.emanci, color: '#3b82f6' },
                   { key: 'siraci', emoji: '⏳', label: t.waiter, color: '#22c55e' },
+                  { key: 'rehber', emoji: '🦭', label: t.guide, color: '#f59e0b' },
                   { key: 'hepsi', emoji: '🌍', label: t.all, color: '#9333ea' }
                 ].map(({ key, emoji, label, color }) => {
                   const isSelected = tempSelectedRoles.includes(key);
