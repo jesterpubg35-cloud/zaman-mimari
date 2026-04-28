@@ -202,12 +202,16 @@ const TRANSLATIONS = {
     completedJobs: 'Tamamlanan İş', avgRating: 'Ort. Puan',
     userUnavailable: 'Kullanıcı şu an müsait değil',
     outOfRadius: 'Hizmet alanı dışında', userBlocked: 'Bu kullanıcıyla iletişim kurulamaz',
-    supportQ1: 'Anlaştığımız kişilere nasıl güveneceğiz?',
-    supportA1: 'Güvenlik süreci, tarafların beyan ettiği kimlik bilgilerinin resmi kanallar aracılığıyla teyit edilmesine dayanır. Tüm iletişim ve veri paylaşımı, izlenebilir ve doğrulanabilir platformlar üzerinden yürütülmelidir. Şeffaflık ilkesi gereği, kimlik doğrulaması tamamlanmamış taraflarla kritik işlem başlatılmaması esastır.',
-    supportQ2: 'Dijital Sözleşme',
-    supportA2: "İş birliğinin tüm teknik ve mali detaylarını (hizmet kapsamı, teslimat takvimi, ödeme şartları ve tarafların yükümlülükleri) kapsayan yazılı mutabakattır. Dijital ortamda onaylanan bu belgeler, uyuşmazlık durumunda başvurulacak temel yasal dayanak olup süreçlerin hukuk çerçevesinde korunmasını sağlar.",
-    supportQ3: 'İşlem Öncesi Kanıt Alın',
-    supportA3: 'Herhangi bir ödeme veya nihai onay aşamasından önce, sunulan hizmetin veya gerçekleştirilen işlemin doğruluğunu ispatlayan somut belgeler (işlem dekontu, çalışma görseli veya veri kayıtları) talep edilmelidir. Doğrulanabilir kanıt sunulmayan hiçbir adım üzerinden finansal transfer veya onay işlemi gerçekleştirilmez.',
+    supportQ1: 'Eşyam zarar görürse platform tazminat öder mi?',
+    supportA1: 'Platform, hizmet veren ile hizmet alan arasında aracılık yapan teknolojik bir altyapıdır. Kullanıcı Sözleşmesi uyarınca platformun mali sorumluluğu, yalnızca ilgili işlemden tahsil edilen komisyon tutarıyla sınırlıdır; eşya bedeli, kayıp maliyeti veya gecikmeden doğan zarar için tazminat ödenmez. Bununla birlikte, uyuşmazlık durumunda teslim fotoğrafları ve sohbet kayıtları delil olarak yetkili mercilerle paylaşılır.',
+    supportQ2: 'Uygulama dışında ödeme yapabilir miyim?',
+    supportA2: 'Hayır. Platform altyapısı dışında gerçekleştirilen hiçbir ödeme (nakit, havale, EFT vb.) güvence kapsamında değildir. Uygulama dışı ödemeler kesinlikle yasaktır; bu tür işlemlerde doğabilecek kayıp, dolandırıcılık veya uyuşmazlıklarda platform hiçbir sorumluluk üstlenmez ve müdahale edemez.',
+    supportQ3: 'Paket içeriğinden kim sorumludur?',
+    supportA3: 'Teslim edilen veya taşınan eşyanın içeriğinden, yasallığından ve uygunluğundan %100 hizmet alan (müşteri) sorumludur. Yasadışı, tehlikeli veya izin gerektiren madde taşınması yasaktır; tespit durumunda veriler ve deliller doğrudan adli makamlara iletilir. Kuryenin sorumluluğu yalnızca teslim süreciyle sınırlıdır.',
+    supportQ4: 'İş güvencesi nasıl çalışır?',
+    supportA4: 'Müşteri ödemeyi uygulama içinden yaptığında tutar platforma emanet olarak alınır ve dondurulur. Hizmet tamamlanıp her iki taraf da onayladığında ödeme otomatik olarak hizmet verene aktarılır. Onay verilmezse işlem incelemeye alınır; delil fotoğrafları bu süreçte belirleyicidir.',
+    supportQ5: 'Anlaşmazlık yaşarsam ne yapmalıyım?',
+    supportA5: 'Sohbet ekranındaki teslim fotoğrafları ve mesaj geçmişi resmi delil niteliğindedir. Uyuşmazlık durumunda önce karşı tarafla iletişim kurmanız, çözüm sağlanamıyorsa destek kanalımız üzerinden başvurmanız gerekir. Platform, kayıtlardaki verileri yetkili makamlarla paylaşmakla yükümlüdür.',
     customer: 'Müşteri', emanci: 'EMANETÇİ', courier: 'KURYE', waiter: 'SIRA BEKLE',
     voiceMsg: 'Sesli Mesaj', voiceMsgSend: 'Sesli Mesaj Gönder',
     recording: 'Kayıt yapılıyor...', recordStop: 'Durdur',
@@ -474,12 +478,16 @@ const TRANSLATIONS = {
     completedJobs: 'Completed Jobs', avgRating: 'Avg Rating',
     userUnavailable: 'User is not available',
     outOfRadius: 'Out of service radius', userBlocked: 'Cannot contact this user',
-    supportQ1: 'How do we trust the people we agree with?',
-    supportA1: 'The security process is based on verifying the identity information declared by the parties through official channels. All communication and data sharing must be conducted through traceable and verifiable platforms. In accordance with the principle of transparency, no critical transactions should be initiated with parties whose identity verification has not been completed.',
-    supportQ2: 'Digital Contract',
-    supportA2: 'A written agreement that covers all technical and financial details of the collaboration (service scope, delivery schedule, payment terms, and obligations of the parties). These digitally approved documents serve as the fundamental legal basis in case of disputes and ensure that processes are protected within the legal framework.',
-    supportQ3: 'Get Evidence Before Transaction',
-    supportA3: 'Before any payment or final approval stage, concrete documents proving the accuracy of the service provided or transaction completed (transaction receipts, work images, or data records) must be requested. No financial transfer or approval process should be carried out on any step where verifiable evidence has not been provided.',
+    supportQ1: 'If my item is damaged, does the platform compensate me?',
+    supportA1: 'The platform is a technological intermediary between service providers and recipients. Under the User Agreement, the platform\'s financial liability is strictly limited to the commission amount collected for that transaction — no compensation is paid for item value, loss costs, or delays. However, in case of a dispute, delivery photos and chat records will be shared with the relevant authorities as evidence.',
+    supportQ2: 'Can I make payments outside the app?',
+    supportA2: 'No. Any payment made outside the platform infrastructure (cash, bank transfer, etc.) is not covered by the platform guarantee. Off-platform payments are strictly prohibited. In the event of loss, fraud, or dispute arising from such payments, the platform bears no responsibility and cannot intervene.',
+    supportQ3: 'Who is responsible for the package contents?',
+    supportA3: 'The service recipient (customer) bears 100% responsibility for the contents, legality, and compliance of items delivered or transported. Carrying illegal, dangerous, or restricted items is strictly prohibited. If detected, all records and evidence will be forwarded directly to judicial authorities. The courier\'s responsibility is limited solely to the delivery process.',
+    supportQ4: 'How does payment security work?',
+    supportA4: 'When a customer makes a payment through the app, the amount is held in escrow by the platform and frozen. Once the service is completed and both parties confirm, the payment is automatically released to the service provider. If confirmation is withheld, the transaction is reviewed — delivery photos are decisive in this process.',
+    supportQ5: 'What should I do if I have a dispute?',
+    supportA5: 'Delivery photos and message history in the chat screen are official evidence. In case of a dispute, you should first contact the other party. If no resolution is reached, you must submit a request through our support channel. The platform is obligated to share the recorded data with the relevant authorities.',
     customer: 'Customer', emanci: 'CUSTODIAN', courier: 'COURIER', waiter: 'WAIT IN LINE',
     voiceMsg: 'Voice Message', voiceMsgSend: 'Send Voice Message',
     recording: 'Recording...', recordStop: 'Stop',
@@ -4457,7 +4465,7 @@ function Home() {
       {aktifPage === 'support' && (
           <div className={`fixed inset-0 z-[6000] flex flex-col ${isDarkMode ? 'bg-[#0F0F0F]' : 'bg-zinc-200'}`}>
             <div className="flex items-center gap-4 p-6 pt-12"><button onClick={() => setAktifPage('menu')} className={`text-2xl ${isDarkMode ? 'text-white' : 'text-black'}`}>←</button><h2 className={`font-black text-xl uppercase ${isDarkMode ? 'text-white' : 'text-black'}`}>{t.support}</h2></div>
-            <div className="flex-1 overflow-y-auto px-6 pb-10">{[1, 2, 3].map(i => <Accordion key={i} title={t[`supportQ${i}`]} dark={isDarkMode}>{t[`supportA${i}`]}</Accordion>)}</div>
+            <div className="flex-1 overflow-y-auto px-6 pb-10">{[1, 2, 3, 4, 5].map(i => <Accordion key={i} title={t[`supportQ${i}`]} dark={isDarkMode}>{t[`supportA${i}`]}</Accordion>)}</div>
           </div>
         )}
         {aktifPage === 'account' && (
