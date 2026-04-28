@@ -4178,9 +4178,8 @@ function Home() {
         const textSub = isDarkMode ? 'text-white/40' : 'text-black/40';
         const chevron = <svg width="7" height="12" viewBox="0 0 7 12" fill="none"><path d="M1 1l5 5-5 5" stroke={isDarkMode ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.3)'} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>;
 
-        const SettingsRow = ({ icon, label, sub, onClick }) => (
+        const SettingsRow = ({ label, sub, onClick }) => (
           <button onClick={onClick} className={`w-full flex items-center gap-4 px-4 py-4 ${cardBg} rounded-2xl`}>
-            <span className="text-lg w-6 text-center flex-shrink-0">{icon}</span>
             <div className="flex-1 text-left">
               <p className={`text-sm font-semibold ${textPrimary}`}>{label}</p>
               {sub && <p className={`text-[11px] mt-0.5 ${textSub}`}>{sub}</p>}
@@ -4272,19 +4271,16 @@ function Home() {
             <PageHeader title="Ayarlar" onBack={() => { setAktifPage('menu'); setSettingsSubPage(null); }} />
             <div className="flex-1 overflow-y-auto px-5 pb-10 space-y-2 pt-2">
               <SettingsRow
-                icon="🌍"
                 label="Uygulama Dili"
                 sub={`${TRANSLATIONS[lang]?.flag} ${TRANSLATIONS[lang]?.name}`}
                 onClick={() => setSettingsSubPage('language')}
               />
               <SettingsRow
-                icon="🔔"
                 label="Anlık Bildirimler"
                 sub={typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted' ? 'Açık' : 'Kapalı'}
                 onClick={() => setSettingsSubPage('notifications')}
               />
               <SettingsRow
-                icon="📄"
                 label="Sözleşmeler"
                 onClick={() => setSettingsSubPage('contracts')}
               />
