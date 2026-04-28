@@ -258,6 +258,34 @@ const TRANSLATIONS = {
     emailChanged: 'E-posta değiştirildi!',
     codeSentToOld: 'Mevcut e-postanıza kod gönderildi',
     codeSentToNew: 'Yeni e-postanıza kod gönderildi',
+    notifPanelTitle: 'Bildirimler',
+    notifMarkRead: 'Tümünü okundu say',
+    notifEmpty: 'Henüz bildirim yok',
+    notifPromptTitle: 'Bildirimleri aç',
+    notifPromptBody: 'Mesajları ve iş tekliflerini kaçırmamak için.',
+    notifPromptBtn: 'Aç',
+    settingsAppLang: 'Uygulama Dili',
+    settingsNotif: 'Anlık Bildirimler',
+    settingsContracts: 'Sözleşmeler',
+    settingsNotifOn: 'Açık',
+    settingsNotifOff: 'Kapalı',
+    settingsNotifTitle: 'Anlık Bildirimleri Al',
+    settingsNotifDesc: 'İş teklifleri ve mesajlar için bildirim alın.',
+    settingsNotifGranted: 'Açık',
+    settingsNotifDenied: 'Reddedildi — tarayıcı ayarlarından değiştirin',
+    settingsNotifDefault: 'İzin verilmedi',
+    settingsNotifUnsupported: 'Bu cihazda desteklenmiyor',
+    notifBrowserUnsupported: 'Tarayıcınız bildirimleri desteklemiyor',
+    notifGranted: 'Bildirimler açıldı ✓',
+    notifDenied: 'Bildirim izni reddedildi',
+    contractUser: 'Kullanıcı Sözleşmesi',
+    contractPrivacy: 'Gizlilik Politikası',
+    contractCookie: 'Çerez Politikası',
+    contractTerms: 'Hizmet Şartları',
+    contractUserText: `1. Taraflar ve Kapsam\n\nİşbu Kullanıcı Sözleşmesi ("Sözleşme"), Platform ile Kullanıcı arasındaki karşılıklı hak ve yükümlülükleri düzenler. Platforma üye olan veya hizmetlerinden faydalanan her gerçek kişi, işbu Sözleşme'yi okumuş, anlamış ve kabul etmiş sayılır.\n\n2. Platformun Rolü ve Aracılık Hizmeti\n\nPlatform, hizmet veren (kurye, emanetçi, sıra bekleyen) ile hizmet alanı bir araya getiren teknolojik bir aracı altyapıdır. Platform, bir "Aracı Hizmet Sağlayıcı" sıfatıyla hareket eder ve taraflar arasında kurulan hukuki ilişkinin doğrudan tarafı değildir.\n\n3. Sorumluluk Sınırı\n\nPlatformun herhangi bir uyuşmazlık, kayıp veya zarar durumundaki mali sorumluluğu; yalnızca o işlemden tahsil edilen hizmet bedeli (komisyon) tutarıyla sınırlıdır. Platform, hiçbir koşulda eşya bedelini, kayıp maliyetini, gecikmeden doğan zararı ödemekle yükümlü değildir.\n\n4. Kullanıcının İbrası\n\nKullanıcı; hırsızlık, fiziksel hasar, gecikme veya üçüncü şahısların herhangi bir kusuru nedeniyle doğabilecek tüm hukuki ve cezai taleplerden Platform'u geri dönülemez biçimde ibra eder.\n\n5. Bağımsız Yüklenici Statüsü\n\nPlatform üzerinden hizmet veren tüm bireyler bağımsız birer yüklenicidir. Bu kişiler Platform'un çalışanı, temsilcisi veya alt yüklenicisi değildir.\n\n6. Delil Sözleşmesi\n\nPlatform üzerinden çekilen fotoğraflar ve konum kayıtları, 6100 sayılı HMK m.193 uyarınca kesin delil niteliğindedir.\n\n7. Yasaklı İçerik\n\nEmanet veya kurye paketinin içeriğinden tamamen Hizmet Alan sorumludur. Yasadışı içerik durumunda veriler doğrudan adli makamlarla paylaşılır.`,
+    contractPrivacyText: `1. Veri Sorumlusu\n\nPlatform, 6698 sayılı KVKK kapsamında veri sorumlusu sıfatıyla hareket etmektedir.\n\n2. Toplanan Kişisel Veriler\n\nAd-soyad, e-posta, telefon numarası ve konum bilgisi toplanır. Teslim fotoğrafları şifreli olarak saklanır.\n\n3. Veri İşleme Amaçları\n\nKonum verisi yalnızca harita eşleşmesi için kullanılır. Verileriniz reklam amacıyla kullanılmaz.\n\n4. Veri Paylaşımı\n\nVeriler; Stripe ve Supabase ile yalnızca hizmet ifasına yönelik ölçüde paylaşılır. Yasal zorunluluk halinde yetkili makamlarla paylaşılabilir.\n\n5. Kullanıcı Hakları\n\nKVKK m.11 uyarınca verilerinize erişme, düzeltme veya silme hakkına sahipsiniz.`,
+    contractCookieText: `1. Kullanılan Teknolojiler\n\nPlatform, çerez yerine localStorage kullanır. Yalnızca oturum, tema ve dil tercihleri için kullanılır.\n\n2. Reklam ve İzleme\n\nÜçüncü taraf reklam veya izleme aracı kullanılmamaktadır.\n\n3. Veri Kontrolü\n\nOturumu kapatarak yerel depolama verilerini temizleyebilirsiniz.`,
+    contractTermsText: `1. Genel Yükümlülükler\n\nTüm kullanıcılar işbu Hizmet Şartları'na uymakla yükümlüdür.\n\n2. Emanet Hizmeti\n\nEmanet eşyanın içeriği ve yasallığı Hizmet Alan'ın sorumluluğundadır. Teslim fotoğrafları HMK m.193 uyarınca kesin delil sayılır.\n\n3. Yasaklı İçerik\n\nYasadışı içerik taşınması yasaktır. Tespit durumunda veriler adli makamlara iletilir.\n\n4. Sıra Bekleme\n\nSıra bekleyen kullanıcı belirlenen saatte hazır bulunmak zorundadır.\n\n5. Ödeme Kuralları\n\nTüm ödemeler platform altyapısı üzerinden yapılmalıdır. Platform dışı ödemeler garanti kapsamı dışındadır.\n\n6. Sorumluluk Sınırı\n\nPlatform'un azami mali sorumluluğu ilgili işlemin komisyon tutarıyla sınırlıdır.\n\n7. İptal ve İade\n\nHizmet başladıktan sonraki iptallerde kısmi kesinti uygulanabilir.`,
   },
   en: {
     name: 'English', flag: '🇬🇧',
@@ -394,6 +422,34 @@ const TRANSLATIONS = {
     emailChanged: 'Email changed!',
     codeSentToOld: 'Code sent to current email',
     codeSentToNew: 'Code sent to new email',
+    notifPanelTitle: 'Notifications',
+    notifMarkRead: 'Mark all as read',
+    notifEmpty: 'No notifications yet',
+    notifPromptTitle: 'Enable Notifications',
+    notifPromptBody: 'Stay updated on messages and job offers.',
+    notifPromptBtn: 'Enable',
+    settingsAppLang: 'App Language',
+    settingsNotif: 'Push Notifications',
+    settingsContracts: 'Agreements',
+    settingsNotifOn: 'On',
+    settingsNotifOff: 'Off',
+    settingsNotifTitle: 'Enable Push Notifications',
+    settingsNotifDesc: 'Receive notifications for job offers and messages.',
+    settingsNotifGranted: 'On',
+    settingsNotifDenied: 'Denied — change in browser settings',
+    settingsNotifDefault: 'Permission not granted',
+    settingsNotifUnsupported: 'Not supported on this device',
+    notifBrowserUnsupported: 'Your browser does not support notifications',
+    notifGranted: 'Notifications enabled ✓',
+    notifDenied: 'Notification permission denied',
+    contractUser: 'User Agreement',
+    contractPrivacy: 'Privacy Policy',
+    contractCookie: 'Cookie Policy',
+    contractTerms: 'Terms of Service',
+    contractUserText: `1. Parties and Scope\n\nThis User Agreement ("Agreement") governs the mutual rights and obligations between the Platform and the User. Any individual who registers or uses the Platform's services is deemed to have read, understood, and accepted this Agreement.\n\n2. Platform Role\n\nThe Platform is a technological intermediary that connects service providers (couriers, custodians, queue waiters) with service recipients. The Platform acts as an "Intermediary Service Provider" and is not a direct party to the legal relationship between users.\n\n3. Limitation of Liability\n\nThe Platform's financial liability in any dispute is limited solely to the service fee (commission) collected for that transaction. The Platform is not obligated to pay for item value, loss costs, or damages arising from delays.\n\n4. User Release\n\nThe User irrevocably releases the Platform, its managers, employees, and shareholders from all legal and criminal claims arising from theft, physical damage, delay, or any fault of third parties.\n\n5. Independent Contractor Status\n\nAll individuals providing services through the Platform are independent contractors. They are not employees, representatives, or sub-contractors of the Platform.\n\n6. Evidence Agreement\n\nPhotographs and location records taken through the Platform constitute conclusive evidence under applicable civil procedure law.\n\n7. Prohibited Content\n\nThe Service Recipient is solely responsible for the contents of any package or deposit. In case of illegal content, data will be shared directly with judicial authorities.`,
+    contractPrivacyText: `1. Data Controller\n\nThe Platform acts as data controller under applicable personal data protection laws.\n\n2. Collected Personal Data\n\nFull name, email, phone number, and location data are collected. Delivery photos are stored securely.\n\n3. Data Processing Purposes\n\nLocation data is used solely for map matching. Your data is never used for advertising.\n\n4. Data Sharing\n\nData is shared with Stripe and Supabase only to the extent necessary for service delivery. Sharing with authorities may occur under legal obligation.\n\n5. User Rights\n\nYou have the right to access, correct, or delete your personal data upon request.`,
+    contractCookieText: `1. Storage Technologies\n\nThe Platform uses localStorage instead of cookies, limited to session management, theme, and language preferences.\n\n2. Advertising and Tracking\n\nNo third-party advertising or behavioral tracking tools are used.\n\n3. Data Control\n\nYou can clear local storage data by logging out of the application.`,
+    contractTermsText: `1. General Obligations\n\nAll users are obligated to comply with these Terms of Service.\n\n2. Custodian Service\n\nThe Service Recipient is responsible for the contents and legality of deposited items. Delivery photos constitute conclusive evidence under applicable law.\n\n3. Prohibited Content\n\nTransporting illegal content is strictly prohibited. Data will be forwarded to judicial authorities upon detection.\n\n4. Queue Waiting Service\n\nThe queue waiter must be present at the specified time and location.\n\n5. Payment Rules\n\nAll payments must be made through the Platform's infrastructure. Payments made outside the Platform are not covered.\n\n6. Limitation of Liability\n\nThe Platform's maximum financial liability is limited to the commission amount of the relevant transaction.\n\n7. Cancellation and Refund\n\nPartial deductions may apply for cancellations after service has commenced.`,
   },
 };
 
@@ -3836,11 +3892,11 @@ function Home() {
           <div className="fixed left-1/2 -translate-x-1/2 top-6 z-[4000] w-[92%] max-w-md">
             <div className="rounded-2xl border border-white/10 bg-black/60 backdrop-blur-md p-4 flex items-center gap-3">
               <div className="flex-1 min-w-0">
-                <p className="text-white font-black text-xs uppercase">Bildirimleri aç</p>
-                <p className="text-white/60 text-[11px] font-bold truncate">Mesajları ve iş tekliflerini kaçırmamak için.</p>
+                <p className={`font-black text-xs uppercase`}>{t.notifPromptTitle}</p>
+                <p className="text-white/60 text-[11px] font-bold truncate">{t.notifPromptBody}</p>
               </div>
               <button onClick={requestNotifications} className="px-4 py-2 rounded-xl bg-[#2ECC71] text-black text-[11px] font-black uppercase">
-                Aç
+                {t.notifPromptBtn}
               </button>
               <button onClick={() => setShowNotifPrompt(false)} className="px-3 py-2 rounded-xl bg-white/10 text-white/70 text-[11px] font-black">
                 ✕
@@ -3947,17 +4003,17 @@ function Home() {
             style={{ top: 'calc(env(safe-area-inset-top, 0px) + 60px)', maxHeight: 'calc(100dvh - env(safe-area-inset-top, 0px) - 80px)' }}
             onClick={e => e.stopPropagation()}>
             <div className={`flex items-center justify-between px-4 py-3 border-b ${isDarkMode ? 'border-white/10' : 'border-black/10'}`}>
-              <p className={`font-black text-sm ${isDarkMode ? 'text-white' : 'text-black'}`}>Bildirimler</p>
+              <p className={`font-black text-sm ${isDarkMode ? 'text-white' : 'text-black'}`}>{t.notifPanelTitle}</p>
               {notifications.some(n => !n.is_read) && (
                 <button onClick={async () => {
                   await supabase.from('notifications').update({ is_read: true }).eq('user_id', user.id).eq('is_read', false);
                   setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
-                }} className="text-[10px] text-emerald-400 font-black">Tümünü okundu say</button>
+                }} className="text-[10px] text-emerald-400 font-black">{t.notifMarkRead}</button>
               )}
             </div>
             <div className="overflow-y-auto" style={{ maxHeight: 'calc(70vh - 48px)' }}>
               {notifications.length === 0 ? (
-                <p className={`text-center text-xs py-8 ${isDarkMode ? 'text-white/30' : 'text-black/30'}`}>Henüz bildirim yok</p>
+                <p className={`text-center text-xs py-8 ${isDarkMode ? 'text-white/30' : 'text-black/30'}`}>{t.notifEmpty}</p>
               ) : notifications.map(n => (
                 <div key={n.id} onClick={async () => {
                   if (!n.is_read) {
@@ -3984,26 +4040,10 @@ function Home() {
 
       {aktifPage === 'settings' && (() => {
         const contracts = [
-          {
-            key: 'user',
-            title: 'Kullanıcı Sözleşmesi',
-            text: `1. Taraflar ve Kapsam\n\nİşbu Kullanıcı Sözleşmesi ("Sözleşme"), Platform ile Kullanıcı arasındaki karşılıklı hak ve yükümlülükleri düzenler. Platforma üye olan veya hizmetlerinden faydalanan her gerçek kişi, işbu Sözleşme'yi okumuş, anlamış ve kabul etmiş sayılır.\n\n2. Platformun Rolü ve Aracılık Hizmeti\n\nPlatform, hizmet veren (kurye, emanetçi, sıra bekleyen) ile hizmet alanı bir araya getiren teknolojik bir aracı altyapıdır. Platform, bir "Aracı Hizmet Sağlayıcı" sıfatıyla hareket eder ve taraflar arasında kurulan hukuki ilişkinin doğrudan tarafı değildir. Kullanıcılar arasındaki hizmet ilişkisi, münhasıran bu taraflar arasında kurulur.\n\n3. Sorumluluk Sınırı\n\nPlatformun herhangi bir uyuşmazlık, kayıp veya zarar durumundaki mali sorumluluğu; yalnızca o işlemden tahsil edilen hizmet bedeli (komisyon) tutarıyla sınırlıdır. Platform, hiçbir koşulda eşya bedelini, kayıp maliyetini, gecikmeden doğan zararı veya üçüncü şahısların kusurlarından kaynaklanan herhangi bir tazminatı ödemekle yükümlü değildir.\n\n4. Kullanıcının İbrası\n\nKullanıcı; hırsızlık, fiziksel hasar, gecikme, hizmet ifa etmeme veya üçüncü şahısların herhangi bir kusuru nedeniyle doğabilecek tüm hukuki ve cezai taleplerden, Platform'u, yöneticilerini, çalışanlarını ve hissedarlarını geri dönülemez biçimde ibra ettiğini ve bu konularda hiçbir hukuki yola başvurmayacağını peşinen kabul ve taahhüt eder.\n\n5. Bağımsız Yüklenici Statüsü\n\nPlatform üzerinden hizmet veren tüm bireyler (kurye, emanetçi, sıra bekleyen vb.) bağımsız birer yüklenicidir. Bu kişiler Platform'un çalışanı, temsilcisi veya alt yüklenicisi değildir. Taraflar arasındaki ilişki bir iş akdine ya da vekâlet sözleşmesine dayanmamakta olup münhasıran aracılık hizmetine ilişkindir.\n\n6. Delil Sözleşmesi\n\nTaraflar, Platform üzerinden gerçekleştirilen işlemlere ait uygulama kayıtlarının, konum verilerinin ve teslim/tesellüm anında çekilen fotoğrafların; 6100 sayılı Hukuk Muhakemeleri Kanunu'nun 193. maddesi çerçevesinde kesin delil niteliği taşıdığını ve bu belgeler hakkında "senetle ispat" kurallarının uygulanacağını kabul eder.\n\n7. Yasaklı İçerik ve Cezai Sorumluluk\n\nKurye veya emanet kapsamında taşınan ya da bırakılan eşyanın içeriğinin yasalara uygunluğundan tamamen "Hizmet Alan" sorumludur. Platform'un söz konusu içeriği denetleme yükümlülüğü bulunmamaktadır. Yasadışı madde, kaçak eşya veya yasak içerik taşındığının tespiti halinde Platform, ilgili tüm kişisel ve işlem verilerini derhal yetkili adli makamlar ile paylaşır ve bu konuda hiçbir hukuki sorumluluğu kabul etmez.`,
-          },
-          {
-            key: 'privacy',
-            title: 'Gizlilik Politikası',
-            text: `1. Veri Sorumlusu\n\nPlatform, 6698 sayılı Kişisel Verilerin Korunması Kanunu ("KVKK") kapsamında veri sorumlusu sıfatıyla hareket etmektedir.\n\n2. Toplanan Kişisel Veriler\n\nAd-soyad, e-posta adresi, telefon numarası ve konum bilgisi; hizmetin ifası için zorunlu veriler olup üyelik sürecinde toplanır. Teslimat ve teslim alma anlarında çekilen fotoğraflar, platform altyapısında şifreli olarak saklanır.\n\n3. Veri İşleme Amaçları\n\nKonum verisi yalnızca harita üzerinde eşleşme sağlamak amacıyla kullanılır. Fotoğraflar münhasıran uyuşmazlık süreçlerinde delil niteliğinde kullanılmak üzere muhafaza edilir. Verileriniz reklam, profilleme veya üçüncü taraf pazarlaması amacıyla kullanılmaz.\n\n4. Veri Paylaşımı\n\nKişisel veriler; ödeme altyapısı için Stripe, veritabanı yönetimi için Supabase ile yalnızca hizmetin ifasına yönelik ölçüde paylaşılır. Bunun dışında hiçbir üçüncü tarafa aktarılmaz. Yasal zorunluluk veya mahkeme/savcılık kararı halinde yetkili makamlarla paylaşım yapılabilir.\n\n5. Delil Amaçlı Veri Saklama\n\nTeslim fotoğrafları ve konum kayıtları; olası hukuki uyuşmazlıklarda 6100 sayılı HMK uyarınca kesin delil olarak kullanılabilmesi amacıyla belirlenen yasal süreler boyunca saklanır. Bu veriler, ilgili uyuşmazlık çözüme kavuşturulana kadar silinmez.\n\n6. Kullanıcı Hakları\n\nKVKK'nın 11. maddesi uyarınca; verilerinize erişme, düzeltme, silme veya işlenmesine itiraz etme haklarına sahipsiniz. Taleplerinizi platform içi iletişim kanalları aracılığıyla iletebilirsiniz.`,
-          },
-          {
-            key: 'cookie',
-            title: 'Çerez Politikası',
-            text: `1. Kullanılan Depolama Teknolojileri\n\nPlatform, çerez (cookie) yerine tarayıcı yerel depolama alanını (localStorage) kullanır. Bu depolama yalnızca oturum yönetimi, tema tercihi ve dil seçimi gibi işlevsel amaçlarla sınırlıdır.\n\n2. Reklam ve İzleme\n\nPlatformda üçüncü taraf reklam ağlarına veya davranışsal izleme araçlarına yer verilmemektedir. Depolanan hiçbir veri, kullanıcı profili oluşturma amacıyla işlenmez.\n\n3. Veri Kontrolü\n\nTarayıcı ayarlarından veya uygulama oturumunu kapatarak yerel depolama verilerini temizleyebilirsiniz. Bu işlem, sonraki girişlerde yeniden kimlik doğrulaması yapmanızı gerektirir.\n\n4. Üçüncü Taraf İçerikleri\n\nHarita görüntüleme için kullanılan harici katman sağlayıcıları (Google Maps, CARTO) kendi gizlilik politikalarını uygular. Platform bu sağlayıcıların veri işleme pratiklerinden sorumlu değildir.`,
-          },
-          {
-            key: 'terms',
-            title: 'Hizmet Şartları',
-            text: `1. Genel Yükümlülükler\n\nPlatform üzerinden hizmet alan veya veren tüm kullanıcılar, işbu Hizmet Şartları'na uymakla yükümlüdür. Şartlara aykırı davranış, hesabın askıya alınması veya kalıcı olarak kapatılması sonucunu doğurabilir.\n\n2. Emanet Hizmeti\n\nEmanet bırakılan eşyaların içeriği ve yasallığı tamamen "Hizmet Alan"ın sorumluluğundadır. Emanetçi, eşyayı teslim aldığı andaki durumuyla korumakla yükümlüdür. Teslim alma ve teslim etme anında platforma yüklenen fotoğraflar HMK m.193 uyarınca kesin delil sayılır.\n\n3. Yasaklı İçerik\n\nYasadışı madde, kaçak eşya veya herhangi bir yasal düzenlemeyle yasaklanmış içerik taşınması ya da emanete bırakılması kesinlikle yasaktır. Bu durumun tespitinde Platform, kullanıcı ve işlem verilerini derhal adli makamlara iletir; hiçbir hukuki sorumluluk kabul etmez.\n\n4. Sıra Bekleme Hizmeti\n\nSıra bekleyen kullanıcı, belirlenen saatte ve konumda hazır bulunmakla yükümlüdür. Gecikme veya görevin yerine getirilememesi durumunda Platform'un belirlediği ceza ve kısmi iade politikaları uygulanır.\n\n5. Ödeme Kuralları\n\nTüm ödemeler, Platform'un güvenli ödeme altyapısı üzerinden yapılmak zorundadır. Platform dışı gerçekleştirilen ödemelerden doğan zararlar Platform'un sorumluluğu dışındadır ve bu işlemler garanti kapsamına alınmaz.\n\n6. Sorumluluk Sınırı\n\nPlatform'un herhangi bir anlaşmazlıktaki azami mali sorumluluğu, ilgili işlemden tahsil edilen hizmet komisyonu tutarıyla sınırlıdır. Eşya değeri, kâr kaybı veya dolaylı zararlar bu limit dışındadır.\n\n7. İptal ve İade\n\nHizmet ifa edilmeye başlandıktan sonra yapılan iptallerde, hizmet verenin emeğini koruma amacıyla kısmi kesinti uygulanabilir. Anlaşmazlık durumunda Platform yönetimi nihai karara yetkilidir.`,
-          },
+          { key: 'user', title: t.contractUser, text: t.contractUserText },
+          { key: 'privacy', title: t.contractPrivacy, text: t.contractPrivacyText },
+          { key: 'cookie', title: t.contractCookie, text: t.contractCookieText },
+          { key: 'terms', title: t.contractTerms, text: t.contractTermsText },
         ];
 
         const bg = isDarkMode ? 'bg-[#0F0F0F]' : 'bg-[#F2F2F7]';
@@ -4049,7 +4089,7 @@ function Home() {
         // Sayfa 2: Sözleşmeler Listesi
         if (settingsSubPage === 'contracts') return (
           <div className={`fixed inset-0 z-[6100] flex flex-col ${bg}`}>
-            <PageHeader title="Sözleşmeler" onBack={() => setSettingsSubPage(null)} />
+            <PageHeader title={t.settingsContracts} onBack={() => setSettingsSubPage(null)} />
             <div className="flex-1 overflow-y-auto pt-4 pb-10 space-y-2">
               {contracts.map((c) => (
                 <ListRow key={c.key} label={c.title}
@@ -4062,7 +4102,7 @@ function Home() {
         // Sayfa 2: Dil Seçimi
         if (settingsSubPage === 'language') return (
           <div className={`fixed inset-0 z-[6100] flex flex-col ${bg}`}>
-            <PageHeader title="Uygulama Dili" onBack={() => setSettingsSubPage(null)} />
+            <PageHeader title={t.settingsAppLang} onBack={() => setSettingsSubPage(null)} />
             <div className="flex-1 overflow-y-auto pt-4 pb-10 space-y-2">
               {Object.entries(TRANSLATIONS).map(([code, tl]) => (
                 <button key={code} onClick={() => { handleLangChange(code); setSettingsSubPage(null); }}
@@ -4079,24 +4119,24 @@ function Home() {
         // Sayfa 2: Anlık Bildirimler
         if (settingsSubPage === 'notifications') return (
           <div className={`fixed inset-0 z-[6100] flex flex-col ${bg}`}>
-            <PageHeader title="Anlık Bildirimler" onBack={() => setSettingsSubPage(null)} />
+            <PageHeader title={t.settingsNotif} onBack={() => setSettingsSubPage(null)} />
             <div className="flex-1 pt-6 px-4 pb-10 space-y-3">
-              <p className={`text-xs px-1 mb-1 ${textSub}`}>İş teklifleri ve mesajlar için bildirim alın.</p>
+              <p className={`text-xs px-1 mb-1 ${textSub}`}>{t.settingsNotifDesc}</p>
               <div className={`rounded-2xl ${listBg} overflow-hidden`}>
                 <div className={`flex items-center px-4 py-3.5 gap-3`}>
                   <div className="flex-1">
-                    <p className={`text-sm ${textPrimary}`}>Anlık Bildirimleri Al</p>
+                    <p className={`text-sm ${textPrimary}`}>{t.settingsNotifTitle}</p>
                     <p className={`text-[11px] mt-0.5 ${textSub}`}>
                       {typeof window !== 'undefined' && 'Notification' in window
-                        ? Notification.permission === 'granted' ? 'Açık' : Notification.permission === 'denied' ? 'Reddedildi — tarayıcı ayarlarından değiştirin' : 'İzin verilmedi'
-                        : 'Bu cihazda desteklenmiyor'}
+                        ? Notification.permission === 'granted' ? t.settingsNotifGranted : Notification.permission === 'denied' ? t.settingsNotifDenied : t.settingsNotifDefault
+                        : t.settingsNotifUnsupported}
                     </p>
                   </div>
                   <button onClick={async () => {
-                    if (!('Notification' in window)) return showToast('Tarayıcınız bildirimleri desteklemiyor');
+                    if (!('Notification' in window)) return showToast(t.notifBrowserUnsupported);
                     const perm = await Notification.requestPermission();
-                    if (perm === 'granted') showToast('Bildirimler açıldı ✓');
-                    else showToast('Bildirim izni reddedildi');
+                    if (perm === 'granted') showToast(t.notifGranted);
+                    else showToast(t.notifDenied);
                     setSettingsSubPage('notifications');
                   }} className={`w-11 h-6 rounded-full flex-shrink-0 transition-colors relative ${typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted' ? 'bg-[#2ECC71]' : isDarkMode ? 'bg-white/20' : 'bg-black/15'}`}>
                     <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-all ${typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted' ? 'right-0.5' : 'left-0.5'}`}></div>
@@ -4108,14 +4148,14 @@ function Home() {
         );
 
         // Sayfa 1: Ana Ayarlar
-        const notifStatus = typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted' ? 'Açık' : 'Kapalı';
+        const notifStatus = typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted' ? t.settingsNotifOn : t.settingsNotifOff;
         return (
           <div className={`fixed inset-0 z-[6000] flex flex-col ${bg}`}>
-            <PageHeader title="Ayarlar" onBack={() => { setAktifPage('menu'); setSettingsSubPage(null); }} />
+            <PageHeader title={t.settings} onBack={() => { setAktifPage('menu'); setSettingsSubPage(null); }} />
             <div className="flex-1 overflow-y-auto pt-4 pb-10 space-y-2">
-              <ListRow label="Uygulama Dili" sub={`${TRANSLATIONS[lang]?.flag} ${TRANSLATIONS[lang]?.name}`} onClick={() => setSettingsSubPage('language')} />
-              <ListRow label="Anlık Bildirimler" sub={notifStatus} onClick={() => setSettingsSubPage('notifications')} />
-              <ListRow label="Sözleşmeler" onClick={() => setSettingsSubPage('contracts')} />
+              <ListRow label={t.settingsAppLang} sub={`${TRANSLATIONS[lang]?.flag} ${TRANSLATIONS[lang]?.name}`} onClick={() => setSettingsSubPage('language')} />
+              <ListRow label={t.settingsNotif} sub={notifStatus} onClick={() => setSettingsSubPage('notifications')} />
+              <ListRow label={t.settingsContracts} onClick={() => setSettingsSubPage('contracts')} />
             </div>
           </div>
         );
