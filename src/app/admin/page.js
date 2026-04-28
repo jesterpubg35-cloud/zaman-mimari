@@ -139,8 +139,18 @@ export default function AdminDashboard() {
 
   const [toast, setToast] = useState('');
   const realtimeRef = useRef(null);
+  const [rtNotifs, setRtNotifs] = useState([]);
+  const [notifOpen, setNotifOpen] = useState(false);
+  const rtNotifId = useRef(0);
 
   const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(''), 3000); };
+
+  const pushNotif = (icon, title, detail) => {
+    const id = ++rtNotifId.current;
+    setRtNotifs(prev => [{ id, icon, title, detail, ts: new Date() }, ...prev].slice(0, 50));
+    // 6 sn sonra otomatik kapat (sadece görsel bildirim, liste kalır)
+    setTimeout(() => setRtNotifs(prev => prev.map(n => n.id === id ? { ...n, fading: true } : n)), 5500);
+  };
 
   // ── Auth kontrolü ───────────────────────────────────────
   useEffect(() => {
@@ -175,17 +185,28 @@ export default function AdminDashboard() {
     if (!isAdmin || !adminKey) return;
     const sb = getSupabase();
     const ch = sb.channel('admin-realtime')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'requests' }, () => {
-        loadStats(); 
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'requests' }, (payload) => {
+        loadStats();
+        pushNotif('📦', 'Yeni İş İsteği', `#${(payload.new?.id || '').slice(0,8)} oluşturuldu`);
       })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'profilkisi' }, () => {
-        loadUsers();
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'requests' }, (payload) => {
+        loadStats();
+        const s = payload.new?.status;
+        const labels = { completed: '✅ İş Tamamlandı', cancelled: '❌ İş İptal Edildi', accepted: '👌 İş Kabul Edildi', picked_up: '🚚 Kurye Teslim Aldı' };
+        if (labels[s]) pushNotif(labels[s].split(' ')[0], labels[s].slice(2), `#${(payload.new?.id || '').slice(0,8)}`);
       })
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'reports' }, () => {
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'profilkisi' }, (payload) => {
+        loadUsers(); loadStats();
+        pushNotif('👤', 'Yeni Kayıt', payload.new?.email || payload.new?.name || 'Yeni kullanıcı');
+      })
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'reports' }, (payload) => {
         loadReports();
+        pushNotif('⚠️', 'Yeni İtiraz', `Rapor #${(payload.new?.id || '').slice(0,8)}`);
       })
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'transactions' }, () => {
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'transactions' }, (payload) => {
         loadStats(); loadTransactions();
+        const amt = payload.new?.amount ? `₺${Number(payload.new.amount).toFixed(2)}` : '';
+        pushNotif('💰', 'Yeni İşlem', `${payload.new?.type || ''} ${amt}`.trim());
       })
       .subscribe();
     realtimeRef.current = ch;
@@ -495,12 +516,39 @@ export default function AdminDashboard() {
 
   return (
     <main className="min-h-screen bg-zinc-950 text-white">
+      <style>{`
+        @keyframes rtSlideIn  { from { opacity:0; transform:translateX(60px); } to { opacity:1; transform:translateX(0); } }
+        @keyframes rtSlideOut { from { opacity:1; transform:translateX(0); }   to { opacity:0; transform:translateX(60px); } }
+        .rt-notif-enter { animation: rtSlideIn  0.3s ease-out both; }
+        .rt-notif-exit  { animation: rtSlideOut 0.3s ease-in  both; }
+      `}</style>
+
       {/* Toast */}
       {toast && (
         <div className="fixed top-4 right-4 z-[9999] bg-emerald-500 text-black font-black px-5 py-3 rounded-2xl shadow-xl text-sm">
           {toast}
         </div>
       )}
+
+      {/* Realtime bildirim yığını — sağ alt */}
+      <div className="fixed bottom-5 right-5 z-[9990] flex flex-col-reverse gap-2 pointer-events-none" style={{ maxWidth: 320 }}>
+        {rtNotifs.filter(n => !n.fading && !n.read).slice(0, 4).map(n => (
+          <div key={n.id}
+            className={`rt-notif-enter pointer-events-auto flex items-start gap-3 px-4 py-3 rounded-2xl shadow-2xl border cursor-pointer`}
+            style={{ background: 'rgba(9,9,11,0.97)', borderColor: 'rgba(52,211,153,0.2)' }}
+            onClick={() => setRtNotifs(prev => prev.map(x => x.id === n.id ? { ...x, read: true, fading: true } : x))}
+          >
+            <span className="text-xl flex-shrink-0">{n.icon}</span>
+            <div className="flex-1 min-w-0">
+              <p className="text-[12px] font-black text-white">{n.title}</p>
+              <p className="text-[11px] text-zinc-400 truncate">{n.detail}</p>
+            </div>
+            <span className="text-[9px] text-zinc-600 flex-shrink-0 font-mono mt-0.5">
+              {n.ts.toLocaleTimeString('tr-TR', { hour:'2-digit', minute:'2-digit', second:'2-digit' })}
+            </span>
+          </div>
+        ))}
+      </div>
 
       {/* İade Modal */}
       {refundModal && (
@@ -548,9 +596,51 @@ export default function AdminDashboard() {
             <div className="text-xl font-black text-emerald-400">TICK</div>
             <div className="text-[11px] text-zinc-600 font-bold uppercase tracking-widest">Admin Paneli</div>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            <span className="text-[11px] text-zinc-500 font-bold">Canlı</span>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="text-[11px] text-zinc-500 font-bold">Canlı</span>
+            </div>
+            {/* Bildirim zili */}
+            <div className="relative">
+              <button
+                onClick={() => setNotifOpen(o => !o)}
+                className="relative w-9 h-9 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center hover:border-zinc-600 transition"
+              >
+                <span className="text-base">🔔</span>
+                {rtNotifs.filter(n => !n.read).length > 0 && (
+                  <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-emerald-500 text-black text-[9px] font-black flex items-center justify-center">
+                    {rtNotifs.filter(n => !n.read).length > 9 ? '9+' : rtNotifs.filter(n => !n.read).length}
+                  </span>
+                )}
+              </button>
+              {notifOpen && (
+                <div className="absolute right-0 top-11 w-80 bg-zinc-950 border border-zinc-800 rounded-2xl shadow-2xl z-[9998] overflow-hidden">
+                  <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-800">
+                    <span className="text-[11px] font-black text-zinc-400 uppercase tracking-widest">Canlı Bildirimler</span>
+                    <button onClick={() => { setRtNotifs(prev => prev.map(n => ({ ...n, read: true }))); }} className="text-[10px] text-zinc-600 hover:text-zinc-400 font-bold">Tamamını Oku</button>
+                  </div>
+                  <div className="max-h-96 overflow-y-auto">
+                    {rtNotifs.length === 0 && (
+                      <div className="px-4 py-8 text-center text-zinc-600 text-xs">Henüz bildirim yok</div>
+                    )}
+                    {rtNotifs.map(n => (
+                      <div key={n.id} onClick={() => setRtNotifs(prev => prev.map(x => x.id === n.id ? { ...x, read: true } : x))}
+                        className={`flex items-start gap-3 px-4 py-3 border-b border-zinc-900 cursor-pointer hover:bg-zinc-900 transition ${n.read ? 'opacity-50' : ''}`}>
+                        <span className="text-xl flex-shrink-0 mt-0.5">{n.icon}</span>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[12px] font-black text-white">{n.title}</p>
+                          <p className="text-[11px] text-zinc-500 truncate">{n.detail}</p>
+                        </div>
+                        <span className="text-[9px] text-zinc-600 flex-shrink-0 font-mono mt-1">
+                          {n.ts.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
