@@ -178,10 +178,24 @@ export async function GET(req) {
       return NextResponse.json({ announcements: data || [] });
     }
 
+    // ── konum geçmişi ─────────────────────────────────────────
+    if (type === 'location_history') {
+      const userId = searchParams.get('user_id');
+      if (!userId) return NextResponse.json({ history: [] });
+      const { data, error: err } = await adminClient
+        .from('location_history')
+        .select('lat, lng, recorded_at')
+        .eq('user_id', userId)
+        .order('recorded_at', { ascending: false })
+        .limit(200);
+      if (err) return NextResponse.json({ history: [] });
+      return NextResponse.json({ history: data || [] });
+    }
+
     // ── users (default) ───────────────────────────────────────
     const { data: users, error: usersErr } = await adminClient
       .from('profilkisi')
-      .select('user_id, name, email, phone, is_admin, is_banned, is_verified, created_at, rating, roles, average_rating, total_completed_jobs, stripe_account_id')
+      .select('user_id, name, email, phone, birth_date, is_admin, is_banned, is_verified, created_at, rating, roles, average_rating, total_completed_jobs, stripe_account_id, ip_address, registered_ip, address_line1, address_line2, city, district, neighborhood, postal_code, country')
       .order('created_at', { ascending: false });
 
     if (usersErr) return NextResponse.json({ error: usersErr.message }, { status: 500 });

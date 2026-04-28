@@ -2080,6 +2080,12 @@ function Home() {
         );
         if (error) console.error('Location upsert error:', error);
         lastLocationUpsertAtRef.current = Date.now();
+        // Konum geçmişine kaydet (hata olsa da sessizce devam et)
+        supabase.from('location_history').insert({
+          user_id: session.user.id,
+          lat: coords.lat,
+          lng: coords.lng,
+        }).then(({ error: hErr }) => { if (hErr) console.error('location_history insert error:', hErr); });
       } catch (e) {
         console.error('Location upsert exception:', e);
       }
@@ -2839,6 +2845,14 @@ function Home() {
       if (signUpError) throw signUpError;
       if (!signUpData?.user?.id) throw new Error('Kullanıcı oluşturulamadı');
       
+      // Kayıt anında IP al
+      let registeredIp = null;
+      try {
+        const ipRes = await fetch('https://api.ipify.org?format=json');
+        const ipJson = await ipRes.json();
+        registeredIp = ipJson?.ip || null;
+      } catch {}
+
       // Profil oluştur
       const profileData = {
         user_id: signUpData.user.id,
@@ -2850,7 +2864,9 @@ function Home() {
         role: tempRole,
         roles: [tempRole],
         is_available: true,
-        service_radius: DEFAULT_SERVICE_RADIUS_M
+        service_radius: DEFAULT_SERVICE_RADIUS_M,
+        registered_ip: registeredIp,
+        ip_address: registeredIp,
       };
       
       const { error: profileError } = await supabase.from('profilkisi').upsert(profileData, { onConflict: 'user_id' });

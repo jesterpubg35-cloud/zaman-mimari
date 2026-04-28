@@ -70,6 +70,8 @@ export default function AdminUsersPage() {
   const [loginPassword, setLoginPassword] = useState('');
   const [loginLoading, setLoginLoading] = useState(false);
   const [loginErr, setLoginErr] = useState('');
+  const [locationHistory, setLocationHistory] = useState({}); // { userId: [...] }
+  const [locationLoading, setLocationLoading] = useState({});  // { userId: bool }
 
   const getSupabase = useCallback(async () => {
     const { createClient } = await import('@supabase/supabase-js');
@@ -184,14 +186,31 @@ export default function AdminUsersPage() {
     }));
   }, [filtered]);
 
-  const toggleExpanded = useCallback((userId) => {
+  const toggleExpanded = useCallback(async (userId) => {
     setExpanded(prev => {
       const next = new Set(prev);
       if (next.has(userId)) next.delete(userId);
       else next.add(userId);
       return next;
     });
-  }, []);
+    // Konum geçmişini henüz çekmediyse çek
+    if (!locationHistory[userId] && !locationLoading[userId]) {
+      setLocationLoading(prev => ({ ...prev, [userId]: true }));
+      try {
+        const supabase = await getSupabase();
+        const { data: { session } } = await supabase.auth.getSession();
+        const token = session?.access_token;
+        if (token) {
+          const res = await fetch(`/api/admin/users?type=location_history&user_id=${userId}`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          const json = await res.json().catch(() => ({}));
+          setLocationHistory(prev => ({ ...prev, [userId]: json?.history || [] }));
+        }
+      } catch {}
+      setLocationLoading(prev => ({ ...prev, [userId]: false }));
+    }
+  }, [locationHistory, locationLoading, getSupabase]);
 
   const exportXlsx = useCallback(() => {
     const rows = filtered.map(u => ({
@@ -460,11 +479,47 @@ export default function AdminUsersPage() {
                                     <div className="text-xs font-mono text-right text-white/60 break-all">{userId}</div>
                                   </div>
 
+                                  {u?.birth_date && (
+                                    <div className="flex items-start justify-between gap-3">
+                                      <div className="text-xs font-black text-white/40">Doğum Tarihi</div>
+                                      <div className="text-sm font-bold text-right">{u.birth_date}</div>
+                                    </div>
+                                  )}
+                                  {u?.registered_ip && (
+                                    <div className="flex items-start justify-between gap-3">
+                                      <div className="text-xs font-black text-white/40">Kayıt IP</div>
+                                      <div className="text-sm font-bold text-right font-mono">{u.registered_ip}</div>
+                                    </div>
+                                  )}
+                                  {u?.country && (
+                                    <div className="flex items-start justify-between gap-3">
+                                      <div className="text-xs font-black text-white/40">Ülke</div>
+                                      <div className="text-sm font-bold text-right">{u.country}</div>
+                                    </div>
+                                  )}
                                   {/* diğer alanlar (varsa) */}
                                   {u?.created_at && (
                                     <div className="flex items-start justify-between gap-3">
                                       <div className="text-xs font-black text-white/40">Oluşturma</div>
                                       <div className="text-sm font-bold text-right">{new Date(u.created_at).toLocaleString()}</div>
+                                    </div>
+                                  )}
+
+                                  {/* Konum Geçmişi */}
+                                  <div className="h-px bg-white/10 my-1" />
+                                  <div className="text-xs font-black text-white/40 mb-2">Konum Geçmişi</div>
+                                  {locationLoading[userId] ? (
+                                    <div className="text-xs text-white/40">Yükleniyor...</div>
+                                  ) : (locationHistory[userId] || []).length === 0 ? (
+                                    <div className="text-xs text-white/30">Konum kaydı yok</div>
+                                  ) : (
+                                    <div className="max-h-40 overflow-y-auto space-y-1">
+                                      {(locationHistory[userId] || []).map((loc, i) => (
+                                        <div key={i} className="flex items-center justify-between gap-2 text-[11px] py-1 border-b border-white/5">
+                                          <span className="font-mono text-white/60">{loc.lat?.toFixed(5)}, {loc.lng?.toFixed(5)}</span>
+                                          <span className="text-white/30 flex-shrink-0">{new Date(loc.recorded_at).toLocaleString('tr-TR')}</span>
+                                        </div>
+                                      ))}
                                     </div>
                                   )}
                                 </div>
