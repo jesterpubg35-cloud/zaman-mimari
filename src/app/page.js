@@ -215,6 +215,16 @@ const TRANSLATIONS = {
     completedJobs: 'Tamamlanan İş', avgRating: 'Ort. Puan',
     userUnavailable: 'Kullanıcı şu an müsait değil',
     outOfRadius: 'Hizmet alanı dışında', userBlocked: 'Bu kullanıcıyla iletişim kurulamaz',
+    counterOfferTitle: 'Karşı Teklif',
+    counterOfferHint: 'Yeni fiyatı girin',
+    counterOfferSend: 'Karşı Teklif Gönder',
+    counterOfferReceived: 'Karşı teklif geldi!',
+    counterOfferFrom: 'tarafından yeni fiyat:',
+    counterOfferAccept: '✓ Bu Fiyatı Kabul Et',
+    counterOfferDecline: 'Reddet',
+    negotiating: 'Pazarlıkta',
+    negotiationAgreed: '🤝 Her iki taraf fiyatı onayladı — ödemeye geçebilirsiniz',
+    priceUpdate: 'Fiyatı Güncelle',
     minAmountError: `Minimum işlem tutarı ${MIN_TRANSACTION_AMOUNT} TL'dir`,
     minAmountHint: `En az ${MIN_TRANSACTION_AMOUNT} TL girilmelidir`,
     offerPriceMin: `${MIN_TRANSACTION_AMOUNT} TL ve üzeri`,
@@ -506,6 +516,16 @@ const TRANSLATIONS = {
     completedJobs: 'Completed Jobs', avgRating: 'Avg Rating',
     userUnavailable: 'User is not available',
     outOfRadius: 'Out of service radius', userBlocked: 'Cannot contact this user',
+    counterOfferTitle: 'Counter Offer',
+    counterOfferHint: 'Enter new price',
+    counterOfferSend: 'Send Counter Offer',
+    counterOfferReceived: 'Counter offer received!',
+    counterOfferFrom: 'proposed a new price:',
+    counterOfferAccept: '✓ Accept This Price',
+    counterOfferDecline: 'Decline',
+    negotiating: 'Negotiating',
+    negotiationAgreed: '🤝 Both parties agreed on price — you can proceed to payment',
+    priceUpdate: 'Update Price',
     minAmountError: `Minimum transaction amount is ${MIN_TRANSACTION_AMOUNT} TL`,
     minAmountHint: `Minimum ${MIN_TRANSACTION_AMOUNT} TL required`,
     offerPriceMin: `${MIN_TRANSACTION_AMOUNT} TL or more`,
@@ -1541,6 +1561,11 @@ function Home() {
   const [reviewComment, setReviewComment] = useState('');
   const [reviewLoading, setReviewLoading] = useState(false);
 
+  // Pazarlık (counter-offer) state'leri
+  const [counterOfferInput, setCounterOfferInput] = useState('');
+  const [showCounterInput, setShowCounterInput] = useState(false);
+  const [incomingCounterOffer, setIncomingCounterOffer] = useState(null); // { requestId, price, byName }
+
   // İşlem geçmişi state'leri
   const [userHistory, setUserHistory] = useState({ transactions: [], completedJobs: [] });
   const [historyLoading, setHistoryLoading] = useState(false);
@@ -2440,6 +2465,12 @@ function Home() {
           if (payload.verified) showToast(t.codeVerified);
         }
       })
+      .on('broadcast', { event: 'counter_offer' }, ({ payload }) => {
+        if (payload.target_user_id === user.id) {
+          setIncomingCounterOffer({ requestId: payload.request_id, price: payload.price, byName: payload.by_name, targetUserId: payload.by_user_id });
+          showToast(`${t.counterOfferReceived} ₺${payload.price}`);
+        }
+      })
       .subscribe((status, error) => {
         console.log(`Requests channel status: ${status}`);
         if (error) console.error("Requests channel error:", error);
@@ -3262,6 +3293,51 @@ function Home() {
     setSentRequestId(null); sentRequestIdRef.current = null; showToast(t.offerCancelled);
     const { error } = await supabase.from('requests').update({ status: 'cancelled' }).eq('id', savedId);
     if (error) console.error('Cancel offer error:', error);
+  };
+
+  // Hizmet veren VEYA müşteri karşı teklif gönderir
+  const handleKarsiTeklif = async (requestId, targetUserId, newPrice) => {
+    const price = parseFloat(newPrice);
+    if (!price || price < MIN_TRANSACTION_AMOUNT) { showToast(t.minAmountError); return; }
+    try {
+      await supabase.from('requests').update({
+        negotiation_price: price,
+        negotiation_by: user.id,
+        negotiation_status: 'open',
+      }).eq('id', requestId);
+      if (requestChannelRef.current) {
+        requestChannelRef.current.send({
+          type: 'broadcast', event: 'counter_offer',
+          payload: { request_id: requestId, price, target_user_id: targetUserId, by_name: user.name, by_user_id: user.id },
+        });
+      }
+      setCounterOfferInput('');
+      setShowCounterInput(false);
+      showToast(`${t.counterOfferSend}: ₺${price}`);
+    } catch (err) {
+      console.error('Counter offer error:', err);
+    }
+  };
+
+  // Karşı teklifi kabul et → negotiation_status: 'agreed' → gelenTalep.price güncelle → Kabul
+  const handleKarsiTeklifKabul = async (requestId, agreedPrice) => {
+    try {
+      await supabase.from('requests').update({
+        negotiation_status: 'agreed',
+        price: agreedPrice,
+      }).eq('id', requestId);
+      setIncomingCounterOffer(null);
+      // gelenTalep varsa fiyatı güncelle ve normal kabul akışını başlat
+      if (gelenTalep?.id === requestId) {
+        setGelenTalep(prev => ({ ...prev, price: agreedPrice }));
+      } else {
+        // Müşteri tarafı: sadece price güncellemesini yansıt
+        setSentRequestId(null); sentRequestIdRef.current = null;
+        showToast(t.negotiationAgreed);
+      }
+    } catch (err) {
+      console.error('Accept counter offer error:', err);
+    }
   };
 
   const handleTalepKabul = async () => {
@@ -4294,6 +4370,47 @@ function Home() {
           <div className="absolute top-28 right-6 z-[3000] flex flex-col items-end gap-1">
             <span className="text-[10px] text-white/40 font-bold animate-pulse">⏳ {t.waiting}</span>
             <button onClick={handleOfferCancel} className="px-3 py-2 rounded-xl bg-red-500/20 text-red-400 text-[10px] font-bold border border-red-500/30">✕ {t.cancelOffer}</button>
+          </div>
+        )}
+
+        {/* Müşteri tarafı: gelen karşı teklif kartı */}
+        {incomingCounterOffer && incomingCounterOffer.requestId === sentRequestId && (
+          <div className="fixed bottom-[280px] left-4 right-4 z-[8500] animate-in slide-in-from-bottom-4">
+            <div className={`rounded-3xl p-5 shadow-2xl border ${isDarkMode ? 'bg-[#1a1a1a] border-amber-500/30' : 'bg-white border-amber-400/40'}`}>
+              <p className="text-amber-500 font-black text-xs uppercase mb-1">🔄 {t.counterOfferTitle}</p>
+              <p className={`text-sm mb-1 ${isDarkMode ? 'text-white/60' : 'text-black/60'}`}>{incomingCounterOffer.byName} {t.counterOfferFrom}</p>
+              <p className="text-amber-500 font-black text-2xl mb-3">₺{incomingCounterOffer.price}</p>
+              <div className="flex gap-2 mb-3">
+                <button
+                  onClick={() => handleKarsiTeklifKabul(incomingCounterOffer.requestId, incomingCounterOffer.price)}
+                  className="flex-1 py-3 bg-[#2ECC71] text-black rounded-2xl font-black text-xs uppercase"
+                >{t.counterOfferAccept}</button>
+                <button
+                  onClick={() => setShowCounterInput(v => !v)}
+                  className={`flex-1 py-3 rounded-2xl font-black text-xs uppercase border ${isDarkMode ? 'border-white/10 text-white/70' : 'border-black/10 text-black/60'}`}
+                >{t.priceUpdate}</button>
+                <button
+                  onClick={() => setIncomingCounterOffer(null)}
+                  className="px-3 py-3 rounded-2xl bg-red-500/10 text-red-400 font-black text-xs"
+                >✕</button>
+              </div>
+              {showCounterInput && (
+                <div className="flex gap-2">
+                  <input
+                    type="number"
+                    value={counterOfferInput}
+                    onChange={(e) => setCounterOfferInput(e.target.value)}
+                    placeholder={t.counterOfferHint}
+                    className={`flex-1 p-3 rounded-xl text-sm outline-none border border-transparent ${isDarkMode ? 'bg-white/10 text-white placeholder-gray-500' : 'bg-gray-100 text-black'}`}
+                  />
+                  <button
+                    onClick={() => handleKarsiTeklif(incomingCounterOffer.requestId, incomingCounterOffer.targetUserId, counterOfferInput)}
+                    disabled={!counterOfferInput || parseFloat(counterOfferInput) < MIN_TRANSACTION_AMOUNT}
+                    className="px-4 py-3 bg-amber-500 text-black rounded-xl font-black text-xs disabled:opacity-40"
+                  >{t.counterOfferSend}</button>
+                </div>
+              )}
+            </div>
           </div>
         )}
 
@@ -5441,7 +5558,7 @@ function Home() {
           </div>
         </div>
         {gelenTalep && (
-          <div className="fixed inset-0 z-[8000] flex items-end justify-center p-6 pointer-events-none"><div className={`w-full max-w-sm rounded-3xl p-6 shadow-2xl pointer-events-auto animate-in slide-in-from-bottom-8 ${isDarkMode ? 'bg-[#1a1a1a] border border-white/10' : 'bg-white border border-black/10'}`}><p className="text-[#2ECC71] font-black text-xs uppercase mb-2">📨 {t.incomingRequest}</p><p className={`font-bold text-lg mb-1 ${isDarkMode ? 'text-white' : 'text-black'}`}>{gelenTalep.senderName}</p>{gelenTalep.title && <p className={`text-sm mb-1 opacity-60 ${isDarkMode ? 'text-white' : 'text-black'}`}>{gelenTalep.title}</p>}{gelenTalep.price && <p className="text-[#2ECC71] font-bold text-sm mb-4">₺{gelenTalep.price}</p>}<OfferCountdown createdAt={gelenTalep.created_at} dark={isDarkMode} /><div className="flex gap-3 mt-3"><button onClick={handleTalepKabul} className="flex-1 py-4 bg-[#2ECC71] text-black font-black rounded-2xl uppercase text-sm">{t.accept}</button><button onClick={handleTalepRed} className="flex-1 py-4 bg-red-500/10 text-red-500 font-black rounded-2xl uppercase text-sm">{t.reject}</button></div></div></div>
+          <div className="fixed inset-0 z-[8000] flex items-end justify-center p-6 pointer-events-none"><div className={`w-full max-w-sm rounded-3xl p-6 shadow-2xl pointer-events-auto animate-in slide-in-from-bottom-8 ${isDarkMode ? 'bg-[#1a1a1a] border border-white/10' : 'bg-white border border-black/10'}`}><p className="text-[#2ECC71] font-black text-xs uppercase mb-2">📨 {t.incomingRequest}</p><p className={`font-bold text-lg mb-1 ${isDarkMode ? 'text-white' : 'text-black'}`}>{gelenTalep.senderName}</p>{gelenTalep.title && <p className={`text-sm mb-1 opacity-60 ${isDarkMode ? 'text-white' : 'text-black'}`}>{gelenTalep.title}</p>}{gelenTalep.price && <p className="text-[#2ECC71] font-bold text-sm mb-4">₺{gelenTalep.price}</p>}<OfferCountdown createdAt={gelenTalep.created_at} dark={isDarkMode} /><div className="flex gap-3 mt-3"><button onClick={handleTalepKabul} className="flex-1 py-4 bg-[#2ECC71] text-black font-black rounded-2xl uppercase text-sm">{t.accept}</button><button onClick={handleTalepRed} className="flex-1 py-4 bg-red-500/10 text-red-500 font-black rounded-2xl uppercase text-sm">{t.reject}</button></div><div className="mt-3">{!showCounterInput ? (<button onClick={() => setShowCounterInput(true)} className={`w-full py-3 rounded-2xl font-bold text-xs uppercase border ${isDarkMode ? 'border-white/10 text-white/60 hover:bg-white/5' : 'border-black/10 text-black/50 hover:bg-gray-50'}`}>{t.priceUpdate}</button>) : (<div className="space-y-2"><div className="flex gap-2"><input type="number" value={counterOfferInput} onChange={(e) => setCounterOfferInput(e.target.value)} placeholder={t.counterOfferHint} className={`flex-1 p-3 rounded-xl text-sm outline-none border ${counterOfferInput && parseFloat(counterOfferInput) < MIN_TRANSACTION_AMOUNT ? 'border-red-500/60' : 'border-transparent'} ${isDarkMode ? 'bg-white/10 text-white placeholder-gray-500' : 'bg-gray-100 text-black'}`} /><button onClick={() => handleKarsiTeklif(gelenTalep.id, gelenTalep.sender_id, counterOfferInput)} disabled={!counterOfferInput || parseFloat(counterOfferInput) < MIN_TRANSACTION_AMOUNT} className="px-4 py-3 bg-amber-500 text-black rounded-xl font-black text-xs disabled:opacity-40">{t.counterOfferSend}</button></div>{counterOfferInput && parseFloat(counterOfferInput) < MIN_TRANSACTION_AMOUNT && <p className="text-red-400 text-[10px] font-bold ml-1">{t.minAmountHint}</p>}</div>)}</div></div></div>
         )}
         {chatAcik && aktifIs && (
           <div className={`fixed inset-0 z-[7000] flex flex-col ${isDarkMode ? 'bg-[#0F0F0F]' : 'bg-white'}`}>
