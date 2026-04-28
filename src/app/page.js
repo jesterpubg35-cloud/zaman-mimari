@@ -3650,8 +3650,8 @@ function Home() {
     if (result.length <= 8) return result;
     if (!konum?.lat || !konum?.lng) return result.slice(0, 8);
 
-    const roleOrder = ['kurye', 'emanetci', 'siraci', 'hepsi'];
-    const roleQuota = { kurye: 3, emanetci: 2, siraci: 2, hepsi: 1 };
+    const roleOrder = ['kurye', 'emanetci', 'siraci', 'rehber', 'hepsi'];
+    const roleQuota = { kurye: 3, emanetci: 2, siraci: 2, rehber: 2, hepsi: 1 };
 
     const getPrimaryRole = (u) => {
       const roles = u.roles || [u.user_role];
@@ -3963,6 +3963,34 @@ function Home() {
                       dark={true}
                       t={t}
                     />
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <p className="text-[10px] font-black uppercase text-white/30 ml-2">{t.selectRole}</p>
+                  <div className="grid grid-cols-3 gap-2">
+                    {[
+                      { key: 'musteri', emoji: '👤', label: t.customer },
+                      { key: 'kurye', emoji: '📦', label: t.courier },
+                      { key: 'emanetci', emoji: '💼', label: t.emanci },
+                      { key: 'siraci', emoji: '⏳', label: t.waiter },
+                      { key: 'rehber', emoji: '🦭', label: t.guide },
+                      { key: 'hepsi', emoji: '🌍', label: t.all },
+                    ].map(({ key, emoji, label }) => (
+                      <button
+                        key={key}
+                        type="button"
+                        onClick={() => setTempRole(key)}
+                        className={`py-3 px-2 rounded-2xl flex flex-col items-center gap-1 border transition-all ${
+                          tempRole === key
+                            ? 'bg-[#2ECC71]/20 border-[#2ECC71] text-white'
+                            : 'bg-white/5 border-white/10 text-white/50'
+                        }`}
+                      >
+                        <span className="text-lg">{emoji}</span>
+                        <span className="text-[9px] font-black uppercase tracking-wide leading-tight text-center">{label}</span>
+                      </button>
+                    ))}
                   </div>
                 </div>
 
@@ -5402,7 +5430,7 @@ function Home() {
                 const uRoles = u.roles || [u.user_role];
                 const color = getRoleColor(uRoles);
                 const glow = getRoleGlow(uRoles);
-                const roleLabels = { kurye: t.courier, emanetci: t.emanci, siraci: t.waiter, hepsi: t.all, musteri: t.customer };
+                const roleLabels = { kurye: t.courier, emanetci: t.emanci, siraci: t.waiter, rehber: t.guide, hepsi: t.all, musteri: t.customer };
                 const primaryRole = getPrimaryRole(u);
 
                 return (
@@ -5918,9 +5946,10 @@ function Home() {
                           role === 'kurye' ? 'bg-yellow-500/20 text-yellow-500' :
                           role === 'emanetci' ? 'bg-blue-500/20 text-blue-500' :
                           role === 'siraci' ? 'bg-green-500/20 text-green-500' :
+                          role === 'rehber' ? 'bg-amber-500/20 text-amber-500' :
                           'bg-purple-500/20 text-purple-500'
                         }`}>
-                          {t[role === 'kurye' ? 'courier' : role === 'emanetci' ? 'emanci' : role === 'siraci' ? 'waiter' : role === 'hepsi' ? 'all' : 'customer']}
+                          {t[role === 'kurye' ? 'courier' : role === 'emanetci' ? 'emanci' : role === 'siraci' ? 'waiter' : role === 'rehber' ? 'guide' : role === 'hepsi' ? 'all' : 'customer']}
                         </span>
                       ))}
                   </div>

@@ -578,7 +578,7 @@ export default function AdminDashboard() {
                 <p className="text-[11px] font-black text-zinc-500 uppercase tracking-widest">Filtrele</p>
                 <div>
                   <p className="text-[10px] text-zinc-600 mb-1">Rol</p>
-                  {['hepsi','musteri','kurye','emanetci','siraci'].map(r => (
+                  {['hepsi','musteri','kurye','emanetci','siraci','rehber'].map(r => (
                     <button key={r} onClick={() => setFilterRole(r)} className={`w-full text-left px-2 py-1.5 rounded-lg text-[11px] font-bold mb-0.5 ${filterRole===r ? 'bg-emerald-500/20 text-emerald-400' : 'text-zinc-500 hover:text-white'}`}>
                       {r === 'hepsi' ? 'Hepsi' : r.charAt(0).toUpperCase()+r.slice(1)}
                     </button>

@@ -63,7 +63,7 @@ export async function GET(req) {
       // Talep/Arz oranı
       const seekers = (roleData || []).filter(u => {
         const r = Array.isArray(u.roles) ? u.roles : [];
-        return r.some(x => ['kurye','emanetci','siraci','hepsi'].includes(x));
+        return r.some(x => ['kurye','emanetci','siraci','rehber','hepsi'].includes(x));
       }).length;
       const givers = (totalUsers || 0) - seekers;
 
@@ -244,7 +244,7 @@ export async function POST(req) {
       const targetUsers = (allUsers || []).filter(u => {
         if (target === 'providers') {
           const r = Array.isArray(u.roles) ? u.roles : [];
-          return r.some(x => ['kurye','emanetci','siraci'].includes(x));
+          return r.some(x => ['kurye','emanetci','siraci','rehber'].includes(x));
         }
         if (target === 'customers') {
           const r = Array.isArray(u.roles) ? u.roles : [];
