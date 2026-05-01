@@ -23,7 +23,7 @@
     "@stripe/react-stripe-js": "^6.2.0",
     "@stripe/stripe-js": "^9.3.1",
     "@supabase/supabase-js": "^2.103.3",
-    "exceljs": "^3.4.0",
+    "exceljs": "^4.2.0",
     "framer-motion": "^11.0.0",
     "jspdf": "^4.2.1",
     "leaflet": "^1.9.4",
