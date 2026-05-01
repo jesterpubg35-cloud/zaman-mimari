@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { MapContainer, TileLayer, Marker, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -21,8 +21,7 @@ function createDivIcon(html, size = 28) {
   });
 }
 
-// Marker'ı doğrudan map instance üzerinde yönet - React render döngüsünden bağımsız
-// selfMarkerRef: module seviyesinde tek instance garantisi
+// Marker'ı doğrudak map instance üzerinde yönet
 let _selfMarker = null;
 
 function MapRefSetter({ mapRef, lat, lng, color }) {
@@ -31,7 +30,6 @@ function MapRefSetter({ mapRef, lat, lng, color }) {
   useEffect(() => {
     if (mapRef) mapRef.current = map;
 
-    // Var olan marker'ı temizle (önceki map instance'ından kalabilir)
     if (_selfMarker) {
       _selfMarker.remove();
       _selfMarker = null;
@@ -56,10 +54,8 @@ function MapRefSetter({ mapRef, lat, lng, color }) {
     return () => {
       if (_selfMarker) { _selfMarker.remove(); _selfMarker = null; }
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [map]); // sadece map değişince yeniden oluştur
+  }, [map, mapRef, lat, lng, color]);
 
-  // Konum değişince sadece setLatLng
   useEffect(() => {
     if (_selfMarker && lat && lng) {
       _selfMarker.setLatLng([lat, lng]);
@@ -68,7 +64,6 @@ function MapRefSetter({ mapRef, lat, lng, color }) {
 
   return null;
 }
-
 
 export default function LeafletMapView({
   lat,
@@ -90,7 +85,12 @@ export default function LeafletMapView({
     if (onResetRef) {
       onResetRef.current = () => {
         if (lat && lng && mapRef.current) {
-          mapRef.current.setView([lat, lng], 15, { animate: true });
+          // flyTo ile daha smooth zoom/pan animasyonu
+          mapRef.current.flyTo([lat, lng], 15, {
+            animate: true,
+            duration: 0.8, // 800ms animasyon süresi
+            easeLinearity: 0.35
+          });
         }
       };
     }
@@ -100,43 +100,149 @@ export default function LeafletMapView({
   const selfColor = getRoleColor(currentUserData.roles);
 
   const tileUrl = dark
-    ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
-    : 'https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}';
+    ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png'
+    : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png';
+  
+  // Harita arka plan rengi
+  const bgColor = dark ? '#1a1a1a' : '#f5f5f5';
 
   const tileAttrib = dark
     ? '&copy; <a href="https://carto.com/">CARTO</a>'
     : '&copy; Google Maps';
 
+
   if (!lat && !lng) {
     return (
-      <div style={{ position: 'absolute', inset: 0, background: '#1a1a1a', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ color: '#2ECC71', fontSize: 14 }}>Harita yükleniyor...</div>
+      <div style={{ position: 'absolute', inset: 0, background: dark ? '#1a1a1a' : '#f5f5f5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ color: dark ? '#2ECC71' : '#333', fontSize: 14 }}>Harita yükleniyor...</div>
       </div>
     );
   }
 
   return (
-    <div style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}>
+    <div style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', touchAction: 'pan-x pan-y', overflow: 'hidden', background: bgColor }}>
       <style>{`
-        .leaflet-container { width: 100%; height: 100%; z-index: 0; }
-        .leaflet-control-zoom { z-index: 400 !important; }
-        .leaflet-pane { z-index: 200 !important; }
-        .leaflet-top, .leaflet-bottom { z-index: 400 !important; }
+        /* Leaflet container arka plan - asla yeşil olmasın */
+        .leaflet-container {
+          background: ${bgColor} !important;
+        }
+        
+        /* Tüm tile'lar ve container - ZORLA koyu arka plan */
+        .leaflet-tile-pane,
+        .leaflet-tile-container,
+        .leaflet-tile {
+          background-color: ${bgColor} !important;
+          background-image: none !important;
+          box-shadow: none !important;
+        }
+        
+        /* Yüklenen tile'lar */
+        img.leaflet-tile {
+          background-color: transparent !important;
+        }
+        
+        /* Tile pane z-index */
+        .leaflet-tile-pane {
+          z-index: 1 !important;
+        }
+        
+        /* Leaflet kontrol paneli */
+        .leaflet-control-container {
+          z-index: 1000 !important;
+        }
+        
+        /* Yeşil renk görünmesin diye tüm img'lere zorla */
+        .leaflet-tile[src=""] {
+          background-color: ${bgColor} !important;
+        }
+        
+        /* SMOOTH ZOOM & PAN OPTİMİZASYONLARI */
+        /* GPU acceleration for smooth animations */
+        .leaflet-map-pane,
+        .leaflet-tile-pane,
+        .leaflet-marker-pane,
+        .leaflet-popup-pane,
+        .leaflet-overlay-pane {
+          transform-style: preserve-3d !important;
+          backface-visibility: hidden !important;
+          will-change: transform !important;
+        }
+        
+        /* Smooth zoom transition */
+        .leaflet-zoom-anim .leaflet-tile {
+          transition: transform 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94) !important;
+          will-change: transform !important;
+        }
+        
+        /* Smooth pan transition */
+        .leaflet-dragging .leaflet-tile {
+          transition: none !important;
+        }
+        
+        /* Marker smooth animation */
+        .leaflet-marker-icon {
+          transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) !important;
+          will-change: transform !important;
+          transform-style: preserve-3d !important;
+          backface-visibility: hidden !important;
+        }
+        
+        /* Popup smooth animation */
+        .leaflet-popup {
+          transition: opacity 0.2s ease-out, transform 0.2s ease-out !important;
+        }
+        
+        /* Zoom control smooth */
+        .leaflet-control-zoom a {
+          transition: background-color 0.2s ease !important;
+        }
       `}</style>
+      
+      
       <MapContainer
         center={[lat, lng]}
         zoom={15}
         minZoom={1}
         maxZoom={22}
-        style={{ width: '100%', height: '100%' }}
+        style={{ width: '100%', height: '100%', touchAction: 'pan-x pan-y', position: 'relative', zIndex: 1 }}
         zoomControl={true}
         dragging={true}
         tap={false}
         scrollWheelZoom={true}
         doubleClickZoom={true}
         touchZoom={true}
+        fadeAnimation={true}
+        markerZoomAnimation={true}
+        zoomAnimation={true}
+        zoomSnap={0.25}
+        zoomDelta={0.25}
+        wheelPxPerZoomLevel={100}
+        wheelDebounceTime={60}
+        inertia={true}
+        inertiaDeceleration={3000}
+        inertiaMaxSpeed={2500}
+        easeLinearity={0.35}
+        worldCopyJump={false}
+        maxBoundsViscosity={1.0}
       >
-        <TileLayer url={tileUrl} attribution={tileAttrib} maxZoom={22} />
+        {/* Ana tile layer - smooth zoom için updateWhenZooming=true */}
+        <TileLayer 
+          url={tileUrl} 
+          attribution={tileAttrib}
+          updateWhenZooming={true}
+          updateWhenIdle={true}
+          keepBuffer={100}
+          minZoom={1}
+          maxZoom={22}
+          errorTileUrl="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
+          eventHandlers={{
+            tileerror: (e) => {
+              console.warn('Tile load error:', e);
+              e.tile.src = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==";
+            }
+          }}
+        />
+        
         <MapRefSetter mapRef={mapRef} lat={lat} lng={lng} color={selfColor} />
 
         {/* Diğer kullanıcı marker'ları */}

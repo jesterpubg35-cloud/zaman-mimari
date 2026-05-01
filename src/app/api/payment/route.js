@@ -129,6 +129,21 @@ export async function PUT(request) {
       console.error('Balance update error:', balanceError);
     }
 
+    // Referans sistemi tetikleyicisi - ATOMIC
+    try {
+      const { data: refResult, error: refError } = await getSupabase()
+        .rpc('activate_referral', { p_user_id: userId });
+      
+      if (refError) {
+        console.error('Referral activation error:', refError);
+      } else if (refResult?.success) {
+        console.log('Referral activated for user:', userId, 'referrer:', refResult.referrer);
+      }
+    } catch (refError) {
+      console.error('Referral trigger error:', refError);
+      // Referans hatası ana akışı bozmamalı
+    }
+
     return NextResponse.json({ 
       success: true, 
       transaction: transaction 

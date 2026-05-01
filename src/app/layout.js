@@ -1,5 +1,7 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import ErrorBoundary from "../components/ErrorBoundary";
+import ServiceWorkerRegister from "./components/ServiceWorkerRegister";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -16,7 +18,7 @@ export const metadata = {
   description: "Yakınınızdaki hizmet sağlayıcıları bulun",
   appleWebApp: {
     capable: true,
-    statusBarStyle: 'black-translucent',
+    statusBarStyle: 'black',
     title: 'Tick',
   },
 };
@@ -28,7 +30,7 @@ export function generateViewport() {
     maximumScale: 5,
     userScalable: true,
     viewportFit: 'cover',
-    themeColor: '#0F0F0F',
+    themeColor: '#000000',
   };
 }
 
@@ -42,14 +44,17 @@ export default function RootLayout({ children }) {
       <head>
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black" />
         <meta name="format-detection" content="telephone=no" />
         <meta name="msapplication-TileColor" content="#0F0F0F" />
         <link rel="manifest" href="/manifest.json" />
         <link rel="apple-touch-icon" href="/icon-192x192.png" />
         <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
       </head>
-      <body className="min-h-full flex flex-col overscroll-none" suppressHydrationWarning>{children}</body>
+      <body className="min-h-full flex flex-col overscroll-none overflow-x-hidden bg-black" suppressHydrationWarning>
+        <ServiceWorkerRegister />
+        <ErrorBoundary>{children}</ErrorBoundary>
+      </body>
     </html>
   );
 }

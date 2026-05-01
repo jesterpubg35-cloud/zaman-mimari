@@ -55,7 +55,7 @@ function Tab({ active, onClick, children }) {
   return (
     <button
       onClick={onClick}
-      className={`px-4 py-2 rounded-lg text-[11px] font-black uppercase tracking-wider transition border ${
+      className={`px-4 py-2 min-h-[44px] flex-shrink-0 rounded-lg text-[11px] font-black uppercase tracking-wider transition border whitespace-nowrap ${
         active
           ? 'bg-emerald-500 text-black border-emerald-500'
           : 'bg-zinc-900 text-zinc-400 border-zinc-800 hover:border-zinc-600 hover:text-white'
@@ -225,7 +225,7 @@ export default function AdminDashboard() {
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'requests' }, (payload) => {
         loadStats();
         const s = payload.new?.status;
-        const labels = { completed: '✅ İş Tamamlandı', cancelled: '❌ İş İptal Edildi', accepted: '👌 İş Kabul Edildi', picked_up: '🚚 Kurye Teslim Aldı' };
+        const labels = { completed: '✅ İş Tamamlandı', cancelled: '❌ İş İptal Edildi', accepted: '👌 İş Kabul Edildi', picked_up: '🚚 Hizmet Veren Başladı' };
         if (labels[s]) pushNotif(labels[s].split(' ')[0], labels[s].slice(2), `#${(payload.new?.id || '').slice(0,8)}`);
       })
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'profilkisi' }, (payload) => {
@@ -324,7 +324,6 @@ export default function AdminDashboard() {
       const data = await res.json();
       setRadar(data.radar || []);
     } catch (e) {
-      console.error('Radar load error:', e);
       setRadar([]);
     }
     setRadarLoading(false);
@@ -335,7 +334,7 @@ export default function AdminDashboard() {
     if (!adminKey) return;
     const confirmed = action === 'reject' 
       ? confirm('Ödemeyi reddedip iade işlemi başlatılacak. Emin misiniz?')
-      : confirm('Ödeme onaylanacak ve kuryenin hesabına aktarılacak. Emin misiniz?');
+      : confirm('Ödeme onaylanacak ve hizmet verenin hesabına aktarılacak. Emin misiniz?');
     if (!confirmed) return;
     
     try {
@@ -385,7 +384,7 @@ export default function AdminDashboard() {
       const data = await res.json();
       if (data.success) loadRadar();
     } catch (e) {
-      console.error('Status update error:', e);
+      console.error('Radar update error:', e);
     }
   }, [adminKey, loadRadar]);
 
@@ -626,7 +625,7 @@ export default function AdminDashboard() {
       )}
 
       {/* Realtime bildirim yığını — sağ alt */}
-      <div className="fixed bottom-5 right-5 z-[9990] flex flex-col-reverse gap-2 pointer-events-none" style={{ maxWidth: 320 }}>
+      <div className="fixed bottom-4 right-3 sm:bottom-5 sm:right-5 z-[9990] flex flex-col-reverse gap-2 pointer-events-none" style={{ maxWidth: 'min(320px, calc(100vw - 1.5rem))' }}>
         {rtNotifs.filter(n => !n.fading && !n.read).slice(0, 4).map(n => (
           <div key={n.id}
             className={`rt-notif-enter pointer-events-auto flex items-start gap-3 px-4 py-3 rounded-2xl shadow-2xl border cursor-pointer`}
@@ -685,8 +684,8 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        <div className="flex items-center justify-between mb-8">
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-8">
+        <div className="flex items-center justify-between mb-5 sm:mb-8">
           <div className="flex items-center gap-4">
             {/* Mobil: Uygulamaya dön butonu */}
             <a 
@@ -733,7 +732,7 @@ export default function AdminDashboard() {
                 )}
               </button>
               {notifOpen && (
-                <div className="absolute right-0 top-11 w-80 bg-zinc-950 border border-zinc-800 rounded-2xl shadow-2xl z-[9998] overflow-hidden">
+                <div className="absolute right-0 top-11 w-[calc(100vw-2rem)] max-w-sm sm:w-80 bg-zinc-950 border border-zinc-800 rounded-2xl shadow-2xl z-[9998] overflow-hidden">
                   <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-800">
                     <span className="text-[11px] font-black text-zinc-400 uppercase tracking-widest">Canlı Bildirimler</span>
                     <button onClick={() => { setRtNotifs(prev => prev.map(n => ({ ...n, read: true }))); }} className="text-[10px] text-zinc-600 hover:text-zinc-400 font-bold">Tamamını Oku</button>
@@ -762,7 +761,7 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        <div className="flex flex-wrap gap-2 mb-8">
+        <div className="flex gap-1.5 mb-5 sm:mb-8 overflow-x-auto no-scrollbar pb-1 -mx-3 px-3 sm:mx-0 sm:px-0 sm:flex-wrap">
           <Tab active={tab === 'dashboard'} onClick={() => setTab('dashboard')}>Dashboard</Tab>
           <Tab active={tab === 'users'} onClick={() => setTab('users')}>Kullanıcılar</Tab>
           <Tab active={tab === 'disputes'} onClick={() => setTab('disputes')}>İtiraz & Kanıt</Tab>
@@ -778,27 +777,27 @@ export default function AdminDashboard() {
         </div>
 
         {/* Ana içerik + Çekmece layout */}
-        <div className="flex gap-6">
+        <div className="flex flex-col lg:flex-row gap-4 lg:gap-6">
           {/* Sol: Ana içerik */}
-          <div className={`transition-all duration-300 ${drawerOpen ? 'flex-1 pr-4' : 'w-full'}`}>
+          <div className={`transition-all duration-300 ${drawerOpen ? 'flex-1 lg:pr-4' : 'w-full'}`}>
 
         {/* ── DASHBOARD ── */}
         {tab === 'dashboard' && (
           <div>
             {statsLoading && <p className="text-zinc-600 text-sm mb-4">Yükleniyor...</p>}
             {stats && (<>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
                 <StatCard label="Toplam Kullanıcı" value={stats.totalUsers} />
                 <StatCard label="Aktif İş" value={stats.activeJobs} accent />
                 <StatCard label="Tamamlanan" value={stats.completedJobs} accent />
                 <StatCard label="Ort. Süre" value={`${stats.avgMinutes}dk`} />
               </div>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-6">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
                 <StatCard label="Hizmet Verenler" value={stats.seekers} sub="Aktif rol sahibi" />
                 <StatCard label="İş Verenler" value={stats.givers} sub="Müşteri rolü" />
                 <StatCard label="Bekleyen Ödeme" value={`₺${stats.pendingAmount?.toFixed(0)}`} sub="Escrow'da" accent />
               </div>
-              <div className="grid md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5">
                   <h3 className="text-[11px] font-black text-zinc-500 uppercase tracking-widest mb-4">Son 14 Günlük Komisyon Geliri</h3>
                   <ResponsiveContainer width="100%" height={180}>
@@ -830,7 +829,7 @@ export default function AdminDashboard() {
 
         {/* ── KULLANICILAR ── */}
         {tab === 'users' && (
-          <div className="flex gap-5">
+          <div className="flex flex-col md:flex-row gap-4 md:gap-5">
             <div className="flex-1 min-w-0">
               <div className="flex gap-2 mb-4">
                 <input value={userQ} onChange={e => setUserQ(e.target.value)} placeholder="İsim, email, telefon ara..."
@@ -882,7 +881,7 @@ export default function AdminDashboard() {
                         </div>
                       </div>
                       {isOpen && (
-                        <div className="border-t border-zinc-800 px-4 py-4 grid grid-cols-2 gap-x-6 gap-y-2 text-[11px]">
+                        <div className="border-t border-zinc-800 px-4 py-4 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-[11px]">
                           <div><span className="text-zinc-500 font-black">IP Adresi: </span><span className="font-mono text-zinc-300">{u.ip_address || '—'}</span></div>
                           <div><span className="text-zinc-500 font-black">Kayıt IP: </span><span className="font-mono text-zinc-300">{u.registered_ip || '—'}</span></div>
                           <div><span className="text-zinc-500 font-black">Doğum Tarihi: </span><span className="text-zinc-300">{u.birth_date || '—'}</span></div>
@@ -909,7 +908,7 @@ export default function AdminDashboard() {
                 </div>
               )}
             </div>
-            <div className="w-48 flex-shrink-0">
+            <div className="w-full md:w-44 flex-shrink-0">
               <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 space-y-4">
                 <p className="text-[11px] font-black text-zinc-500 uppercase tracking-widest">Filtrele</p>
                 <div>
@@ -1405,7 +1404,7 @@ export default function AdminDashboard() {
 
           {/* Sağ: Aktivite Çekmecesi */}
           {drawerOpen && (
-            <div className="w-80 flex-shrink-0 bg-zinc-900/50 border-l border-zinc-800 rounded-2xl p-4 h-fit max-h-[calc(100vh-140px)] overflow-y-auto">
+            <div className="w-full lg:w-80 flex-shrink-0 bg-zinc-900/50 border border-zinc-800 rounded-2xl p-4 h-fit lg:max-h-[calc(100vh-140px)] overflow-y-auto">
               <div className="flex items-center justify-between mb-4 pb-3 border-b border-zinc-800">
                 <span className="text-[11px] font-black text-zinc-400 uppercase tracking-widest">
                   {tab === 'dashboard' && '📊 Genel Aktivite'}

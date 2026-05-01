@@ -188,7 +188,7 @@ export default function MapView({
   }, []);
 
   return (
-    <div ref={containerRef} className="absolute inset-0">
+    <div ref={containerRef} className="absolute inset-0" style={{ touchAction: 'none' }}>
       <LeafletMap
         lat={lat}
         lng={lng}

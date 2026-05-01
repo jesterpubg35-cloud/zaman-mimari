@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import PropTypes from 'prop-types';
 import { loadStripe } from '@stripe/stripe-js';
 import {
   Elements,
@@ -9,21 +10,83 @@ import {
   useElements,
 } from '@stripe/react-stripe-js';
 
-const stripePromise = loadStripe(
-  process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || ''
-);
+// =============================================================================
+// SABİTLER (SonarQube: String Literal Duplication Fix)
+// =============================================================================
+const STRIPE_CONFIG = {
+  PROMISE: loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || ''),
+  COMMISSION_RATE: 0.10, // %10
+};
 
-const PLATFORM_COMMISSION = 0.10; // %10
+const PAYMENT_METHODS = {
+  WALLET: 'wallet',
+  CARD: 'card',
+};
 
-// Gerçek kart formu (Elements içinde çalışır)
-function CheckoutForm({ amount, requestId, onSuccess, onClose, isDarkMode, supabase, walletBalance }) {
+const CARD_ELEMENT_OPTIONS = {
+  style: {
+    base: {
+      fontSize: '16px',
+      fontFamily: 'system-ui, sans-serif',
+      '::placeholder': { color: '#666666' },
+    },
+    invalid: { color: '#ef4444' },
+  },
+};
+
+// =============================================================================
+// YARDIMCI FONKSİYONLAR (SonarQube: Nested Functions Fix)
+// =============================================================================
+
+const formatCurrency = (amount) => {
+  return (amount || 0).toFixed(2);
+};
+
+const calculateCommission = (amount) => {
+  return Math.round((amount || 0) * STRIPE_CONFIG.COMMISSION_RATE * 100) / 100;
+};
+
+const getCardStyle = (isDarkMode) => ({
+  style: {
+    base: {
+      color: isDarkMode ? '#ffffff' : '#000000',
+      fontFamily: 'system-ui, sans-serif',
+      fontSize: '16px',
+      '::placeholder': { color: isDarkMode ? '#666666' : '#999999' },
+    },
+    invalid: { color: '#ef4444' },
+  },
+});
+
+// =============================================================================
+// CHECKOUT FORM BİLEŞENİ
+// =============================================================================
+function CheckoutForm({ 
+  amount = 0, 
+  requestId, 
+  onSuccess, 
+  onClose, 
+  isDarkMode = false, 
+  supabase, 
+  walletBalance = 0 
+}) {
+  // PropTypes validasyonu
+  CheckoutForm.propTypes = {
+    amount: PropTypes.number.isRequired,
+    requestId: PropTypes.string.isRequired,
+    onSuccess: PropTypes.func.isRequired,
+    onClose: PropTypes.func.isRequired,
+    isDarkMode: PropTypes.bool,
+    supabase: PropTypes.object.isRequired,
+    walletBalance: PropTypes.number,
+  };
   const stripe = useStripe();
   const elements = useElements();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [payMethod, setPayMethod] = useState(walletBalance >= (amount + Math.round(amount * PLATFORM_COMMISSION * 100) / 100) ? 'wallet' : 'card');
+  const [payMethod, setPayMethod] = useState(walletBalance >= (amount + calculateCommission(amount)) ? PAYMENT_METHODS.WALLET : PAYMENT_METHODS.CARD);
 
-  const commission = Math.round(amount * PLATFORM_COMMISSION * 100) / 100;
+  const commission = calculateCommission(amount);
   const total = amount + commission;
   const walletSufficient = walletBalance >= total;
 
@@ -171,8 +234,29 @@ function CheckoutForm({ amount, requestId, onSuccess, onClose, isDarkMode, supab
   );
 }
 
-// Modal wrapper
-export default function StripePaymentModal({ amount, requestId, onSuccess, onClose, isDarkMode, supabase, walletBalance = 0 }) {
+// =============================================================================
+// ANA MODAL BİLEŞENİ
+// =============================================================================
+export default function StripePaymentModal({ 
+  amount = 0, 
+  requestId, 
+  onSuccess, 
+  onClose, 
+  isDarkMode = false, 
+  supabase, 
+  walletBalance = 0 
+}) {
+  // PropTypes validasyonu
+  StripePaymentModal.propTypes = {
+    amount: PropTypes.number.isRequired,
+    requestId: PropTypes.string.isRequired,
+    onSuccess: PropTypes.func.isRequired,
+    onClose: PropTypes.func.isRequired,
+    isDarkMode: PropTypes.bool,
+    supabase: PropTypes.object.isRequired,
+    walletBalance: PropTypes.number,
+  };
+
   if (!amount || !requestId) return null;
 
   return (
@@ -186,7 +270,7 @@ export default function StripePaymentModal({ amount, requestId, onSuccess, onClo
           <button onClick={onClose} className="text-2xl opacity-40">✕</button>
         </div>
 
-        <Elements stripe={stripePromise}>
+        <Elements stripe={STRIPE_CONFIG.PROMISE}>
           <CheckoutForm
             amount={amount}
             requestId={requestId}

@@ -35,6 +35,7 @@
 html {
   height: 100%;
   width: 100%;
+  overflow-x: hidden;
 }
 
 body {
@@ -43,8 +44,17 @@ body {
   font-family: Arial, Helvetica, sans-serif;
   min-height: 100%;
   width: 100%;
+  overflow-x: hidden;
   overscroll-behavior: none;
   -webkit-overflow-scrolling: touch;
+}
+
+.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
 }
 
 /* Input zoom önleme iOS */
@@ -101,6 +111,73 @@ button:active, a:active, [role="button"]:active {
   scroll-behavior: smooth;
 }
 
+/* Üyelik Paketleri Slide-up Animasyonu */
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.animate-slide-up {
+  animation: slideUp 0.3s ease-out forwards;
+}
+
+/* Neon Glow Efektleri */
+.neon-glow {
+  box-shadow: 0 0 20px rgba(6, 182, 212, 0.4), 0 0 40px rgba(6, 182, 212, 0.2);
+}
+
+.neon-text {
+  text-shadow: 0 0 10px rgba(6, 182, 212, 0.6);
+}
+
+/* Premium Kart Gölgeleri */
+.premium-shadow {
+  box-shadow: 0 0 30px rgba(107, 114, 128, 0.3), 0 10px 40px rgba(0, 0, 0, 0.2);
+}
+
+/* Hediye Paketi İkon Animasyonu */
+@keyframes giftBounce {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+
+.gift-icon-animate {
+  animation: giftBounce 0.6s ease-in-out;
+}
+
+/* Toast Bildirim Animasyonu */
+@keyframes toastSlideIn {
+  from {
+    transform: translateX(-50%) translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+  }
+}
+
+.toast-animate {
+  animation: toastSlideIn 0.3s ease-out;
+}
+
+/* Checkbox Stil */
+input[type="checkbox"] {
+  accent-color: #2ECC71;
+}
+
+/* Sözleşme Metni Okunabilirlik */
+.contract-text {
+  line-height: 1.8;
+  font-size: 14px;
+}
+
 /* 300ms tap delay kaldırma */
 .touch-manipulation {
   touch-action: manipulation;
@@ -137,9 +214,9 @@ button:active, a:active, [role="button"]:active {
   display: none !important;
 }
 
-/* Touch davranışı map için */
+/* Touch davranışı map için - passive listener uyarısını önler */
 .leaflet-container {
-  touch-action: pan-x pan-y;
+  touch-action: pan-x pan-y !important;
 }
 
 /* Map container */

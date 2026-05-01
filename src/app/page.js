@@ -4,9 +4,216 @@
 // SİSTEM ŞU AN GÜNCEL - BU YAZIYI GÖRÜYORSANIZ DOĞRU DOSYADIR
 // ************************************************************
 
-import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import dynamic from 'next/dynamic';
+import { motion, AnimatePresence } from 'framer-motion';
+
+// 60 FPS GPU-accelerated page transitions
+const pageVariants = {
+  initial:  { opacity: 0, y: 20, scale: 0.98 },
+  animate:  { 
+    opacity: 1, 
+    y: 0, 
+    scale: 1,
+    transition: { 
+      duration: 0.25, 
+      ease: [0.25, 0.46, 0.45, 0.94],
+      opacity: { duration: 0.2 },
+      scale: { duration: 0.25 }
+    } 
+  },
+  exit:     { 
+    opacity: 0, 
+    y: 12, 
+    scale: 0.98,
+    transition: { 
+      duration: 0.15,  
+      ease: [0.25, 0.46, 0.45, 0.94],
+      opacity: { duration: 0.12 }
+    } 
+  },
+};
+
+const PageTransition = React.memo(({ children, className = '', style = {} }) => {
+  return (
+    <motion.div
+      className={className}
+      style={{
+        ...style,
+        willChange: 'transform, opacity',
+        transform: 'translateZ(0)', // Force GPU layer
+      }}
+      variants={pageVariants}
+      initial="initial"
+      animate="animate"
+      exit="exit"
+      layout
+    >
+      {children}
+    </motion.div>
+  );
+});
+
+const ROLES_KEYS = [
+  { key: 'kurye',    titleKey: 'fastCourier', subtitle: 'Express Delivery',       descKey: 'courierLong' },
+  { key: 'emanetci', titleKey: 'custodian',   subtitle: 'Safe Keeper',            descKey: 'custodianLong' },
+  { key: 'siraci',   titleKey: 'waitInLine',  subtitle: 'Queue Assistant',        descKey: 'waitInLineLong' },
+  { key: 'rehber',   titleKey: 'guide',       subtitle: 'Local Guide & Assistant',descKey: 'guideLong' },
+  { key: 'hepsi',    titleKey: 'all',         subtitle: 'Universal Agent',        descKey: 'allLong' },
+];
+
+const ROLES_ICONS = {
+  kurye: (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-5 h-5"><rect x="1" y="3" width="15" height="13" rx="2"/><path d="M16 8h4l3 5v4h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>),
+  emanetci: (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-5 h-5"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg>),
+  siraci: (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-5 h-5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>),
+  rehber: (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-5 h-5"><circle cx="12" cy="8" r="4"/><path d="M6 20v-2a6 6 0 0 1 12 0v2"/></svg>),
+  hepsi: (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-5 h-5"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>),
+};
+
+// 60 FPS GPU-optimized Accordion Item
+const AccordionItem = React.memo(({ role, isOpen, onToggle, isDarkMode, t }) => {
+  const contentRef = useRef(null);
+  const [height, setHeight] = useState(0);
+  
+  useEffect(() => {
+    if (contentRef.current) {
+      setHeight(isOpen ? contentRef.current.scrollHeight : 0);
+    }
+  }, [isOpen]);
+  
+  return (
+    <div 
+      className="rounded-2xl overflow-hidden will-change-transform"
+      style={{ 
+        background: isDarkMode ? '#1e2025' : '#ffffff', 
+        border: isDarkMode ? '1px solid rgba(255,255,255,0.07)' : '1px solid rgba(0,0,0,0.07)', 
+        boxShadow: isDarkMode ? '0 2px 12px rgba(0,0,0,0.4)' : '0 1px 6px rgba(0,0,0,0.06)',
+        transform: 'translateZ(0)', // GPU layer
+      }}
+    >
+      <motion.button 
+        whileTap={{scale:0.98}} 
+        onClick={onToggle} 
+        className="w-full flex items-center gap-3 px-4 py-4 text-left"
+        style={{ touchAction: 'manipulation' }}
+      >
+        <span className={`flex-shrink-0 p-2 rounded-xl ${isDarkMode ? 'bg-white/6 text-white/60' : 'bg-gray-100 text-gray-500'}`}>
+          {ROLES_ICONS[role.key]}
+        </span>
+        <div className="flex-1 min-w-0">
+          <p className={`font-bold text-sm ${isDarkMode ? 'text-white' : 'text-black'}`}>{t[role.titleKey]}</p>
+          <p className={`text-[11px] mt-0.5 ${isDarkMode ? 'text-white/35' : 'text-gray-400'}`}>{role.subtitle}</p>
+        </div>
+        <motion.svg 
+          xmlns="http://www.w3.org/2000/svg" 
+          viewBox="0 0 24 24" 
+          fill="none" 
+          stroke="currentColor" 
+          strokeWidth="2" 
+          className="w-4 h-4 flex-shrink-0"
+          style={{ color: isDarkMode ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.3)' }}
+          animate={{ rotate: isOpen ? 180 : 0 }}
+          transition={{ duration: 0.25, ease: [0.25, 0.46, 0.45, 0.94] }}
+        >
+          <polyline points="6 9 12 15 18 9"/>
+        </motion.svg>
+      </motion.button>
+      
+      {/* GPU-accelerated smooth expand */}
+      <motion.div 
+        animate={{ height }}
+        transition={{ duration: 0.3, ease: [0.25, 0.46, 0.45, 0.94] }}
+        style={{ overflow: 'hidden', willChange: 'height' }}
+      >
+        <div ref={contentRef} className={`px-4 pb-5 pt-0 border-t ${isDarkMode ? 'border-white/6' : 'border-black/6'}`}>
+          <p className={`text-sm leading-relaxed pt-4 ${isDarkMode ? 'text-white/60' : 'text-gray-600'}`}>
+            {t[role.descKey]}
+          </p>
+        </div>
+      </motion.div>
+    </div>
+  );
+});
+
+function RolesPage({ isDarkMode, onBack, t }) {
+  const [openRole, setOpenRole] = useState(null);
+  const touchStartY = useRef(0);
+  const [swipeOffset, setSwipeOffset] = useState(0);
+  
+  const handleTouchStart = (e) => {
+    touchStartY.current = e.touches[0].clientY;
+  };
+  
+  const handleTouchMove = (e) => {
+    const deltaY = e.touches[0].clientY - touchStartY.current;
+    if (deltaY > 0 && e.currentTarget.scrollTop === 0) {
+      setSwipeOffset(deltaY * 0.3);
+    }
+  };
+  
+  const handleTouchEnd = () => {
+    if (swipeOffset > 60) {
+      onBack();
+    }
+    setSwipeOffset(0);
+  };
+  
+  return (
+    <PageTransition 
+      className="fixed inset-0 z-[6000] flex flex-col" 
+      style={{ 
+        background: isDarkMode ? 'linear-gradient(160deg, #16181c 0%, #0c0e12 100%)' : '#f5f5f7',
+        transform: `translateY(${swipeOffset}px)`,
+        willChange: 'transform',
+      }}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+    >
+      {/* Thumb-friendly header */}
+      <div className="relative flex items-center justify-center pt-14 pb-4 px-6 flex-shrink-0">
+        {/* Sol - Büyük geri butonu */}
+        <button 
+          onClick={onBack} 
+          className={`absolute left-4 w-12 h-12 flex items-center justify-center rounded-full active:scale-95 transition-transform ${isDarkMode ? 'text-white hover:bg-white/10' : 'text-black hover:bg-black/5'}`}
+          style={{ touchAction: 'manipulation' }}
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-6 h-6">
+            <path d="M19 12H5M12 19l-7-7 7-7"/>
+          </svg>
+        </button>
+        <div className="text-center">
+          <h2 className={`font-bold text-base ${isDarkMode ? 'text-white' : 'text-black'}`}>{t.workerRolesTitle}</h2>
+          <p className={`text-[11px] mt-0.5 ${isDarkMode ? 'text-white/40' : 'text-gray-400'}`}>Worker Roles</p>
+        </div>
+        {/* Sağ - X kapat butonu */}
+        <button 
+          onClick={onBack}
+          className={`absolute right-4 w-12 h-12 flex items-center justify-center rounded-full active:scale-95 transition-transform ${isDarkMode ? 'text-white hover:bg-white/10' : 'text-black hover:bg-black/5'}`}
+          style={{ touchAction: 'manipulation' }}
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-6 h-6">
+            <path d="M18 6L6 18M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+      
+      <div className="flex-1 overflow-y-auto px-4 pb-10 space-y-2 pt-2">
+        {ROLES_KEYS.map((role) => (
+          <AccordionItem
+            key={role.key}
+            role={role}
+            isOpen={openRole === role.key}
+            onToggle={() => setOpenRole(openRole === role.key ? null : role.key)}
+            isDarkMode={isDarkMode}
+            t={t}
+          />
+        ))}
+      </div>
+    </PageTransition>
+  );
+}
 
 const StripePaymentModal = dynamic(() => import('./components/StripePaymentModal'), { ssr: false });
 
@@ -21,7 +228,7 @@ const loadLibraries = async () => {
     const cap = await import('@capacitor/geolocation');
     Geolocation = cap.Geolocation;
   } catch (e) {
-    console.warn('Capacitor geolocation load failed:', e);
+    // Capacitor geolocation yüklenemedi - web API kullanılacak
   }
   libsLoaded = true;
 };
@@ -31,7 +238,7 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
 if (!supabaseUrl || !supabaseKey) {
-  console.error('KRİTİK HATA: .env.local dosyasındaki anahtarlar okunamadı. NEXT_PUBLIC_SUPABASE_URL veya NEXT_PUBLIC_SUPABASE_ANON_KEY eksik.');
+  // Hata sessizce loglanır - kullanıcıya gösterilmez
 }
 
 const supabase = createClient(supabaseUrl, supabaseKey, {
@@ -44,8 +251,14 @@ const supabase = createClient(supabaseUrl, supabaseKey, {
 
 const MIN_TRANSACTION_AMOUNT = 100; // TL — ileride bu değeri değiştirerek taban fiyatı güncelleyebilirsiniz
 
+// === EVRENSEL ROL SABITLERI ===
+// Tüm hizmet veren (provider) rolleri - finansal işlemlerde kullanılır
+const PROVIDER_ROLES = ['kurye', 'emanetci', 'siraci', 'rehber', 'hepsi'];
+// Müşteri rolü
+const CUSTOMER_ROLE = 'musteri';
+
 // Simple Pigeon Maps component (no dynamic import needed)
-const roleOrder = ['kurye', 'emanetci', 'siraci', 'rehber', 'hepsi'];
+const roleOrder = PROVIDER_ROLES;
 const getRoleColor = (roles) => {
   if (!roles || roles.length === 0) return '#6b7280';
   if (roles.includes('hepsi')) return '#bf00ff';   // neon mor
@@ -68,9 +281,8 @@ const getRoleGlow = (roles) => {
 
 const getPrimaryRole = (u) => {
   const roles = u?.roles || [u?.user_role];
-  const order = ['kurye', 'emanetci', 'siraci', 'rehber', 'hepsi'];
-  for (const r of order) if (roles?.includes(r)) return r;
-  return 'musteri';
+  for (const r of PROVIDER_ROLES) if (roles?.includes(r)) return r;
+  return CUSTOMER_ROLE;
 };
 
 
@@ -160,10 +372,19 @@ const TRANSLATIONS = {
     searchCountry: 'Ülke ara...',
     support: 'Destek', payment: 'Ödeme', history: 'Geçmiş',
     settings: 'Ayarlar', darkTheme: 'Koyu Tema', logout: 'Çıkış Yap',
-    myAccount: 'Hesabım ▶',
+    myAccount: 'Hesabım',
     fastCourier: 'HIZLI KURYE', custodian: 'EMANETÇİ', waitInLine: 'SIRA BEKLE', guide: 'REHBER',
     courierDesc: 'Paket taşır', custodianDesc: 'Emanet kabul eder', waitDesc: 'Sizin yerinize bekler', guideDesc: 'Yol gösterir ve eşlik eder',
     all: 'HEPSİ', allDesc: 'Tüm çalışanları gör',
+    inviteFriend: 'Arkadaşını davet et, yapacağın 1 işten kesinti yaşama!',
+    inviteBtn: 'Davet Et!', shareTitle: 'TICK ile zaman kazan!', shareText: 'Zamanını sat veya başkasının zamanından tasarruf et. Üye olurken benim referans kodumu kullan:',
+    growth: 'BÜYÜME', referrals: 'Referanslar', topReferrer: 'En İyi Davetçi', assignBadge: 'Rozet Ver', badgeAssigned: 'Rozet atandı!',
+    workerRolesTitle: 'Çalışan Rolleri',
+    courierLong: 'Şehir içi lojistiği kişiselleştiriyoruz. Sadece paket değil, zaman taşıyoruz. Unutulan bir anahtar, acil bir evrak veya küçük bir paket... Hızlı Kurye, trafiğe takılmadan en güvenli rotayı kullanarak gönderinizi kapıdan kapıya ulaştırır. Gönderiniz teslim edilene kadar TICK güvencesi altındadır.',
+    custodianLong: 'Eşyalarınız için güvenli bir durak. Yanınızda taşımak istemediğiniz veya güvenli bir noktaya bırakmanız gereken paketleriniz için doğrulanmış TICK noktalarını kullanın. Dijital onay sistemiyle çalışır; eşyanız sadece sizin belirlediğiniz kişiye, özel bir güvenlik kodu ile teslim edilir.',
+    waitInLineLong: 'Sizin vaktiniz değerli, bırakın sırayı biz bekleyelim. Konser biletleri, teknoloji lansmanları, resmi daireler veya popüler mekanlardaki yoğun sıralar... Asistanımız sizin adınıza fiziksel olarak orada bulunur, sıra size yaklaştığında bildirim gönderir ve yerinizi size teslim eder.',
+    guideLong: 'Bulunduğunuz bölgeye bir yerli kadar hakim olun. Rehberlerimiz sadece yol göstermez; bölgenin tarihi, kültürel ve gizli kalmış değerli noktalarını bir uzman gibi tanıtır. En iyi saklı lezzet duraklarını, görülmesi gereken ikonik mekanları ve yerel ipuçlarını paylaşır. Yabancısı olduğunuz bir lokasyonda hem keşif yapmak hem de yardıma ihtiyaç duyduğunuz her an, donanımlı bir asistan gibi yanınızda olur.',
+    allLong: 'Tüm hizmetleri tek bir çatı altında toplayan çok yönlü uzmanlık. "Hepsi" seçeneği, karmaşık ihtiyaçlarınız için Kurye, Emanet, Sıra ve Rehber görevlerini tek bir operasyonda birleştirir. En üst segment hizmetimizle tüm ihtiyaçlarınıza tek seferde çözüm sunar.',
     guideLanguages: 'Konuştuğu Diller',
     guideLanguagesPlaceholder: 'Örn: Türkçe, İngilizce, Almanca',
     guideSpecialties: 'Uzmanlık Alanları',
@@ -387,6 +608,93 @@ const TRANSLATIONS = {
     transferSuccess: 'Para gönderildi! Alıcı {net}₺ aldı (Komisyon: {commission}₺)',
     transferError: 'Transfer başarısız',
     transferNetError: 'Transfer hatası',
+
+    // Üyelik Paketleri
+    membership: 'Üye Paketleri',
+    membershipTitle: 'Üyelik Paketleri',
+    membershipSubtitle: 'Avantajlı paketlerle kazanmaya başla',
+    dailyPackage: 'Günlük Paket',
+    weeklyPackage: 'Haftalık Paket',
+    packagePriceDaily: '99,99 TL',
+    packagePriceWeekly: '599,99 TL',
+    packageDurationDaily: '24 saat',
+    packageDurationWeekly: '7 gün',
+    packageBenefits: 'Paket Avantajları',
+    buyPackage: 'Satın Al',
+    packageDetail: 'Paketi İncele',
+    insufficientBalance: 'Yetersiz Bakiye',
+    insufficientBalanceDesc: 'Paket satın almak için cüzdanınıza para yükleyin',
+    purchaseSuccess: 'Paket Satın Alındı! 🎉',
+    purchaseSuccessDesc: '{package} aktif edildi. Keyfini çıkarın!',
+    activeMembershipBadge: 'Aktif Paket',
+    membershipExpires: 'Bitiş: {time}',
+
+    // Sözleşmeler
+    preInformationForm: 'Ön Bilgilendirme Formu',
+    distanceSalesContract: 'Mesafeli Satış Sözleşmesi',
+    sellerInfo: 'Satıcı Bilgileri',
+    sellerTitle: 'Ünvan: Uğur Yiğit Karakuzu',
+    sellerAddress: 'Adres: 3617 sokak no 134/A Mehtap Mahallesi Konak / İZMİR',
+    sellerPhone: 'Telefon: 0537 886 81 59',
+    sellerEmail: 'E-posta: tickglobalapp@gmail.com',
+    sellerTaxNo: 'TCKN: 12545513488',
+    contractSubject: 'Sözleşme Konusu',
+    contractSubjectText: 'TICK mobil uygulaması üzerinden satın alınan dijital üyelik paketlerine ilişkin satış ve teslimat şartlarıdır.',
+    productInfo: 'Ürün Bilgileri',
+    productService: 'Hizmet: Dijital Üyelik Paketi (Komisyon indirimi ve iş önceliği sağlar)',
+    productPrice: 'Fiyat: Günlük 99,99 TL / Haftalık 599,99 TL (Tüm vergiler dahil)',
+    productPayment: 'Ödeme: Kredi Kartı veya Cüzdan Bakiyesi ile anında tahsil edilir',
+    withdrawalRight: 'Cayma Hakkı',
+    withdrawalRightText: 'Mesafeli Sözleşmeler Yönetmeliği m. 15/ğ uyarınca, elektronik ortamda anında ifa edilen hizmetler kapsamında olan bu ürün için cayma hakkı bulunmamaktadır.',
+    parties: 'Taraflar',
+    seller: 'SATICI',
+    buyer: 'ALICI',
+    deliveryUsage: 'Hizmetin Teslimi ve Kullanımı',
+    deliveryText: 'Satın alınan paket, ödeme onaylandığı anda hesaba otomatik olarak tanımlanır. Paket süresi tanımlama anından itibaren başlar.',
+    paymentRefund: 'Ödeme ve İade Koşulları',
+    paymentAccept: 'Paket bedeli satın alma anında ödemeyi kabul eder.',
+    noRefund: 'İade ve İptal: Satın alınan hizmet dijital bir avantaj olup, anında aktifleştiği için iadesi, değişimi veya iptali mümkün değildir.',
+    autoRenewal: 'Otomatik Yenileme seçeneği aktif edildiğinde, paket süresi sonunda sistem kayıtlı karttan veya cüzdandan otomatik tahsilat yapar.',
+    generalTerms: 'Genel Hükümler',
+    technicalIssues: 'Uygulama üzerindeki teknik aksaklıklardan dolayı hizmetin kesilmesi durumunda sorumluluk kabul edilmez ancak sorunu gidermek için azami çaba gösterilir.',
+    jurisdiction: 'İşbu sözleşmeden doğan uyuşmazlıklarda İzmir Tüketici Hakem Heyetleri ve Tüketici Mahkemeleri yetkilidir.',
+    effectiveDate: 'Yürürlük',
+    effectiveDateText: 'Ödemeyi gerçekleştirdiğiniz anda bu sözleşmenin tüm maddelerini kabul etmiş sayılırsınız.',
+    readAndAccept: 'Okudum, kabul ediyorum',
+    acceptContractRequired: 'Sözleşmeyi kabul etmelisiniz',
+    contractConfirm: 'Sözleşmeyi Onayla',
+    sellerInfoNote: 'SATICI: Uğur Yiğit Karakuzu (Adres: 3617 sokak no 134/A Konak/İzmir, TCKN: 12545513488)',
+
+    // Martı Tarzı Üyelik
+    back: 'Geri',
+    membershipPackagesTitle: 'Üyelik Paketleri',
+    membershipCampaigns: 'Kampanyalar',
+    viewDetails: 'Paketi İncele >',
+    discountBadge: 'İndirimli',
+    monthlyPrice: '/aylık',
+    autoRenewal: 'Aboneliği otomatik yenile',
+    autoRenewalDesc: 'Paketin süresi dolduğunda otomatik yenilenecek',
+    paymentMethod: 'Ödeme Yöntemi',
+    payWithWallet: 'Cüzdan Bakiyesi',
+    payWithCard: 'Kredi Kartı',
+    contractApprovalText: 'Ön Bilgilendirme Koşullarını ve Mesafeli Satış Sözleşmesini okudum, onaylıyorum.',
+    clickToRead: '(Okumak için tıklayın)',
+    and: 've',
+    campaignBadge: 'Kampanya',
+    saveWithPackage: 'Paket al, kazan',
+    payAndSubscribe: 'öde, üye ol!',
+    selectPaymentMethod: 'Ödeme Yöntemi Seçin',
+    selectPaymentDesc: 'Ödemenizi nasıl yapmak istersiniz?',
+    availableBalance: 'Mevcut bakiye',
+    cardEndingWith: 'ile biten kart',
+    packageDetailBenefits: 'Paket Avantajları',
+    packageDetailTerms: 'Kullanım Koşulları',
+    instantActivation: 'Anında aktif olur',
+    noRefundPolicy: 'İptal/iade yapılamaz',
+    securePayment: 'Güvenli ödeme',
+    campaignBadge: 'Kampanya',
+    saveWithPackage: 'Paket ile kazan',
+
     markerLoading: 'Yükleniyor...',
     markerAvg: '⭐ Ortalama',
     markerReviews: '💬 Yorum',
@@ -484,10 +792,16 @@ const TRANSLATIONS = {
     searchCountry: 'Search country...',
     support: 'Support', payment: 'Payment', history: 'History',
     settings: 'Settings', darkTheme: 'Dark Theme', logout: 'Logout',
-    myAccount: 'My Account ▶',
+    myAccount: 'My Account',
     fastCourier: 'FAST COURIER', custodian: 'CUSTODIAN', waitInLine: 'WAIT IN LINE', guide: 'GUIDE',
     courierDesc: 'Delivers packages', custodianDesc: 'Accepts deposits', waitDesc: 'Waits in line for you', guideDesc: 'Guides and accompanies',
     all: 'ALL', allDesc: 'View all workers',
+    workerRolesTitle: 'Worker Roles',
+    courierLong: 'We personalize urban logistics. We carry not just packages, but time itself. A forgotten key, an urgent document, or a small parcel — our Express Courier takes the safest route without getting stuck in traffic and delivers door-to-door. Your shipment is under TICK guarantee until it is delivered.',
+    custodianLong: 'A secure stop for your belongings. Use verified TICK points for packages you do not want to carry with you or need to store safely. Operates with a digital confirmation system; your item is handed over only to the person you designate, with a unique security code.',
+    waitInLineLong: 'Your time is valuable — let us wait in line for you. Concert tickets, tech launches, government offices, or crowded queues at popular venues... Our assistant is physically present on your behalf, sends a notification when your turn approaches, and hands the spot over to you.',
+    guideLong: 'Discover any destination like a local. Our guides do not just show the way; they introduce the historical, cultural, and hidden gems of the area like an expert. They share the best-kept culinary stops, iconic must-see spots, and insider tips. Wherever you are unfamiliar, they are by your side as a well-equipped assistant whenever you need help.',
+    allLong: 'Versatile expertise combining all services under one roof. The "All" option merges Courier, Custodian, Queue, and Guide duties into a single operation for your complex needs. Solve all your requirements in one go with our top-tier service.',
     guideLanguages: 'Languages Spoken',
     guideLanguagesPlaceholder: 'e.g. Turkish, English, German',
     guideSpecialties: 'Areas of Expertise',
@@ -548,6 +862,8 @@ const TRANSLATIONS = {
     reportWorker: '⚠️ Report Worker', reportReason: 'Reason for Report',
     cancelCurrentJob: 'Cancel Current Job', reportSubmitted: 'Report received. Admin will review.',
     securityViolation: 'Security violation detected', offPlatformWarning: 'Off-platform payments are prohibited.',
+    securityReviewPending: 'Your transaction is under security review, payment will be transferred after verification',
+    paymentAutoReleased: 'Payment automatically approved and transferred to worker',
     completedJobs: 'Completed Jobs', avgRating: 'Avg Rating',
     userUnavailable: 'User is not available',
     outOfRadius: 'Out of service radius', userBlocked: 'Cannot contact this user',
@@ -707,6 +1023,86 @@ const TRANSLATIONS = {
     transferSuccess: 'Money sent! Recipient received {net}₺ (Commission: {commission}₺)',
     transferError: 'Transfer failed',
     transferNetError: 'Transfer error',
+
+    // Membership Packages
+    membership: 'Membership',
+    membershipTitle: 'Membership Packages',
+    membershipSubtitle: 'Start earning with advantageous packages',
+    dailyPackage: 'Daily Package',
+    weeklyPackage: 'Weekly Package',
+    packagePriceDaily: '99.99 TL',
+    packagePriceWeekly: '599.99 TL',
+    packageBenefits: 'Package Benefits',
+    buyPackage: 'Buy Now',
+    packageDetail: 'View Package',
+    insufficientBalance: 'Insufficient Balance',
+    insufficientBalanceDesc: 'Add funds to your wallet to purchase package',
+    purchaseSuccess: 'Package Purchased! 🎉',
+    purchaseSuccessDesc: '{package} activated. Enjoy!',
+    activeMembershipBadge: 'Active Package',
+    membershipExpires: 'Expires: {time}',
+
+    // Contracts
+    preInformationForm: 'Pre-Information Form',
+    distanceSalesContract: 'Distance Sales Contract',
+    sellerInfo: 'Seller Information',
+    sellerTitle: 'Title: Ugur Yigit Karakuzu',
+    sellerAddress: 'Address: 3617 street no 134/A Mehtap Neighborhood Konak / IZMIR',
+    sellerPhone: 'Phone: +90 537 886 81 59',
+    sellerEmail: 'Email: tickglobalapp@gmail.com',
+    sellerTaxNo: 'TCKN: 12545513488',
+    contractSubject: 'Subject',
+    contractSubjectText: 'This is the sales and delivery terms for digital membership packages purchased through the TICK mobile application.',
+    productInfo: 'Product Information',
+    productService: 'Service: Digital Membership Package (Provides commission discount and job priority)',
+    productPrice: 'Price: Daily 99.99 TL / Weekly 599.99 TL (All taxes included)',
+    productPayment: 'Payment: Instantly charged via Credit Card or Wallet Balance',
+    withdrawalRight: 'Right of Withdrawal',
+    withdrawalRightText: 'According to Article 15/g of the Distance Contracts Regulation, there is no right of withdrawal for this product as it is a service performed instantly in electronic environment.',
+    parties: 'Parties',
+    seller: 'SELLER',
+    buyer: 'BUYER',
+    deliveryUsage: 'Service Delivery and Usage',
+    deliveryText: 'The purchased package is automatically assigned to your account upon payment approval. The package period (24 hours or 7 days) starts from the moment of assignment.',
+    paymentRefund: 'Payment and Refund Conditions',
+    paymentAccept: 'You accept to pay the package fee at the time of purchase.',
+    noRefund: 'Refund and Cancellation: The purchased service is a digital benefit and cannot be returned, exchanged or canceled as it is activated instantly.',
+    autoRenewal: 'When the Automatic Renewal option is activated, automatic deduction will be made from the registered card or wallet at the end of the package period.',
+    generalTerms: 'General Provisions',
+    technicalIssues: 'No responsibility is accepted for service interruptions due to technical failures on the application, but maximum effort will be made to resolve the issue.',
+    jurisdiction: 'For disputes arising from this contract, Izmir Consumer Arbitration Committees and Consumer Courts are authorized.',
+    effectiveDate: 'Effective Date',
+    effectiveDateText: 'You are deemed to have accepted all articles of this contract upon completing the payment.',
+    readAndAccept: 'I have read and accept',
+    acceptContractRequired: 'You must accept the contract',
+
+    // Martı Style Membership
+    back: 'Back',
+    membershipPackagesTitle: 'Membership Packages',
+    membershipCampaigns: 'Campaigns',
+    viewDetails: 'View Package >',
+    discountBadge: 'Discount',
+    monthlyPrice: '/month',
+    autoRenewalDesc: 'Your subscription will automatically renew when the package expires',
+    paymentMethod: 'Payment Method',
+    payWithWallet: 'Wallet Balance',
+    payWithCard: 'Credit Card',
+    contractApprovalText: 'I have read and agree to the Pre-Information Conditions and Distance Sales Agreement.',
+    clickToRead: '(Click to read)',
+    and: 'and',
+    campaignBadge: 'Campaign',
+    saveWithPackage: 'Get the package, save',
+    payAndSubscribe: 'pay and subscribe!',
+    selectPaymentMethod: 'Select Payment Method',
+    selectPaymentDesc: 'How would you like to make your payment?',
+    availableBalance: 'Available balance',
+    cardEndingWith: 'ending with',
+    packageDetailBenefits: 'Package Benefits',
+    packageDetailTerms: 'Terms of Use',
+    instantActivation: 'Activates instantly',
+    noRefundPolicy: 'Cannot be canceled/refunded',
+    securePayment: 'Secure payment',
+
     markerLoading: 'Loading...',
     markerAvg: '⭐ Average',
     markerReviews: '💬 Reviews',
@@ -995,7 +1391,7 @@ class VoiceCallManager {
       await this._sendSignal({ type: 'offer', sdp: offer.sdp, from: this.userId, to: remoteUserId });
       this.setState('calling');
     } catch (err) {
-      console.error('Call start error:', err);
+      // Call error - UI'da göster
       this.setState('failed');
     }
   }
@@ -1012,7 +1408,7 @@ class VoiceCallManager {
       await this._sendSignal({ type: 'answer', sdp: answer.sdp, from: this.userId, to: from });
       this.setState('connected');
     } catch (err) {
-      console.error('Call accept error:', err);
+      // Call accept error
       this.setState('failed');
     }
   }
@@ -1045,7 +1441,6 @@ class VoiceCallManager {
         audio.srcObject.addTrack(ev.track);
         audio.play().catch(() => {
           // Bazı tarayıcılar etkileşim bekler, ses ikonuna tıklatarak çözebiliriz
-          console.log("Audio play deferred or blocked");
         }); 
       }
     };
@@ -1081,8 +1476,7 @@ class VoiceCallManager {
         }
       })
       .subscribe((status, error) => {
-        console.log(`Call channel status for ${this.requestId}:`, status);
-        if (error) console.error(`Call channel error:`, error);
+        // Realtime channel status monitoring
       });
   }
 
@@ -1223,22 +1617,53 @@ function PhoneSelector({ value, onChange, dark, t }) {
 }
 
 // ─── ADMIN PANEL ──────────────────────────────────────────────────────────────
-function AdminPanel({ isDarkMode, onClose, supabase }) {
+function AdminPanel({ isDarkMode, onClose, supabase, t }) {
   const [tab, setTab] = useState('users');
   const [users, setUsers] = useState([]);
   const [transactions, setTransactions] = useState([]);
+  const [referrals, setReferrals] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [badgeModalUser, setBadgeModalUser] = useState(null);
+  const [badgeText, setBadgeText] = useState('');
 
   const fetchData = async (type) => {
     setLoading(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      const url = type === 'transactions' ? '/api/admin/users?type=transactions' : '/api/admin/users';
-      const res = await fetch(url, { headers: { Authorization: `Bearer ${session?.access_token}` } });
-      const data = await res.json();
-      if (type === 'transactions') setTransactions(data.transactions || []);
-      else setUsers(data.users || []);
+      if (type === 'growth') {
+        // Tek sorguda tüm referans verilerini çek (N+1 sorunu çözümü)
+        const { data: allUsers } = await supabase
+          .from('profilkisi')
+          .select('user_id, name, email, badge, referred_by, referral_qualified, created_at')
+          .order('created_at', { ascending: false });
+
+        // Bellekte say - tek seferde tüm verileri işle
+        const referrerMap = new Map();
+        (allUsers || []).forEach(u => {
+          if (u.referred_by) {
+            const current = referrerMap.get(u.referred_by) || 0;
+            if (u.referral_qualified) {
+              referrerMap.set(u.referred_by, current + 1);
+            }
+          }
+        });
+
+        // Sonuçları oluştur
+        const refCounts = (allUsers || []).map(u => ({
+          ...u,
+          id: u.user_id,
+          successfulReferrals: referrerMap.get(u.user_id) || 0
+        })).sort((a, b) => b.successfulReferrals - a.successfulReferrals);
+
+        setReferrals(refCounts);
+      } else {
+        const url = type === 'transactions' ? '/api/admin/users?type=transactions' : '/api/admin/users';
+        const res = await fetch(url, { headers: { Authorization: `Bearer ${session?.access_token}` } });
+        const data = await res.json();
+        if (type === 'transactions') setTransactions(data.transactions || []);
+        else setUsers(data.users || []);
+      }
     } catch {}
     setLoading(false);
   };
@@ -1255,10 +1680,12 @@ function AdminPanel({ isDarkMode, onClose, supabase }) {
     fetchData('users');
   };
 
-  const filteredUsers = users.filter(u =>
-    (u.name || '').toLowerCase().includes(search.toLowerCase()) ||
-    (u.email || '').toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredUsers = useMemo(() =>
+    users.filter(u =>
+      (u.name || '').toLowerCase().includes(search.toLowerCase()) ||
+      (u.email || '').toLowerCase().includes(search.toLowerCase())
+    ),
+  [users, search]);
 
   const bg = isDarkMode ? 'bg-[#0F0F0F]' : 'bg-zinc-100';
   const text = isDarkMode ? 'text-white' : 'text-black';
@@ -1270,10 +1697,10 @@ function AdminPanel({ isDarkMode, onClose, supabase }) {
         <button onClick={onClose} className={`text-2xl ${text}`}>←</button>
         <h2 className={`font-black text-xl uppercase ${text}`}>🛡 Admin Paneli</h2>
         <div className="ml-auto flex gap-2">
-          {['users', 'transactions'].map(t => (
-            <button key={t} onClick={() => setTab(t)}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${tab === t ? 'bg-red-500 text-white' : isDarkMode ? 'bg-white/10 text-white' : 'bg-black/10 text-black'}`}>
-              {t === 'users' ? 'Kullanıcılar' : 'İşlemler'}
+          {['users', 'transactions', 'growth'].map(tabKey => (
+            <button key={tabKey} onClick={() => setTab(tabKey)}
+              className={`px-4 py-2 min-h-[44px] rounded-xl text-xs font-bold transition-all ${tab === tabKey ? 'bg-red-500 text-white' : isDarkMode ? 'bg-white/10 text-white' : 'bg-black/10 text-black'}`}>
+              {tabKey === 'users' ? 'Kullanıcılar' : tabKey === 'transactions' ? 'İşlemler' : t?.growth || 'BÜYÜME'}
             </button>
           ))}
         </div>
@@ -1339,7 +1766,94 @@ function AdminPanel({ isDarkMode, onClose, supabase }) {
             {transactions.length === 0 && <p className={`text-sm opacity-50 text-center py-10 ${text}`}>Henüz işlem yok.</p>}
           </div>
         )}
+
+        {/* BÜYÜME / REFERRAL TAB */}
+        {tab === 'growth' && (
+          <div className="px-4 pt-4 pb-20">
+            {/* Liderlik Tablosu - En İyi Davetçi */}
+            {referrals.length > 0 && referrals[0].successfulReferrals > 0 && (
+              <div 
+                onClick={() => setBadgeModalUser(referrals[0])}
+                className={`mb-6 p-5 rounded-2xl cursor-pointer transition-transform active:scale-95 ${isDarkMode ? 'bg-gradient-to-br from-[#FFD700]/20 to-[#FFA500]/20 border-2 border-[#FFD700]' : 'bg-gradient-to-br from-[#FFD700]/30 to-[#FFA500]/30 border-2 border-[#FFD700]'}`}
+                style={{ boxShadow: '0 0 20px rgba(255, 215, 0, 0.4), inset 0 1px 0 rgba(255,255,255,0.1)' }}
+              >
+                <div className="flex items-center gap-3">
+                  <span className="text-4xl">👑</span>
+                  <div className="flex-1">
+                    <p className={`text-xs font-bold uppercase tracking-wider ${isDarkMode ? 'text-[#FFD700]' : 'text-[#B8860B]'}`}>{t?.topReferrer || 'En İyi Davetçi'}</p>
+                    <p className={`font-black text-xl ${isDarkMode ? 'text-white' : 'text-black'}`}>{referrals[0].name || referrals[0].email}</p>
+                    <p className={`text-sm font-bold ${isDarkMode ? 'text-[#FFD700]' : 'text-[#B8860B]'}`}>{referrals[0].successfulReferrals} Başarılı Referans</p>
+                    {referrals[0].badge && (
+                      <span className="inline-block mt-1 px-2 py-0.5 bg-[#FFD700] text-black text-[10px] font-bold rounded-full">{referrals[0].badge}</span>
+                    )}
+                  </div>
+                  <span className="text-2xl">🏆</span>
+                </div>
+              </div>
+            )}
+
+            {/* Tüm Referanslar Listesi */}
+            <p className={`text-xs font-bold uppercase tracking-wider mb-3 ${text}`}>{t?.referrals || 'Referanslar'}</p>
+            <div className="space-y-3">
+              {referrals.slice(1).map((u, i) => (
+                <div key={u.id} className={`rounded-2xl p-4 border ${card}`}>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <span className="text-lg font-black opacity-30">#{i + 2}</span>
+                      <div>
+                        <p className={`font-bold text-sm ${text}`}>{u.name || u.email}</p>
+                        <p className={`text-xs opacity-50 ${text}`}>{u.successfulReferrals} başarılı davet</p>
+                        {u.badge && (
+                          <span className="inline-block mt-1 px-2 py-0.5 bg-[#2ECC71] text-white text-[10px] font-bold rounded-full">{u.badge}</span>
+                        )}
+                      </div>
+                    </div>
+                    <button 
+                      onClick={() => setBadgeModalUser(u)}
+                      className="px-3 py-1.5 rounded-lg bg-[#2ECC71] text-black text-xs font-bold"
+                    >{t?.assignBadge || 'Rozet Ver'}</button>
+                  </div>
+                </div>
+              ))}
+              {referrals.filter(r => r.successfulReferrals > 0).length === 0 && (
+                <p className={`text-sm opacity-50 text-center py-10 ${text}`}>Henüz başarılı referans yok.</p>
+              )}
+            </div>
+          </div>
+        )}
       </div>
+
+      {/* Rozet Modal */}
+      {badgeModalUser && (
+        <div className="fixed inset-0 z-[7000] flex items-center justify-center p-6 bg-black/70 backdrop-blur-md">
+          <div className={`w-full max-w-sm rounded-3xl p-6 ${isDarkMode ? 'bg-[#1a1a1a] border border-white/10' : 'bg-white border border-black/10'}`}>
+            <h3 className={`font-black text-lg mb-4 ${text}`}>{badgeModalUser.name || badgeModalUser.email} {t?.assignBadge || 'Rozet Ver'}</h3>
+            <input 
+              value={badgeText} 
+              onChange={(e) => setBadgeText(e.target.value)} 
+              placeholder="Örn: Altın Davetçi, Elit Üye..."
+              className={`w-full p-4 rounded-2xl text-sm outline-none border mb-4 ${isDarkMode ? 'bg-white/10 text-white border-white/10 placeholder-gray-500' : 'bg-gray-100 text-black border-gray-200'}`} 
+            />
+            <div className="flex gap-3">
+              <button 
+                onClick={async () => {
+                  if (!badgeText.trim()) return;
+                  await supabase.from('profilkisi').update({ badge: badgeText.trim() }).eq('user_id', badgeModalUser.user_id);
+                  setBadgeModalUser(null);
+                  setBadgeText('');
+                  fetchData('growth');
+                  showToast(t?.badgeAssigned || 'Rozet atandı!');
+                }}
+                className="flex-1 py-4 bg-[#2ECC71] text-black font-black rounded-2xl text-sm uppercase"
+              >Kaydet</button>
+              <button 
+                onClick={() => { setBadgeModalUser(null); setBadgeText(''); }}
+                className={`flex-1 py-4 font-black rounded-2xl text-sm uppercase ${isDarkMode ? 'bg-white/10 text-white' : 'bg-gray-200 text-black'}`}
+              >İptal</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -1547,6 +2061,7 @@ function Home() {
   const [newPassword, setNewPassword] = useState('');
   const [newPasswordConfirm, setNewPasswordConfirm] = useState('');
   const [konum, setKonum] = useState(null);
+  const [locationName, setLocationName] = useState(null);
   const [heading, setHeading] = useState(null);
   const [digerleri, setDigerleri] = useState([]);
   const digerleriRef = useRef([]);
@@ -1634,6 +2149,52 @@ function Home() {
   const [providerLoading, setProviderLoading] = useState(false);
   const [providerBalance, setProviderBalance] = useState({ available: 0, pending: 0, total: 0 });
   const [balanceLoading, setBalanceLoading] = useState(false);
+
+  // Üyelik Paketleri State'leri
+  const [membershipPackages, setMembershipPackages] = useState([
+    { 
+      id: 'daily', 
+      name: 'Günlük Paket', 
+      originalPrice: 149.99, 
+      discountedPrice: 99.99, 
+      duration: '24 saat', 
+      icon: '🎁', 
+      color: 'neon', 
+      benefits: [
+        { title: 'Komisyon indirimi', desc: 'Her işlemde %30 daha az komisyon ödeyerek kazancınızı artırın' },
+        { title: 'İş önceliği', desc: 'Yeni işler size öncelikli olarak gösterilir, daha hızlı müşteri bulun' },
+        { title: 'Özel rozet', desc: 'Profilinizde yeşil üye rozeti ile diğerlerinden ayrışın' }
+      ] 
+    },
+    { 
+      id: 'weekly', 
+      name: 'Haftalık Paket', 
+      originalPrice: 899.99, 
+      discountedPrice: 599.99, 
+      duration: '7 gün', 
+      icon: '👑', 
+      color: 'premium', 
+      benefits: [
+        { title: 'Komisyon indirimi', desc: 'Her işlemde %50 daha az komisyon ödeyerek kazancınızı maksimize edin' },
+        { title: 'Öncelikli iş eşleştirme', desc: 'En iyi müşteriler ve işler ilk size önerilir' },
+        { title: 'Premium destek', desc: '7/24 öncelikli müşteri desteği ile anında yardım alın' },
+        { title: 'Özel rozet', desc: 'Profilinizde premium üye rozeti ile fark yaratın' }
+      ] 
+    }
+  ]);
+  const [activeMembership, setActiveMembership] = useState(null);
+  const [selectedPackage, setSelectedPackage] = useState(null);
+  const [showPackageDetail, setShowPackageDetail] = useState(false);
+  const [contractApproved, setContractApproved] = useState(false);
+  const [showContractModal, setShowContractModal] = useState(false);
+
+  // Martı Tarzı Üyelik Sistemi State'leri
+  const [selectedMembershipPackage, setSelectedMembershipPackage] = useState(null);
+  const [showMembershipDetail, setShowMembershipDetail] = useState(false);
+  const [showPaymentMethodModal, setShowPaymentMethodModal] = useState(false);
+  const [membershipContractApproved, setMembershipContractApproved] = useState(false);
+  const [autoRenewal, setAutoRenewal] = useState(false);
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState(null); // 'wallet' | 'card'
 
   const [langMenuAcik, setLangMenuAcik] = useState(false);
   const [settingsSubPage, setSettingsSubPage] = useState(null); // null | 'contracts' | 'contract-detail' | 'language' | 'notifications'
@@ -1817,6 +2378,44 @@ function Home() {
     })();
   }, [stripeConnected, user?.id]);
 
+  // GERÇEK KAZANÇ VERİSİ - Supabase transactions tablosundan (Tüm Worker rolleri için)
+  useEffect(() => {
+    if (!user?.id) return;
+    (async () => {
+      try {
+        // Hizmet veren (Worker) olarak tamamlanan işlerin kazancı
+        const { data: earnings } = await supabase
+          .from('transactions')
+          .select('amount')
+          .eq('user_id', user.id)
+          .eq('type', 'escrow_release')
+          .eq('status', 'completed');
+        
+        const totalEarnings = (earnings || []).reduce((sum, t) => sum + (t.amount || 0), 0);
+        setProviderEarnings(totalEarnings);
+      } catch {}
+    })();
+  }, [user?.id]);
+
+  // GERÇEK HARCAMA VERİSİ - Müşteri olarak yapılan ödemeler
+  useEffect(() => {
+    if (!user?.id) return;
+    (async () => {
+      try {
+        // Müşteri olarak yapılan toplam harcama
+        const { data: spending } = await supabase
+          .from('transactions')
+          .select('amount')
+          .eq('user_id', user.id)
+          .eq('type', 'escrow_hold')
+          .eq('status', 'completed');
+        
+        const totalSpending = (spending || []).reduce((sum, t) => sum + (t.amount || 0), 0);
+        // setCustomerSpending(totalSpending); // Gerekirse kullanılabilir
+      } catch {}
+    })();
+  }, [user?.id]);
+
   const handleGoogleLogin = async () => {
     try {
       setAuthLoading(true);
@@ -1861,7 +2460,7 @@ function Home() {
         setShowNotifPrompt(false);
       }
     } catch (e) {
-      console.warn('Notification permission error', e);
+      // Notification permission error
     }
   }, [showToast]);
 
@@ -1870,6 +2469,20 @@ function Home() {
   const konumaGit = () => {
     if (mapResetRef.current) mapResetRef.current();
   };
+
+  useEffect(() => {
+    if (!konum?.lat || !konum?.lng) return;
+    const controller = new AbortController();
+    fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${konum.lat}&lon=${konum.lng}&accept-language=tr`, { signal: controller.signal })
+      .then(r => r.json())
+      .then(data => {
+        const district = data.address?.suburb || data.address?.neighbourhood || data.address?.quarter || data.address?.district || data.address?.county || '';
+        const city = data.address?.city || data.address?.town || data.address?.province || '';
+        if (district || city) setLocationName([district, city].filter(Boolean).join('/')  );
+      })
+      .catch(() => {});
+    return () => controller.abort();
+  }, [konum?.lat && Math.round(konum.lat * 100), konum?.lng && Math.round(konum.lng * 100)]);
 
   // Kullanıcı işlem geçmişini çek
   const fetchUserHistory = useCallback(async (userId) => {
@@ -1889,7 +2502,7 @@ function Home() {
         completedJobs: jobs.filter(j => j.status === 'completed')
       });
     } catch (err) {
-      console.error('Error fetching user history:', err);
+      // Error fetching user history
     } finally {
       setHistoryLoading(false);
     }
@@ -1913,7 +2526,7 @@ function Home() {
         })
         .eq('user_id', user.id);
     } catch (err) {
-      console.error('Error saving address:', err);
+      // Error saving address
     }
   }, [user?.id, addressLine1, addressLine2, addressCity, addressDistrict, addressNeighborhood, addressPostalCode]);
 
@@ -2019,13 +2632,15 @@ function Home() {
         // Stripe provider durumunu set et
         const hasStripe = Boolean(profile.stripe_account_id);
         setStripeConnected(hasStripe);
-        setIsProvider(Boolean(profile.is_provider));
+        // Provider kontrolü: rol listesinde herhangi bir PROVIDER_ROLES var mı?
+        const hasProviderRole = rolesForUser.some(r => PROVIDER_ROLES.includes(r));
+        setIsProvider(hasProviderRole || Boolean(profile.is_provider));
 
         // Tüm profil verilerini localStorage'a kaydet
         try {
           localStorage.setItem('radar_user', JSON.stringify(userData));
         } catch (e) {
-          console.error('Error saving user to localStorage:', e);
+          // Error saving user to localStorage
         }
       } else {
         // Profil DB'den gelmedi - localStorage'daki kaydı koru (geçici hata olabilir)
@@ -2059,7 +2674,6 @@ function Home() {
           setUser(null);
         }
       } catch (e) {
-        console.error('Auth getSession failed:', e);
         setAuthUid(null);
         setAuthSessionOk(false);
         setUser(null);
@@ -2126,16 +2740,17 @@ function Home() {
           },
           { onConflict: 'user_id' }
         );
-        if (error) console.error('Location upsert error:', error);
         lastLocationUpsertAtRef.current = Date.now();
         // Konum geçmişine kaydet (hata olsa da sessizce devam et)
-        supabase.from('location_history').insert({
-          user_id: session.user.id,
-          lat: coords.lat,
-          lng: coords.lng,
-        }).then(({ error: hErr }) => { if (hErr) console.error('location_history insert error:', hErr); });
+        try {
+          await supabase.from('location_history').insert({
+            user_id: session.user.id,
+            lat: coords.lat,
+            lng: coords.lng,
+          });
+        } catch { /* 403 veya diğer hataları sessizce yut */ }
       } catch (e) {
-        console.error('Location upsert exception:', e);
+        // Location upsert exception
       }
     };
 
@@ -2207,7 +2822,6 @@ function Home() {
           await upsertLastSeen(coords);
         }
       } catch (e) {
-        console.log('Initial position error:', e);
         initialPosDone = true;
       }
 
@@ -2226,7 +2840,9 @@ function Home() {
             sonKonumRef.current = coords;
             setKonum(coords);
             await upsertLastSeen(coords);
-          } catch (e) {}
+          } catch (e) {
+            console.error('Location tracking error:', e);
+          }
         }, 5000);
         watchId = locationInterval;
       } else if (navigator.geolocation) {
@@ -2243,7 +2859,7 @@ function Home() {
             setKonum(coords);
             await upsertLastSeen(coords);
           },
-          (err) => console.log('watchPosition error:', err),
+          (err) => {}, // watchPosition error ignored
           { enableHighAccuracy: true, maximumAge: 0, timeout: 15000 }
         );
         watchId = wid;
@@ -2316,9 +2932,7 @@ function Home() {
         const rec = payload.new || payload.old;
         if (rec && (rec.blocker_id === user.id || rec.blocked_id === user.id)) loadBlocks();
       })
-      .subscribe((status, error) => {
-        if (error) console.error("Blocks channel error:", error);
-      });
+      .subscribe(() => {});
 
     // 2. LOCATIONS CHANNEL
     const loadLocations = async () => {
@@ -2369,39 +2983,61 @@ function Home() {
     };
     document.addEventListener('visibilitychange', handleVisibility);
 
-    const applyLocationRecord = async (rec) => {
-      if (rec.user_id === user.id) return;
-      if (!isLocationFresh(rec.last_seen)) {
-        setDigerleri(prev => prev.filter(d => d.user_id !== rec.user_id));
-        return;
+    const pendingLocBatch = new Map();
+    let locBatchTimer = null;
+
+    const flushLocationBatch = async () => {
+      locBatchTimer = null;
+      if (pendingLocBatch.size === 0) return;
+      const batch = Array.from(pendingLocBatch.values());
+      pendingLocBatch.clear();
+
+      const stale = batch.filter(r => !isLocationFresh(r.last_seen));
+      const fresh = batch.filter(r => isLocationFresh(r.last_seen));
+
+      if (stale.length > 0) {
+        const staleIds = new Set(stale.map(r => r.user_id));
+        setDigerleri(prev => prev.filter(d => !staleIds.has(d.user_id)));
       }
-      const profileMap = await fetchPublicProfiles([rec.user_id]);
-      const profile = profileMap.get(rec.user_id);
-      const normalizedRoles = normalizeRolesValue(profile?.roles);
+
+      if (fresh.length === 0) return;
+      const profileMap = await fetchPublicProfiles(fresh.map(r => r.user_id));
       setDigerleri(prev => {
-        const newOthers = prev.filter(d => d.user_id !== rec.user_id);
-        return [...newOthers, {
-          user_id: rec.user_id, 
-          lat: rec.lat, 
-          lng: rec.lng, 
-          status: rec.status, 
-          last_seen: rec.last_seen,
-          name: profile?.name || 'Gizli', 
-          user_role: profile?.role || 'musteri', 
-          roles: normalizedRoles || (profile?.role ? [profile.role] : ['musteri']), 
-          is_available: profile?.is_available ?? true,
-          service_radius: profile?.service_radius ?? DEFAULT_SERVICE_RADIUS_M,
-          avatar_url: profile?.avatar_url || null,
-        }];
+        const freshIds = new Set(fresh.map(r => r.user_id));
+        const base = prev.filter(d => !freshIds.has(d.user_id));
+        const added = fresh.map(rec => {
+          const profile = profileMap.get(rec.user_id);
+          const normalizedRoles = normalizeRolesValue(profile?.roles);
+          return {
+            user_id: rec.user_id,
+            lat: rec.lat,
+            lng: rec.lng,
+            status: rec.status,
+            last_seen: rec.last_seen,
+            name: profile?.name || 'Gizli',
+            user_role: profile?.role || 'musteri',
+            roles: normalizedRoles || (profile?.role ? [profile.role] : ['musteri']),
+            is_available: profile?.is_available ?? true,
+            service_radius: profile?.service_radius ?? DEFAULT_SERVICE_RADIUS_M,
+            avatar_url: profile?.avatar_url || null,
+          };
+        });
+        return [...base, ...added];
       });
+    };
+
+    const applyLocationRecord = (rec) => {
+      if (rec.user_id === user.id) return;
+      pendingLocBatch.set(rec.user_id, rec);
+      if (!locBatchTimer) {
+        locBatchTimer = setTimeout(flushLocationBatch, 300);
+      }
     };
 
     const locationChannel = supabase.channel('locations-realtime')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'locations' }, p => applyLocationRecord(p.new))
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'locations' }, p => applyLocationRecord(p.new))
-      .subscribe((status, error) => {
-        if (error) console.error("Locations channel error:", error);
-      });
+      .subscribe(() => {});
 
     // NOTE: Removed 10s periodic timer - now relying 100% on Supabase Realtime for efficiency
     // Real-time profile changes are handled by the 'profilkisi-realtime' channel below
@@ -2434,7 +3070,7 @@ function Home() {
       }
 
       if (req.status === 'rejected') {
-        console.log("Offer rejected for request:", req.id);
+        // Offer rejected
         if (req.sender_id === user.id || sentRequestIdRef.current === req.id) { 
           showToast(t.offerRejected); 
           setSentRequestId(null); 
@@ -2471,7 +3107,7 @@ function Home() {
 
     const loadRequests = async () => {
       const { data, error } = await supabase.from('requests').select('*').or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`).in('status', ['pending', ...ACTIVE_STATUSES]).order('created_at', { ascending: false }).limit(20);
-      if (error) { console.error('Requests load error:', error); return; }
+      if (error) { return; }
       const active = (data || []).find(r => isActiveReq(r));
       if (active) {
         setAktifIs(active);
@@ -2500,7 +3136,6 @@ function Home() {
     const requestChannel = supabase.channel(`requests-all-${user.id}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'requests' }, p => processRequestChange(p.new || p.old))
       .on('broadcast', { event: 'rejection' }, ({ payload }) => {
-        console.log("Broadcast rejection received:", payload);
         if (payload.sender_id === user.id) {
           showToast(t.offerRejected);
           setSentRequestId(null);
@@ -2508,7 +3143,6 @@ function Home() {
         }
       })
       .on('broadcast', { event: 'confirm_sync' }, ({ payload }) => {
-        console.log("Broadcast confirm_sync received:", payload);
         if (aktifIsRef.current && payload.request_id === aktifIsRef.current.id) {
           setAktifIs(prev => ({ ...prev, ...payload.update }));
         }
@@ -2525,10 +3159,7 @@ function Home() {
           showToast(`${t.counterOfferReceived} ₺${payload.price}`);
         }
       })
-      .subscribe((status, error) => {
-        console.log(`Requests channel status: ${status}`);
-        if (error) console.error("Requests channel error:", error);
-      });
+      .subscribe(() => {});
     requestChannelRef.current = requestChannel;
 
     // 4. PROFILE CHANGES - Realtime role/color updates
@@ -2539,8 +3170,7 @@ function Home() {
         // Only update if this user is currently visible on map
         const isVisible = digerleriRef.current.some(d => d.user_id === updated.user_id);
         if (!isVisible) return;
-        console.log('Profile update received for:', updated.user_id, 'role:', updated.role);
-        // Fetch fresh profile data via RPC
+        // Profile update received - Fetch fresh profile data via RPC
         const profileMap = await fetchPublicProfiles([updated.user_id]);
         const profile = profileMap.get(updated.user_id);
         if (!profile) return;
@@ -2558,19 +3188,16 @@ function Home() {
           };
         }));
       })
-      .subscribe((status, error) => {
-        console.log(`Profile channel status: ${status}`);
-        if (error) console.error("Profile channel error:", error);
-      });
+      .subscribe(() => {});
 
     return () => {
-      console.log("Cleaning up main Realtime channels");
       try { blocksChannel.unsubscribe(); } catch {}
       try { locationChannel.unsubscribe(); } catch {}
       try { requestChannel.unsubscribe(); } catch {}
       try { profileChannel.unsubscribe(); } catch {}
       requestChannelRef.current = null;
       clearInterval(pollInterval);
+      if (locBatchTimer) clearTimeout(locBatchTimer);
       document.removeEventListener('visibilitychange', handleVisibility);
     };
   }, [user?.id]);
@@ -2586,11 +3213,8 @@ function Home() {
   useEffect(() => {
     if (!aktifIs?.id || !user) return;
 
-    console.log("Setting up Messages channel for:", aktifIs.id);
-
     const loadMessages = async () => {
       const { data, error } = await supabase.from('messages').select('*').eq('request_id', aktifIs.id).order('created_at', { ascending: true });
-      if (error) console.error('Messages load error:', error);
       if (data) setMesajlar(data);
     };
     loadMessages();
@@ -2619,11 +3243,7 @@ function Home() {
         });
         if (!chatAcikRef.current) setUnreadCount(c => c + 1);
       })
-      .subscribe((status, error) => {
-        console.log(`Messages channel status: ${status}`);
-        if (error) console.error("Messages channel error:", error);
-      });
-    messageChannelRef.current = messageChannel;
+      .subscribe();
 
     const typingChannel = supabase.channel(`typing-${aktifIs.id}`)
       .on('broadcast', { event: 'typing' }, ({ payload }) => {
@@ -2647,7 +3267,6 @@ function Home() {
       .subscribe();
 
     return () => {
-      console.log("Cleaning up Messages channels");
       supabase.removeChannel(messageChannel);
       supabase.removeChannel(typingChannel);
       supabase.removeChannel(callSignalChannel);
@@ -2678,7 +3297,6 @@ function Home() {
       setLoginOtpSent(true);
       showToast(t.codeSent);
     } catch (err) {
-      console.error('OTP send error:', err);
       // Rate limit hatasi kontrolu
       if (err.message?.includes('For security purposes') || err.message?.includes('seconds')) {
         const match = err.message.match(/(\d+)\s*seconds?/);
@@ -2705,7 +3323,6 @@ function Home() {
       setLoginSmsSent(true);
       showToast(t.codeSent);
     } catch (err) {
-      console.error('SMS OTP send error:', err);
       showToast(t.errorOccurred);
     } finally {
       setAuthLoading(false);
@@ -2740,7 +3357,6 @@ function Home() {
       setTempSelectedRoles(rolesForUser);
       localStorage.setItem('radar_user', JSON.stringify(loggedUser));
     } catch (err) {
-      console.error('SMS OTP verify error:', err);
       showToast(t.authError);
     } finally {
       setAuthLoading(false);
@@ -2774,7 +3390,6 @@ function Home() {
       setTempSelectedRoles(rolesForUser);
       localStorage.setItem('radar_user', JSON.stringify(loggedUser));
     } catch (err) {
-      console.error('OTP verify error:', err);
       showToast(t.authError);
     } finally {
       setAuthLoading(false);
@@ -2831,7 +3446,9 @@ function Home() {
       // E-posta doğrulama kalıcılığı: auth veya DB'den doğrulanmışsa DB'ye işle
       const isVerified = !!(authData.user.email_confirmed_at || profile?.email_verified);
       if (isVerified && !profile?.email_verified) {
-        supabase.from('profilkisi').update({ email_verified: true }).eq('user_id', authData.user.id).then(() => {});
+        try {
+          await supabase.from('profilkisi').update({ email_verified: true }).eq('user_id', authData.user.id);
+        } catch { /* Hata durumunda sessizce devam et */ }
       }
       setEmailVerified(isVerified);
 
@@ -2841,8 +3458,7 @@ function Home() {
       setTempSelectedRoles(rolesForUser);
       localStorage.setItem('radar_user', JSON.stringify(loggedUser));
     } catch (err) {
-      console.error('Login error:', err);
-      alert(t.authError + " (" + (err.message || "Bilinmeyen hata") + ")");
+      alert(t.authError);
     } finally {
       setAuthLoading(false);
     }
@@ -2909,6 +3525,15 @@ function Home() {
         registeredIp = ipJson?.ip || null;
       } catch {}
 
+      // URL'den referans kodunu oku
+      let referredBy = null;
+      try {
+        if (typeof window !== 'undefined') {
+          const urlParams = new URLSearchParams(window.location.search);
+          referredBy = urlParams.get('ref');
+        }
+      } catch {}
+
       // Profil oluştur
       const profileData = {
         user_id: signUpData.user.id,
@@ -2923,6 +3548,7 @@ function Home() {
         service_radius: DEFAULT_SERVICE_RADIUS_M,
         registered_ip: registeredIp,
         ip_address: registeredIp,
+        referred_by: referredBy,
       };
       
       const { error: profileError } = await supabase.from('profilkisi').upsert(profileData, { onConflict: 'user_id' });
@@ -2949,8 +3575,7 @@ function Home() {
       showToast('Kayıt başarılı!');
       
     } catch (err) {
-      console.error('Registration error:', err);
-      alert(t.regError + " (" + (err.message || "Bilinmeyen hata") + ")");
+      alert(t.regError);
     } finally {
       setAuthLoading(false);
     }
@@ -3042,12 +3667,14 @@ function Home() {
 
       // Adres geçmişine logla (sessizce, hata olsa da devam et)
       const hasOldAddress = Object.values(oldAddress).some(Boolean);
-      supabase.from('address_history').insert({
-        user_id: user.id,
-        old_address: hasOldAddress ? oldAddress : null,
-        new_address: addressData,
-        change_type: hasOldAddress ? 'update' : 'initial',
-      }).then(({ error: hErr }) => { if (hErr) console.error('address_history insert error:', hErr); });
+      try {
+        await supabase.from('address_history').insert({
+          user_id: user.id,
+          old_address: hasOldAddress ? oldAddress : null,
+          new_address: addressData,
+          change_type: hasOldAddress ? 'update' : 'initial',
+        });
+      } catch { /* Hata durumunda sessizce devam et */ }
       
       // LocalStorage'a da kaydet
       const updatedUser = { ...user, ...addressData };
@@ -3056,8 +3683,7 @@ function Home() {
       
       showToast(t.addressSaved);
     } catch (err) {
-      console.error('Save address error:', err);
-      alert(t.errorOccurred + ': ' + (err.message || 'Bilinmeyen hata'));
+      alert(t.errorOccurred);
     } finally {
       setProfileEditLoading(false);
     }
@@ -3075,8 +3701,7 @@ function Home() {
       localStorage.setItem('radar_user', JSON.stringify(updatedUser));
       showToast(t.guideSaved);
     } catch (err) {
-      console.error('Save guide profile error:', err);
-      alert(t.errorOccurred + ': ' + (err.message || 'Bilinmeyen hata'));
+      alert(t.errorOccurred);
     } finally {
       setGuideSaveLoading(false);
     }
@@ -3106,11 +3731,7 @@ function Home() {
       const fileName = `${user.id}-${Date.now()}.${fileExt}`;
       const filePath = `${fileName}`;
       
-      console.log('Uploading file:', filePath, 'Size:', file.size, 'Type:', file.type);
-      
-      // Önce bucket'ın var olduğunu kontrol et
-      const { data: buckets } = await supabase.storage.listBuckets();
-      console.log('Available buckets:', buckets);
+      // Upload başlatılıyor
       
       const { error: uploadError, data: uploadData } = await supabase.storage
         .from('profile-photos')
@@ -3121,7 +3742,6 @@ function Home() {
         });
       
       if (uploadError) {
-        console.error('Upload error details:', uploadError);
         if (uploadError.message?.includes('Bucket not found')) {
           throw new Error('Storage bucket bulunamadı. Lütfen Supabase\'de "profile-photos" bucket\'ını oluşturun.');
         }
@@ -3131,26 +3751,20 @@ function Home() {
         throw new Error(uploadError.message || 'Yükleme başarısız');
       }
       
-      console.log('Upload success:', uploadData);
-      
       const { data: { publicUrl } } = supabase.storage
         .from('profile-photos')
         .getPublicUrl(filePath);
       
-      console.log('Public URL:', publicUrl);
-      
       const { error: updateError } = await supabase.from('profilkisi').update({ avatar_url: publicUrl }).eq('user_id', user.id);
       if (updateError) {
-        console.error('Profile update error:', updateError);
-        throw new Error('Profil fotoğrafı kaydedilemedi: ' + updateError.message);
+        throw new Error('Profil fotoğrafı kaydedilemedi');
       }
       
       setUser({ ...user, avatar_url: publicUrl });
       localStorage.setItem('radar_user', JSON.stringify({ ...user, avatar_url: publicUrl }));
       showToast(t.photoUploaded);
     } catch (err) {
-      console.error('Photo upload error:', err);
-      alert('Fotoğraf yüklenemedi: ' + (err.message || 'Bilinmeyen hata'));
+      alert('Fotoğraf yüklenemedi');
     } finally {
       setProfileEditLoading(false);
     }
@@ -3283,8 +3897,7 @@ function Home() {
       setTempPhone('');
       setPendingAuthUser(null);
     } catch (err) {
-      console.error('Email verification error:', err);
-      alert(t.authError + " (" + (err.message || "Bilinmeyen hata") + ")");
+      alert(t.authError);
     } finally {
       setEmailVerifyLoading(false);
     }
@@ -3361,8 +3974,7 @@ function Home() {
     } catch (err) {
       // Hata olursa geri al
       setSeciliKisi(savedKisi); setIsDetayi(savedDetay); setTeklifFiyat(savedFiyat);
-      console.error('handleTalepGonder error:', err);
-      const msg = err?.message || err?.details || err?.hint || String(err);
+      const msg = err?.message || 'Bilinmeyen hata';
       updateDebug({
         lastRequest: {
           ok: false,
@@ -3382,8 +3994,7 @@ function Home() {
     const savedId = sentRequestId;
     // Optimistic
     setSentRequestId(null); sentRequestIdRef.current = null; showToast(t.offerCancelled);
-    const { error } = await supabase.from('requests').update({ status: 'cancelled' }).eq('id', savedId);
-    if (error) console.error('Cancel offer error:', error);
+    await supabase.from('requests').update({ status: 'cancelled' }).eq('id', savedId);
   };
 
   // Hizmet veren VEYA müşteri karşı teklif gönderir
@@ -3407,6 +4018,79 @@ function Home() {
       showToast(`${t.counterOfferSend}: ₺${price}`);
     } catch (err) {
       console.error('Counter offer error:', err);
+      showToast('Teklif gönderilemedi');
+    }
+  };
+
+  // ÜYELİK PAKETİ SATIN ALMA
+  const handleBuyPackage = async (pkg) => {
+    if (!user) {
+      showToast('Önce giriş yapmalısınız');
+      return;
+    }
+    
+    // Bakiye kontrolü
+    const price = pkg.id === 'daily' ? 99.99 : 599.99;
+    if (walletBalance < price) {
+      showToast(t.insufficientBalance);
+      setAktifPage('payment'); // Ödeme sayfasına yönlendir
+      return;
+    }
+    
+    setBakiyeYukleniyor(true);
+    try {
+      // Bakiyeden düş
+      const newBalance = walletBalance - price;
+      const { error } = await supabase
+        .from('wallets')
+        .update({ balance: newBalance })
+        .eq('user_id', user.id);
+      
+      if (error) throw error;
+      
+      // Üyelik kaydı
+      const expiresAt = pkg.id === 'daily' 
+        ? new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 saat
+        : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 gün
+      
+      const { error: membershipError } = await supabase
+        .from('memberships')
+        .insert([{
+          user_id: user.id,
+          type: pkg.id,
+          price: price,
+          started_at: new Date().toISOString(),
+          expires_at: expiresAt.toISOString(),
+          status: 'active'
+        }]);
+      
+      if (membershipError) throw membershipError;
+      
+      // İşlem kaydı
+      await supabase.from('transactions').insert([{
+        user_id: user.id,
+        type: 'membership_purchase',
+        amount: price,
+        description: `${pkg.name} satın alımı`,
+        status: 'completed',
+        created_at: new Date().toISOString()
+      }]);
+      
+      setWalletBalance(newBalance);
+      setActiveMembership({
+        type: pkg.id,
+        expiresIn: pkg.id === 'daily' ? '24 saat' : '7 gün',
+        expiresAt: expiresAt
+      });
+      
+      setShowPackageDetail(false);
+      setContractApproved(false);
+      showToast(`${t.purchaseSuccess} ${pkg.name}`);
+      
+    } catch (err) {
+      showToast('Satın alma başarısız: ' + err.message);
+    } finally {
+      setBakiyeYukleniyor(false);
     }
   };
 
@@ -3427,7 +4111,8 @@ function Home() {
         showToast(t.negotiationAgreed);
       }
     } catch (err) {
-      console.error('Accept counter offer error:', err);
+      console.error('Negotiation accept error:', err);
+      showToast('Anlaşma kabul edilemedi');
     }
   };
 
@@ -3445,7 +4130,6 @@ function Home() {
     activateJob(optimisticJob);
     setGelenTalep(null);
     const { data, error } = await supabase.from('requests').update({ status: 'accepted', active_job: true, delivery_code: code }).eq('id', gelenTalep.id).select().single();
-    if (error) console.error('Accept request error:', error);
     if (data) activateJob(data);
   };
 
@@ -3462,8 +4146,7 @@ function Home() {
         payload: { sender_id: savedTalep.sender_id, request_id: savedTalep.id }
       });
     }
-    const { error } = await supabase.from('requests').update({ status: 'rejected' }).eq('id', savedTalep.id);
-    if (error) console.error('Reject request error:', error);
+    await supabase.from('requests').update({ status: 'rejected' }).eq('id', savedTalep.id);
   };
 
   const handleOnayla = async () => {
@@ -3484,7 +4167,6 @@ function Home() {
     }
 
     const { data, error } = await supabase.from('requests').update(updateData).eq('id', aktifIs.id).select().single();
-    if (error) console.error('Confirm error:', error);
     if (data) setAktifIs(data);
   };
 
@@ -3495,7 +4177,6 @@ function Home() {
     setAktifIs(prev => ({ ...prev, status: nextStage }));
     setCurrentStage(nextStage);
     const { data, error } = await supabase.from('requests').update({ status: nextStage }).eq('id', aktifIs.id).select().single();
-    if (error) console.error('Advance stage error:', error);
     if (data) { setAktifIs(data); setCurrentStage(data.status); }
   };
 
@@ -3512,23 +4193,93 @@ function Home() {
       setAktifIs(null); setChatAcik(false); setCurrentStage('accepted'); setDeliveryCode(null); setCodeInput(''); setCodeVerified(false); setPhotoProofRequired(false); setMesajlar([]); setUnreadCount(0);
       setReviewHedef(isSender ? aktifIs.receiver_id : aktifIs.sender_id); setReviewAcik(true);
     }
-    const { data, error } = await supabase.from('requests').update(updateData).eq('id', aktifIs.id).select().single();
-    if (error) console.error('Complete job error:', error);
+    await supabase.from('requests').update(updateData).eq('id', aktifIs.id);
   };
 
-  const handleVerifyCode = () => {
-    if (codeInput === deliveryCode) { 
-      setCodeVerified(true); 
-      showToast(t.codeVerified);
-      if (requestChannelRef.current) {
-        requestChannelRef.current.send({
-          type: 'broadcast',
-          event: 'code_verified',
-          payload: { request_id: aktifIs.id, verified: true }
-        });
+  const handleVerifyCode = async () => {
+    if (codeInput !== deliveryCode) {
+      showToast(t.codeWrong);
+      return;
+    }
+
+    // Kod doğrulandı - zaman kontrolü yap
+    setCodeVerified(true);
+    showToast(t.codeVerified);
+
+    // Broadcast kod doğrulama
+    if (requestChannelRef.current) {
+      requestChannelRef.current.send({
+        type: 'broadcast',
+        event: 'code_verified',
+        payload: { request_id: aktifIs.id, verified: true }
+      });
+    }
+
+    // === SEÇİCİ MANUEL KONTROL: 3 DAKİKA KURALI ===
+    // Finansal Akış Ayrımı:
+    // - 3 dk < işlem: Otomatik capture (auto_capture: true) - Güvenli
+    // - 3 dk > işlem: Manuel onayda bekle (security_hold: true) - Şüpheli
+    if (aktifIs?.accepted_at && user) {
+      const acceptedTime = new Date(aktifIs.accepted_at).getTime();
+      const now = Date.now();
+      const durationMinutes = Math.floor((now - acceptedTime) / 60000);
+
+      try {
+        if (durationMinutes < 3) {
+          // === İSTİSNA AKIŞ (ŞÜPHELİ - MANUEL) ===
+          // 3 dakikadan kısa: Güvenlik radarına düş, manuel onay bekle
+          const isFastCompletion = durationMinutes < 1 ? 'critical' : durationMinutes < 2 ? 'high' : 'medium';
+
+          // Güvenlik radarına kayıt
+          await supabase.from('security_radar').insert({
+            request_id: aktifIs.id,
+            alert_type: 'fast_completion',
+            severity: isFastCompletion,
+            reporter_id: user.id,
+            reported_id: aktifIs.sender_id === user.id ? aktifIs.receiver_id : aktifIs.sender_id,
+            details: `İş ${durationMinutes} dakikada tamamlandı. Kod doğrulama: ${new Date().toISOString()}. Kabul zamanı: ${aktifIs.accepted_at}`,
+            payment_hold: true,
+            status: 'open'
+          });
+
+          // Ödemeyi manuel onayda bekle (auto_capture: false, security_hold: true)
+          await supabase.from('requests').update({
+            security_hold: true,
+            auto_capture: false,
+            completed_duration_minutes: durationMinutes
+          }).eq('id', aktifIs.id);
+
+          showToast(t.securityReviewPending);
+
+        } else {
+          // === VARSAYILAN AKIŞ (OTOMATİK - GÜVENLİ) ===
+          // 3 dakikadan uzun: Otomatik capture (güvenli işlem)
+          await supabase.from('requests').update({
+            security_hold: false,
+            auto_capture: true,
+            completed_duration_minutes: durationMinutes
+          }).eq('id', aktifIs.id);
+
+          // Otomatik ödeme serbest bırakma (escrow API çağrısı)
+          // İş tamamlandıktan sonra otomatik capture tetiklenir
+          const releaseResponse = await fetch('/api/stripe/escrow', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              action: 'release',
+              requestId: aktifIs.id,
+              autoCapture: true
+            })
+          });
+
+          if (releaseResponse.ok) {
+            showToast(t.paymentAutoReleased || 'Ödeme otomatik olarak onaylandı ve çalışana aktarıldı');
+          }
+        }
+      } catch (err) {
+        // Hata durumunda sessizce devam et (loglama kaldırıldı)
       }
     }
-    else showToast(t.codeWrong);
   };
 
   // Güvenlik kelime filtresi
@@ -3659,7 +4410,6 @@ function Home() {
       setReportReason('');
       setReportCancelJob(false);
     } catch (err) {
-      console.error('Report error:', err);
       showToast('Bildirim gönderilemedi');
     } finally {
       setReportSubmitting(false);
@@ -3805,17 +4555,11 @@ function Home() {
 
   const handleLogout = async () => { await supabase.auth.signOut(); try { localStorage.removeItem('radar_user'); } catch {} setUser(null); setAktifIs(null); setGelenTalep(null); setMesajlar([]); setChatAcik(false); setUnreadCount(0); setCallState('idle'); };
 
-  const filteredDigerleri = (() => {
+  const filteredDigerleri = useMemo(() => {
     const result = digerleri.filter(u => {
-      // Kendini gösterme
       if (user && u.user_id === user.id) return false;
-      // Engelleme kontrolü
       if (myBlocks.has(u.user_id) || blockedByOthers.has(u.user_id)) return false;
-      
-      // Konum tazlığı kontrolü (stale konumları filtrele)
       if (!isLocationFresh(u.last_seen)) return false;
-      
-      // Rol filtresi
       if (aktifFiltre !== 'hepsi') {
         const userRoles = u.roles || [u.user_role];
         if (!userRoles.includes(aktifFiltre)) return false;
@@ -3823,14 +4567,13 @@ function Home() {
       return true;
     });
 
-    // 8 kullanıcı max göster, rol bazlı ve mesafe bazlı optimize
     if (result.length <= 8) return result;
     if (!konum?.lat || !konum?.lng) return result.slice(0, 8);
 
     const roleOrder = ['kurye', 'emanetci', 'siraci', 'rehber', 'hepsi'];
     const roleQuota = { kurye: 3, emanetci: 2, siraci: 2, rehber: 2, hepsi: 1 };
 
-    const getPrimaryRole = (u) => {
+    const getLocalPrimaryRole = (u) => {
       const roles = u.roles || [u.user_role];
       for (const r of roleOrder) if (roles?.includes(r)) return r;
       return 'other';
@@ -3839,7 +4582,7 @@ function Home() {
     const enriched = result
       .map(u => ({
         ...u,
-        _primaryRole: getPrimaryRole(u),
+        _primaryRole: getLocalPrimaryRole(u),
         _distance: getDistance(konum.lat, konum.lng, u.lat, u.lng)
       }))
       .sort((a, b) => a._distance - b._distance);
@@ -3847,7 +4590,6 @@ function Home() {
     const selected = [];
     const used = new Set();
 
-    // Quota bazlı seçim
     for (const r of roleOrder) {
       const quota = roleQuota[r] || 0;
       if (quota <= 0) continue;
@@ -3861,7 +4603,6 @@ function Home() {
       }
     }
 
-    // Kalan 8'e kadar uzak olanları ekle
     for (const u of enriched) {
       if (selected.length >= 8) break;
       if (used.has(u.user_id)) continue;
@@ -3870,7 +4611,7 @@ function Home() {
     }
 
     return selected.map(({ _primaryRole, _distance, ...rest }) => rest);
-  })();
+  }, [digerleri, user?.id, myBlocks, blockedByOthers, aktifFiltre, konum?.lat, konum?.lng]);
 
   // Map logic extracted to src/components/MapView
 
@@ -4531,10 +5272,54 @@ function Home() {
   }
 
   return (
-    <main 
-      className={`w-screen overflow-hidden ${isDarkMode ? 'bg-[#0F0F0F] text-white' : 'bg-white text-black'} h-[100dvh]`}
-      suppressHydrationWarning
-    >
+    <>
+      {/* Global 60 FPS GPU Optimization Styles */}
+      <style>{`
+        /* GPU Acceleration for all animated elements */
+        .will-change-transform {
+          will-change: transform;
+        }
+        .will-change-opacity {
+          will-change: opacity;
+        }
+        
+        /* Force GPU layers for smooth animations */
+        * {
+          -webkit-tap-highlight-color: transparent;
+        }
+        
+        /* Optimize scrolling performance */
+        .overflow-y-auto {
+          -webkit-overflow-scrolling: touch;
+          overscroll-behavior-y: contain;
+        }
+        
+        /* Reduce motion for accessibility */
+        @media (prefers-reduced-motion: reduce) {
+          *, *::before, *::after {
+            animation-duration: 0.01ms !important;
+            animation-iteration-count: 1 !important;
+            transition-duration: 0.01ms !important;
+          }
+        }
+        
+        /* Optimize paint operations */
+        .contain-paint {
+          contain: paint;
+        }
+        
+        /* GPU compositing hints */
+        .gpu-accelerated {
+          transform: translateZ(0);
+          backface-visibility: hidden;
+          perspective: 1000px;
+        }
+      `}</style>
+      
+      <main 
+        className={`w-screen overflow-hidden ${isDarkMode ? 'bg-[#0F0F0F] text-white' : 'bg-white text-black'} h-[100dvh] gpu-accelerated`}
+        suppressHydrationWarning
+      >
       {isHydrated && <audio id="radar-remote-audio" autoPlay playsInline style={{ display: 'none' }} />}
       <div className="relative w-full h-[100dvh]" suppressHydrationWarning>
         {showNotifPrompt && (
@@ -4633,11 +5418,11 @@ function Home() {
               setMarkerSheetLoading(true);
               try {
                 const [reviewsRes, requestsRes] = await Promise.all([
-                  supabase.from('reviews').select('rating, comment, created_at').eq('reviewee_id', u.user_id).order('created_at', { ascending: false }).limit(5),
-                  supabase.from('requests').select('id').eq('receiver_id', u.user_id).eq('status', 'completed'),
+                  supabase.from('reviews').select('rating,comment,created_at').eq('reviewee_id', u.user_id).order('created_at', { ascending: false }).limit(5).catch(() => ({ data: [] })),
+                  supabase.from('requests').select('id').eq('receiver_id', u.user_id).eq('status', 'completed').catch(() => ({ data: [] })),
                 ]);
-                const reviews = reviewsRes.data || [];
-                const completedCount = requestsRes.data?.length || 0;
+                const reviews = reviewsRes?.data || [];
+                const completedCount = requestsRes?.data?.length || 0;
                 const avgRating = reviews.length ? (reviews.reduce((s, r) => s + r.rating, 0) / reviews.length) : 0;
                 setMarkerSheet({ user: u, stats: { reviews, completedCount, avgRating } });
               } catch {}
@@ -4656,40 +5441,87 @@ function Home() {
           />
         </div>
 
-        <div className={`fixed inset-0 z-[5000] transition-opacity duration-300 ${aktifPage === 'menu' ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
-          <div className={`absolute inset-0 backdrop-blur-sm ${isDarkMode ? 'bg-black/60' : 'bg-black/30'}`} onClick={() => setAktifPage('map')}></div>
-          <div className={`absolute inset-y-5 left-5 w-[65%] max-w-[260px] shadow-2xl transform transition-transform duration-500 ease-out flex flex-col p-6 overflow-y-auto rounded-3xl ${isDarkMode ? 'border border-white/10 bg-black/40' : 'border border-black/20 bg-zinc-200'} backdrop-blur-md ${aktifPage === 'menu' ? 'translate-x-0' : '-translate-x-[120%]'}`}>
-            <div className="flex items-center gap-3 mb-8">
-              <div className="w-14 h-14 bg-[#2ECC71]/20 rounded-full flex items-center justify-center text-xl font-bold text-[#2ECC71] shadow-[0_0_25px_rgba(46,204,113,0.18)] cursor-pointer flex-shrink-0" onClick={() => setAktifPage('account')}>{user.name[0].toUpperCase()}</div>
-              <div className="flex-1 min-w-0 cursor-pointer" onClick={() => setAktifPage('account')}>
-                <p className={`font-bold text-lg truncate ${isDarkMode ? 'text-white' : 'text-black'}`}>{user.name}</p>
-                <p className="text-[#2ECC71] text-[10px] font-black uppercase">{t.myAccount}</p>
+        {/* TAM EKRAN MENÜ - Martı Tarzı */}
+        <div className={`fixed inset-0 z-[5000] transition-all duration-300 ${aktifPage === 'menu' ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
+          <div className={`absolute inset-0 ${isDarkMode ? 'bg-[#0a0a0a]' : 'bg-white'}`}></div>
+          <div className={`absolute inset-0 flex flex-col ${isDarkMode ? 'bg-[#0a0a0a]' : 'bg-white'}`}>
+            {/* Header - Tam Ekran */}
+            <div className="flex items-center justify-between px-6 py-4 mt-12 border-b border-gray-800/10">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-[#2ECC71]/20 rounded-full flex items-center justify-center text-lg font-bold text-[#2ECC71] shadow-[0_0_20px_rgba(46,204,113,0.15)]" onClick={() => setAktifPage('account')}>
+                  {user.name[0].toUpperCase()}
+                </div>
+                <div onClick={() => setAktifPage('account')}>
+                  <p className={`font-bold text-base ${isDarkMode ? 'text-white' : 'text-black'}`}>{user.name}</p>
+                  <p className="text-[#2ECC71] text-xs font-bold">{t.myAccount} ›</p>
+                </div>
               </div>
-              <button onClick={(e) => { e.stopPropagation(); setNotifPanelAcik(v => !v); }} className="relative flex-shrink-0 w-9 h-9 flex items-center justify-center rounded-full hover:bg-white/10 transition">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`w-5 h-5 ${isDarkMode ? 'text-white' : 'text-black'}`}><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-                {notifications.filter(n => !n.is_read).length > 0 && (
-                  <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 bg-red-500 text-white text-[9px] font-black rounded-full flex items-center justify-center px-1">
-                    {notifications.filter(n => !n.is_read).length > 9 ? '9+' : notifications.filter(n => !n.is_read).length}
-                  </span>
-                )}
+              <button onClick={() => setAktifPage('map')} className={`p-2 rounded-full ${isDarkMode ? 'hover:bg-white/10' : 'hover:bg-black/10'}`}>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={`w-6 h-6 ${isDarkMode ? 'text-white' : 'text-black'}`}>
+                  <path d="M18 6L6 18M6 6l12 12"/>
+                </svg>
               </button>
             </div>
-            <div className="flex-1 space-y-1">
-              {['support', 'payment', 'history'].map(p => <button key={p} onClick={() => setAktifPage(p)} className={`w-full text-left py-3 px-2 font-semibold text-sm border-b transition-all hover:scale-[1.01] hover:bg-white/5 hover:shadow-[0_0_20px_rgba(255,255,255,0.06)] ${isDarkMode ? 'text-white border-white/10' : 'text-black border-black/10'}`}>{t[p]}</button>)}
-              {user?.is_admin && (
-                <a href="/admin" target="_blank" rel="noopener noreferrer" className={`w-full text-left py-3 px-2 font-semibold text-sm border-b transition-all hover:scale-[1.01] hover:bg-red-500/10 flex items-center gap-2 ${isDarkMode ? 'text-red-400 border-white/10' : 'text-red-600 border-black/10'}`}>🛡 Admin Paneli <span className="text-[10px] opacity-50">↗</span></a>
-              )}
-            </div>
-            <div className="mt-6 space-y-3">
-              <button onClick={() => setAktifPage('settings')} className={`w-full p-4 rounded-2xl font-bold text-sm text-left flex items-center gap-2 ${isDarkMode ? 'bg-white/5 text-white' : 'bg-black/5 text-black'}`}>⚙️ {t.settings || 'Ayarlar'}</button>
-              <button onClick={handleLogout} className="w-full p-4 bg-red-500/10 text-red-500 rounded-2xl font-bold text-sm">{t.logout}</button>
+            {/* Menü Listesi - Tam Ekran Grid */}
+            <div className="flex-1 overflow-y-auto px-6 py-4">
+              {/* Ana Menü Grid */}
+              <div className="grid grid-cols-3 gap-3 mb-6">
+                {[{page:'support',icon:(<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className={`w-7 h-7 ${isDarkMode?'text-white/70':'text-gray-600'}`}><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><circle cx="12" cy="17" r="1" fill="currentColor" stroke="none"/></svg>),label:t.support},{page:'payment',icon:(<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className={`w-7 h-7 ${isDarkMode?'text-white/70':'text-gray-600'}`}><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>),label:t.payment},{page:'history',icon:(<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className={`w-7 h-7 ${isDarkMode?'text-white/70':'text-gray-600'}`}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>),label:t.history}].map((item,i)=>(
+                  <motion.button key={item.page} onClick={()=>setAktifPage(item.page)}
+                    initial={{opacity:0,y:16}} animate={{opacity:1,y:0}} transition={{duration:0.28,ease:[0.25,0.46,0.45,0.94],delay:i*0.06}}
+                    whileTap={{scale:0.95}} className={`flex flex-col items-center gap-2 p-4 rounded-2xl ${isDarkMode?'bg-white/5':'bg-gray-100'} transition-colors`}>
+                    {item.icon}
+                    <span className={`text-xs font-medium ${isDarkMode?'text-white':'text-black'}`}>{item.label}</span>
+                  </motion.button>
+                ))}
+              </div>
+
+              {/* Üyelik Paketleri - Öne Çıkan Kart */}
+              <button onClick={() => setAktifPage('membership')} className={`w-full p-4 rounded-2xl mb-4 flex items-center justify-between ${isDarkMode ? 'bg-gradient-to-r from-[#2ECC71]/20 to-[#2ECC71]/5 border border-[#2ECC71]/30' : 'bg-gradient-to-r from-[#2ECC71]/10 to-white border border-[#2ECC71]/20'}`}>
+                <div className="flex items-center gap-3">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className={`w-7 h-7 text-[#2ECC71]`}><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                  <div className="text-left">
+                    <p className={`font-bold text-sm ${isDarkMode ? 'text-white' : 'text-black'}`}>{t.membershipPackagesTitle}</p>
+                    <p className={`text-xs ${isDarkMode ? 'text-white/60' : 'text-gray-600'}`}>{t.membershipCampaigns}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  {activeMembership && (
+                    <span className="px-2 py-1 bg-[#2ECC71] text-white text-xs rounded-full font-bold">
+                      {activeMembership.type === 'daily' ? 'G' : 'H'}
+                    </span>
+                  )}
+                  <span className={`text-lg ${isDarkMode ? 'text-white/50' : 'text-gray-400'}`}>›</span>
+                </div>
+              </button>
+
+              {/* Diğer Menü Öğeleri Liste */}
+              <div className="space-y-1">
+                {user?.is_admin && (
+                  <a href="/admin" target="_blank" rel="noopener noreferrer" className={`w-full flex items-center justify-between py-4 px-2 border-b transition-opacity active:opacity-60 ${isDarkMode ? 'border-white/10 text-red-400' : 'border-gray-200 text-red-600'}`}>
+                    <span className="font-medium text-sm flex items-center gap-2"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-4 h-4"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> Admin Paneli</span>
+                    <span className="text-xs opacity-50">↗</span>
+                  </a>
+                )}
+                <motion.button onClick={() => setAktifPage('roles')} whileTap={{scale:0.98}} initial={{opacity:0,x:-8}} animate={{opacity:1,x:0}} transition={{duration:0.24,ease:[0.25,0.46,0.45,0.94],delay:0.1}} className={`w-full flex items-center justify-between py-4 px-2 border-b ${isDarkMode ? 'border-white/10 text-white' : 'border-gray-200 text-black'}`}>
+                  <span className="font-medium text-sm flex items-center gap-2"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-4 h-4"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/><path d="M21 21v-2a4 4 0 0 0-3-3.85"/></svg> Çalışan Rolleri</span>
+                  <span className={`text-lg ${isDarkMode ? 'text-white/50' : 'text-gray-400'}`}>›</span>
+                </motion.button>
+                <motion.button onClick={() => setAktifPage('settings')} whileTap={{scale:0.98}} initial={{opacity:0,x:-8}} animate={{opacity:1,x:0}} transition={{duration:0.24,ease:[0.25,0.46,0.45,0.94],delay:0.15}} className={`w-full flex items-center justify-between py-4 px-2 border-b ${isDarkMode ? 'border-white/10 text-white' : 'border-gray-200 text-black'}`}>
+                  <span className="font-medium text-sm flex items-center gap-2"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-4 h-4"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg> {t.settings || 'Ayarlar'}</span>
+                  <span className={`text-lg ${isDarkMode ? 'text-white/50' : 'text-gray-400'}`}>›</span>
+                </motion.button>
+                <motion.button onClick={handleLogout} whileTap={{scale:0.98}} initial={{opacity:0,x:-8}} animate={{opacity:1,x:0}} transition={{duration:0.24,ease:[0.25,0.46,0.45,0.94],delay:0.2}} className="w-full flex items-center justify-between py-4 px-2 text-red-500">
+                  <span className="font-medium text-sm flex items-center gap-2"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-4 h-4"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg> {t.logout}</span>
+                </motion.button>
+              </div>
             </div>
           </div>
         </div>
         {/* ── BİLDİRİM PANELİ ── */}
       {notifPanelAcik && aktifPage === 'menu' && (
         <div className="fixed inset-0 z-[5500] animate-fade-in" onClick={() => setNotifPanelAcik(false)}>
-          <div className={`absolute left-5 w-[72%] max-w-[280px] rounded-3xl border shadow-2xl overflow-hidden animate-fade-slide-up ${isDarkMode ? 'bg-[#111] border-white/10' : 'bg-white border-black/10'}`}
+          <div className={`absolute left-4 right-4 sm:right-auto sm:w-[72%] sm:max-w-[300px] rounded-3xl border shadow-2xl overflow-hidden animate-fade-slide-up ${isDarkMode ? 'bg-[#111] border-white/10' : 'bg-white border-black/10'}`}
             style={{ top: 'calc(env(safe-area-inset-top, 0px) + 60px)', maxHeight: 'calc(100dvh - env(safe-area-inset-top, 0px) - 80px)' }}
             onClick={e => e.stopPropagation()}>
             <div className={`flex items-center justify-between px-4 py-3 border-b ${isDarkMode ? 'border-white/10' : 'border-black/10'}`}>
@@ -4757,42 +5589,58 @@ function Home() {
           </button>
         );
 
-        const PageHeader = ({ title, onBack }) => (
+        // Simple header component as function (not React component to avoid hooks issues)
+        const renderHeader = (title, onBack) => (
           <div className={`flex items-center pt-14 pb-3 px-4 border-b ${divider}`}>
-            <button onClick={onBack} className={`flex items-center gap-1 text-sm font-medium ${isDarkMode ? 'text-white/60' : 'text-black/60'} mr-3`}>
-              <svg width="8" height="13" viewBox="0 0 8 13" fill="none"><path d="M7 1L2 6.5 7 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            <button 
+              onClick={onBack} 
+              className={`flex items-center justify-center w-12 h-12 -ml-2 rounded-full active:scale-95 transition-transform ${isDarkMode ? 'text-white/70 hover:bg-white/10' : 'text-black/60 hover:bg-black/5'}`}
+              style={{ touchAction: 'manipulation' }}
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M19 12H5M12 19l-7-7 7-7"/>
+              </svg>
             </button>
-            <h2 className={`font-semibold text-base ${textPrimary}`}>{title}</h2>
+            <h2 className={`flex-1 font-semibold text-base text-center -ml-6 ${textPrimary}`}>{title}</h2>
+            <button 
+              onClick={onBack}
+              className={`flex items-center justify-center w-12 h-12 -mr-2 rounded-full active:scale-95 transition-transform ${isDarkMode ? 'text-white/70 hover:bg-white/10' : 'text-black/60 hover:bg-black/5'}`}
+              style={{ touchAction: 'manipulation' }}
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M18 6L6 18M6 6l12 12"/>
+              </svg>
+            </button>
           </div>
         );
 
         // Sayfa 3: Sözleşme Detayı
         if (settingsSubPage === 'contract-detail' && activeContract) return (
-          <div className={`fixed inset-0 z-[6200] flex flex-col ${bg}`}>
-            <PageHeader title={activeContract.title} onBack={() => setSettingsSubPage('contracts')} />
+          <PageTransition className={`fixed inset-0 z-[6200] flex flex-col ${bg}`}>
+            {renderHeader(activeContract.title, () => setSettingsSubPage('contracts'))}
             <div className="flex-1 overflow-y-auto px-5 pt-5 pb-12">
               <p className={`text-[13px] leading-relaxed whitespace-pre-line ${textPrimary} opacity-75`}>{activeContract.text}</p>
             </div>
-          </div>
+          </PageTransition>
         );
 
         // Sayfa 2: Sözleşmeler Listesi
         if (settingsSubPage === 'contracts') return (
-          <div className={`fixed inset-0 z-[6100] flex flex-col ${bg}`}>
-            <PageHeader title={t.settingsContracts} onBack={() => setSettingsSubPage(null)} />
+          <PageTransition className={`fixed inset-0 z-[6100] flex flex-col ${bg}`}>
+            {renderHeader(t.settingsContracts, () => setSettingsSubPage(null))}
             <div className="flex-1 overflow-y-auto pt-4 pb-10 space-y-2">
               {contracts.map((c) => (
                 <ListRow key={c.key} label={c.title}
                   onClick={() => { setActiveContract(c); setSettingsSubPage('contract-detail'); }} />
               ))}
             </div>
-          </div>
+          </PageTransition>
         );
 
         // Sayfa 2: Dil Seçimi
         if (settingsSubPage === 'language') return (
-          <div className={`fixed inset-0 z-[6100] flex flex-col ${bg}`}>
-            <PageHeader title={t.settingsAppLang} onBack={() => setSettingsSubPage(null)} />
+          <PageTransition className={`fixed inset-0 z-[6100] flex flex-col ${bg}`}>
+            {renderHeader(t.settingsAppLang, () => setSettingsSubPage(null))}
             <div className="flex-1 overflow-y-auto pt-4 pb-10 space-y-2">
               {Object.entries(TRANSLATIONS).map(([code, tl]) => (
                 <button key={code} onClick={() => { handleLangChange(code); setSettingsSubPage(null); }}
@@ -4803,13 +5651,13 @@ function Home() {
                 </button>
               ))}
             </div>
-          </div>
+          </PageTransition>
         );
 
         // Sayfa 2: Anlık Bildirimler
         if (settingsSubPage === 'notifications') return (
-          <div className={`fixed inset-0 z-[6100] flex flex-col ${bg}`}>
-            <PageHeader title={t.settingsNotif} onBack={() => setSettingsSubPage(null)} />
+          <PageTransition className={`fixed inset-0 z-[6100] flex flex-col ${bg}`}>
+            {renderHeader(t.settingsNotif, () => setSettingsSubPage(null))}
             <div className="flex-1 pt-6 px-4 pb-10 space-y-3">
               <p className={`text-xs px-1 mb-1 ${textSub}`}>{t.settingsNotifDesc}</p>
               <div className={`rounded-2xl ${listBg} overflow-hidden`}>
@@ -4834,24 +5682,24 @@ function Home() {
                 </div>
               </div>
             </div>
-          </div>
+          </PageTransition>
         );
 
         // Sayfa 1: Ana Ayarlar
         const notifStatus = typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted' ? t.settingsNotifOn : t.settingsNotifOff;
         return (
-          <div className={`fixed inset-0 z-[6000] flex flex-col ${bg}`}>
-            <PageHeader title={t.settings} onBack={() => { setAktifPage('menu'); setSettingsSubPage(null); }} />
+          <PageTransition className={`fixed inset-0 z-[6000] flex flex-col ${bg}`}>
+            {renderHeader(t.settings, () => { setAktifPage('menu'); setSettingsSubPage(null); })}
             <div className="flex-1 overflow-y-auto pt-4 pb-10 space-y-2">
               <ListRow label={t.settingsAppLang} sub={`${TRANSLATIONS[lang]?.flag} ${TRANSLATIONS[lang]?.name}`} onClick={() => setSettingsSubPage('language')} />
               <ListRow label={t.settingsNotif} sub={notifStatus} onClick={() => setSettingsSubPage('notifications')} />
               <ListRow label={t.settingsContracts} onClick={() => setSettingsSubPage('contracts')} />
             </div>
-          </div>
+          </PageTransition>
         );
       })()}
       {aktifPage === 'support' && (
-          <div className={`fixed inset-0 z-[6000] flex flex-col ${isDarkMode ? 'bg-[#0F0F0F]' : 'bg-zinc-200'}`}>
+          <PageTransition className={`fixed inset-0 z-[6000] flex flex-col ${isDarkMode ? 'bg-[#0F0F0F]' : 'bg-zinc-200'}`}>
             <div className="flex items-center gap-4 p-6 pt-12"><button onClick={() => setAktifPage('menu')} className={`text-2xl ${isDarkMode ? 'text-white' : 'text-black'}`}>←</button><h2 className={`font-black text-xl uppercase ${isDarkMode ? 'text-white' : 'text-black'}`}>{t.support}</h2></div>
             <div className="flex-1 overflow-y-auto px-6 pb-10">
               {[1, 2, 3, 4, 5].map(i => <Accordion key={i} title={t[`supportQ${i}`]} dark={isDarkMode}>{t[`supportA${i}`]}</Accordion>)}
@@ -4865,10 +5713,10 @@ function Home() {
                 </button>
               </Accordion>
             </div>
-          </div>
+          </PageTransition>
         )}
         {aktifPage === 'account' && (
-          <div className={`fixed inset-0 z-[6000] flex flex-col ${isDarkMode ? 'bg-[#0F0F0F]' : 'bg-zinc-200'}`}>
+          <PageTransition className={`fixed inset-0 z-[6000] flex flex-col ${isDarkMode ? 'bg-[#0F0F0F]' : 'bg-zinc-200'}`}>
             <div className="flex items-center gap-4 p-6 pt-12">
               <button onClick={() => setAktifPage('menu')} className={`text-2xl ${isDarkMode ? 'text-white' : 'text-black'}`}>←</button>
               <h2 className={`font-black text-xl uppercase ${isDarkMode ? 'text-white' : 'text-black'}`}>{t.myAccount}</h2>
@@ -5098,10 +5946,10 @@ function Home() {
                 </div>
               )}
             </div>
-          </div>
+          </PageTransition>
         )}
-        {aktifPage === 'history' && (
-          <div className={`fixed inset-0 z-[6000] flex flex-col ${isDarkMode ? 'bg-[#0F0F0F]' : 'bg-zinc-200'}`}>
+        {aktifPage === 'history' && (  
+          <PageTransition className={`fixed inset-0 z-[6000] flex flex-col ${isDarkMode ? 'bg-[#0F0F0F]' : 'bg-zinc-200'}`}>
             <div className="flex items-center gap-4 p-6 pt-12">
               <button onClick={() => setAktifPage('menu')} className={`text-2xl ${isDarkMode ? 'text-white' : 'text-black'}`}>←</button>
               <h2 className={`font-black text-xl uppercase ${isDarkMode ? 'text-white' : 'text-black'}`}>{t.history}</h2>
@@ -5171,181 +6019,159 @@ function Home() {
                 </div>
               )}
             </div>
-          </div>
+          </PageTransition>
         )}
         {aktifPage === 'payment' && (
-          <div className={`fixed inset-0 z-[6000] flex flex-col ${isDarkMode ? 'bg-[#0F0F0F]' : 'bg-zinc-200'}`}>
-            <div className="flex items-center gap-4 p-6 pt-12">
-              <button onClick={() => setAktifPage('menu')} className={`text-2xl ${isDarkMode ? 'text-white' : 'text-black'}`}>←</button>
-              <h2 className={`font-black text-xl uppercase ${isDarkMode ? 'text-white' : 'text-black'}`}>{t.payment}</h2>
+          <PageTransition className="fixed inset-0 z-[6000] flex flex-col" style={{background: 'linear-gradient(135deg, #1a1d21 0%, #0b0d10 100%)'}}>
+            {/* Header - ortalanmış başlık, sol geri ok */}
+            <div className="relative flex items-center justify-center pt-14 pb-4 px-6">
+              <button
+                onClick={() => setAktifPage('menu')}
+                className="absolute left-6 text-white"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-6 h-6"><path d="M19 12H5"/><path d="M12 5l-7 7 7 7"/></svg>
+              </button>
+              <h2 className="text-white font-semibold text-lg">Ödeme</h2>
             </div>
-            <div className="flex-1 overflow-y-auto px-6 pb-10">
-              {/* Bakiye Kartı */}
-              <div className={`rounded-3xl p-6 mb-6 border ${isDarkMode ? 'bg-white/5 border-white/10' : 'bg-zinc-100 border-black/10'}`}>
-                <p className={`text-sm opacity-60 mb-1 ${isDarkMode ? 'text-white' : 'text-black'}`}>{t.paymentBalance}</p>
-                <p className={`text-4xl font-black ${isDarkMode ? 'text-white' : 'text-black'}`}>{walletBalance}</p>
+
+            <div className="flex-1 overflow-y-auto px-4 pb-10 space-y-4 pt-2">
+              {/* Mevcut Bakiye Kartı */}
+              <div className="rounded-2xl p-5" style={{background:'#2c2c2e', border:'1px solid rgba(255,255,255,0.1)', boxShadow:'0 2px 12px rgba(0,0,0,0.6)'}}>
+                <p className="text-gray-400 text-xs font-medium tracking-wide uppercase mb-1.5">Mevcut Bakiye</p>
+                <p className="text-white text-2xl font-medium">{walletBalance}<span className="text-gray-300 text-lg ml-1">₺</span></p>
               </div>
 
-              {/* Para Yatırma */}
-              <div className={`rounded-3xl p-6 mb-6 border ${isDarkMode ? 'bg-white/5 border-white/10' : 'bg-zinc-100 border-black/10'}`}>
-                <h3 className={`font-bold text-sm uppercase mb-4 ${isDarkMode ? 'text-white' : 'text-black'}`}>{t.paymentDeposit}</h3>
-                
-                {/* Komisyon bilgisi */}
-                <div className={`mb-4 p-3 rounded-lg text-xs ${isDarkMode ? 'bg-white/5 text-white/70' : 'bg-zinc-200 text-black/70'}`}>
-                  <p>{t.paymentFeeInfo}</p>
-                  {paymentAmount > 0 && (() => {
-                    const amt = parseFloat(paymentAmount) || 0;
-                    const commission = Math.max(25, amt * 0.05);
-                    const total = amt + commission;
-                    return (
-                      <div className="mt-2 space-y-1">
-                        <p>{t.paymentFee} <span className="text-yellow-400">{commission.toFixed(2)}</span></p>
-                        <p>{t.paymentTotal} <span className="text-white font-bold">{total.toFixed(2)}</span></p>
-                        <p>{t.paymentToWallet} <span className="text-[#2ECC71] font-bold">{amt.toFixed(2)}</span></p>
-                      </div>
-                    );
-                  })()}
+              {/* Para Yatır Kartı */}
+              <div className="rounded-2xl p-5" style={{background:'#2c2c2e', border:'1px solid rgba(255,255,255,0.1)', boxShadow:'0 2px 12px rgba(0,0,0,0.6)'}}>
+                <h3 className="text-white font-bold text-base mb-4">Para Yatır</h3>
+
+                {/* Miktar Input - kart ikonu sağda */}
+                <div className="relative mb-3">
+                  <input
+                    type="number"
+                    value={paymentAmount}
+                    onChange={(e) => setPaymentAmount(e.target.value)}
+                    placeholder="Miktar (TRY)"
+                    className="w-full py-3.5 pl-4 pr-12 rounded-xl bg-[#3a3a3c] text-white placeholder-gray-500 text-sm outline-none"
+                  />
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2" style={{color:'rgba(255,255,255,0.25)'}}>
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-5 h-5"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+                  </div>
                 </div>
 
-                <input
-                  type="number"
-                  value={paymentAmount}
-                  onChange={(e) => setPaymentAmount(e.target.value)}
-                  placeholder={t.paymentAmount}
-                  className={`w-full p-4 rounded-xl text-lg mb-4 outline-none border ${isDarkMode ? 'bg-white/10 text-white placeholder-gray-500 border-white/10' : 'bg-zinc-200 text-black border-black/20'}`}
-                />
                 <button
                   onClick={() => {
                     if (!paymentAmount || parseFloat(paymentAmount) <= 0) return;
                     setClientSecret('show');
                   }}
                   disabled={!paymentAmount || parseFloat(paymentAmount) <= 0}
-                  className="w-full py-4 bg-[#2ECC71] text-black rounded-2xl font-bold text-sm disabled:opacity-50 active:scale-95 transition-transform"
+                  className="w-full py-3.5 rounded-xl font-semibold text-sm text-black bg-[#aeaeb2] disabled:opacity-50 active:scale-95 transition-transform"
+                  style={{borderRadius:'12px'}}
                 >
-                  {t.paymentByCard}
+                  Kart ile Öde
                 </button>
 
                 {clientSecret && (
-                  <div className="mt-4 p-4 rounded-xl border border-[#2ECC71]/30 bg-[#2ECC71]/5 space-y-3">
-                    <p className={`text-xs ${isDarkMode ? 'text-white' : 'text-black'}`}>{t.paymentCardDetails}</p>
+                  <div className="mt-4 space-y-3">
                     <input
                       type="text"
-                      placeholder={t.paymentCardNumber}
+                      placeholder="Kart Numarası"
                       maxLength={19}
-                      className={`w-full p-3 rounded-lg border text-sm outline-none ${isDarkMode ? 'bg-white/10 border-white/20 text-white placeholder-gray-500' : 'bg-white border-black/20 text-black'}`}
+                      className="w-full py-3.5 px-4 rounded-xl bg-[#3a3a3c] text-white placeholder-gray-500 text-sm outline-none"
                     />
                     <div className="flex gap-3">
                       <input
                         type="text"
-                        placeholder={t.paymentExpiry}
+                        placeholder="AA/YY"
                         maxLength={5}
-                        className={`flex-1 p-3 rounded-lg border text-sm outline-none ${isDarkMode ? 'bg-white/10 border-white/20 text-white placeholder-gray-500' : 'bg-white border-black/20 text-black'}`}
+                        className="flex-1 py-3.5 px-4 rounded-xl bg-[#3a3a3c] text-white placeholder-gray-500 text-sm outline-none"
                       />
                       <input
                         type="text"
                         placeholder="CVC"
                         maxLength={3}
-                        className={`flex-1 p-3 rounded-lg border text-sm outline-none ${isDarkMode ? 'bg-white/10 border-white/20 text-white placeholder-gray-500' : 'bg-white border-black/20 text-black'}`}
+                        className="flex-1 py-3.5 px-4 rounded-xl bg-[#3a3a3c] text-white placeholder-gray-500 text-sm outline-none"
                       />
                     </div>
-                    {paymentAmount > 0 && (() => {
-                      const amt = parseFloat(paymentAmount) || 0;
-                      const commission = Math.max(25, amt * 0.05);
-                      const total = amt + commission;
-                      return (
-                        <div className={`text-xs space-y-1 ${isDarkMode ? 'text-white/70' : 'text-black/70'}`}>
-                          <p>{t.paymentFee} <span className="text-yellow-400">{commission.toFixed(2)}</span></p>
-                          <p>{t.paymentTotal} <span className={`font-bold ${isDarkMode ? 'text-white' : 'text-black'}`}>{total.toFixed(2)}</span></p>
-                          <p>{t.paymentToWallet} <span className="text-[#2ECC71] font-bold">{amt.toFixed(2)}</span></p>
-                        </div>
-                      );
-                    })()}
                     <button
                       onClick={async () => {
                         const amt = parseFloat(paymentAmount) || 0;
-                        const commission = Math.max(25, amt * 0.05);
                         const net = amt;
-                        
-                        // API'ye kayıt gönder
                         try {
                           const { data: { session: sessPut } } = await supabase.auth.getSession();
                           await fetch('/api/payment', {
                             method: 'PUT',
                             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${sessPut?.access_token}` },
-                            body: JSON.stringify({
-                              userId: user.id,
-                              amount: amt,
-                              commission: commission,
-                              netAmount: net,
-                              status: 'completed'
-                            })
+                            body: JSON.stringify({ userId: user.id, amount: amt, commission: 0, netAmount: net, status: 'completed' })
                           });
-                          
-                          // Geçmişi güncelle
                           setUserHistory(prev => ({
                             ...prev,
-                            transactions: [{
-                              type: 'deposit',
-                              amount: net,
-                              commission: commission,
-                              total_amount: amt,
-                              description: `Para yatırma (Komisyon: ${commission.toFixed(2)}₺)`,
-                              created_at: new Date().toISOString()
-                            }, ...prev.transactions]
+                            transactions: [{ type: 'deposit', amount: net, commission: 0, total_amount: amt, description: `Para yatırma`, created_at: new Date().toISOString() }, ...prev.transactions]
                           }));
-                          
-                          showToast(t.paymentSuccess.replace('{net}', net.toFixed(2)).replace('{commission}', commission.toFixed(2)));
+                          showToast(`Ödeme başarılı! ${net.toFixed(2)}₺ bakiyenize eklendi`);
                         } catch (e) {
                           showToast(t.paymentHistoryErr);
                         }
-                        
                         setClientSecret('');
                         setPaymentAmount('');
                         setWalletBalance(prev => prev + net);
                       }}
-                      className="w-full py-3 bg-[#2ECC71] text-black rounded-xl font-bold text-sm active:scale-95 transition-transform"
+                      className="w-full py-3.5 rounded-xl font-semibold text-sm text-black bg-[#aeaeb2] active:scale-95 transition-transform"
+                      style={{borderRadius:'12px'}}
                     >
-                      {t.paymentComplete}
+                      Ödemeyi Tamamla
                     </button>
                   </div>
                 )}
               </div>
 
-              {/* Para Gönder */}
-              <div className={`rounded-3xl p-6 border ${isDarkMode ? 'bg-white/5 border-white/10' : 'bg-zinc-100 border-black/10'}`}>
-                <h3 className={`font-bold text-sm uppercase mb-4 ${isDarkMode ? 'text-white' : 'text-black'}`}>{t.transferTitle}</h3>
+              {/* Para Gönder Kartı */}
+              <div className="rounded-2xl p-5" style={{background:'#2c2c2e', border:'1px solid rgba(255,255,255,0.1)', boxShadow:'0 2px 12px rgba(0,0,0,0.6)'}}>
+                <h3 className="text-white font-bold text-base mb-1">Para Gönder</h3>
+                <p className="text-gray-400 text-xs mb-4">Transfer ücreti: min 20 veya %4</p>
 
-                {/* Komisyon bilgisi */}
-                <div className={`mb-4 p-3 rounded-lg text-xs ${isDarkMode ? 'bg-white/5 text-white/70' : 'bg-zinc-200 text-black/70'}`}>
-                  <p>{t.transferFeeInfo}</p>
-                  {transferAmount > 0 && (() => {
-                    const amt = parseFloat(transferAmount) || 0;
-                    const commission = Math.max(20, amt * 0.04);
-                    const total = amt + commission;
-                    return (
-                      <div className="mt-2 space-y-1">
-                        <p>{t.transferFee} <span className="text-yellow-400">{commission.toFixed(2)}</span></p>
-                        <p>{t.transferTotal} <span className="text-white font-bold">{total.toFixed(2)}</span></p>
-                        <p>{t.transferToReceiver} <span className="text-[#2ECC71] font-bold">{amt.toFixed(2)}</span></p>
-                      </div>
-                    );
-                  })()}
+                {/* Komisyon hesaplama */}
+                {transferAmount > 0 && (() => {
+                  const amt = parseFloat(transferAmount) || 0;
+                  const commission = Math.max(20, amt * 0.04);
+                  const total = amt + commission;
+                  return (
+                    <div className="mb-4 text-xs space-y-1 text-gray-400">
+                      <p>Transfer ücreti: <span className="text-gray-300">{commission.toFixed(2)}₺</span></p>
+                      <p>Toplam kesilecek: <span className="text-white font-medium">{total.toFixed(2)}₺</span></p>
+                      <p>Alıcıya gidecek: <span className="text-gray-300">{amt.toFixed(2)}₺</span></p>
+                    </div>
+                  );
+                })()}
+
+                {/* Telefon input - telefon ikonu sağda */}
+                <div className="relative mb-3">
+                  <input
+                    type="tel"
+                    value={transferPhone}
+                    onChange={(e) => setTransferPhone(e.target.value)}
+                    placeholder="Telefon Numarası"
+                    className="w-full py-3.5 pl-4 pr-12 rounded-xl bg-[#3a3a3c] text-white placeholder-gray-500 text-sm outline-none"
+                  />
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2" style={{color:'rgba(255,255,255,0.25)'}}>
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-5 h-5"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.4 11a19.79 19.79 0 01-3.07-8.67A2 2 0 012.32 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.91 9.91a16 16 0 006.17 6.17l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
+                  </div>
                 </div>
 
-                <input
-                  type="tel"
-                  value={transferPhone}
-                  onChange={(e) => setTransferPhone(e.target.value)}
-                  placeholder={t.transferPhone}
-                  className={`w-full p-4 rounded-xl text-sm mb-3 outline-none border ${isDarkMode ? 'bg-white/10 text-white placeholder-gray-500 border-white/10' : 'bg-white text-black border-black/20'}`}
-                />
-                <input
-                  type="number"
-                  value={transferAmount}
-                  onChange={(e) => setTransferAmount(e.target.value)}
-                  placeholder={`${t.transferAmountPlaceholder} (${transferCurrency})`}
-                  className={`w-full p-4 rounded-xl text-sm mb-4 outline-none border ${isDarkMode ? 'bg-white/10 text-white placeholder-gray-500 border-white/10' : 'bg-white text-black border-black/20'}`}
-                />
+                {/* Miktar input - TRY etiketi sağda */}
+                <div className="relative mb-4">
+                  <input
+                    type="number"
+                    value={transferAmount}
+                    onChange={(e) => setTransferAmount(e.target.value)}
+                    placeholder="Gönderilecek miktar (TRY)"
+                    className="w-full py-3.5 pl-4 pr-16 rounded-xl bg-[#3a3a3c] text-white placeholder-gray-500 text-sm outline-none"
+                  />
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                    <span className="text-xs font-semibold px-1.5 py-0.5 rounded-md" style={{color:'rgba(255,255,255,0.3)', background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.1)'}}>TRY</span>
+                  </div>
+                </div>
+
                 <button
                   onClick={async () => {
                     if (!transferPhone || !transferAmount) return;
@@ -5362,30 +6188,15 @@ function Home() {
                       const res = await fetch('/api/transfer', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${sessTr?.access_token}` },
-                        body: JSON.stringify({
-                          fromUserId: user.id,
-                          phone: transferPhone,
-                          amount: amt,
-                          description: 'Para transferi'
-                        })
+                        body: JSON.stringify({ fromUserId: user.id, phone: transferPhone, amount: amt, description: 'Para transferi' })
                       });
                       const data = await res.json();
                       if (data.success) {
                         const receiverGets = amt - commission;
-                        
-                        // Geçmişi güncelle
                         setUserHistory(prev => ({
                           ...prev,
-                          transactions: [{
-                            type: 'withdrawal',
-                            amount: amt,
-                            commission: commission,
-                            total_amount: amt,
-                            description: `Transfer: ${transferPhone} (Komisyon: ${commission.toFixed(2)}₺)`,
-                            created_at: new Date().toISOString()
-                          }, ...prev.transactions]
+                          transactions: [{ type: 'withdrawal', amount: amt, commission: commission, total_amount: amt, description: `Transfer: ${transferPhone} (Komisyon: ${commission.toFixed(2)}₺)`, created_at: new Date().toISOString() }, ...prev.transactions]
                         }));
-                        
                         showToast(t.transferSuccess.replace('{net}', receiverGets.toFixed(2)).replace('{commission}', commission.toFixed(2)));
                         setWalletBalance(prev => prev - totalNeeded);
                         setTransferPhone('');
@@ -5400,17 +6211,20 @@ function Home() {
                     }
                   }}
                   disabled={transferLoading || !transferPhone || !transferAmount}
-                  className="w-full py-4 bg-[#2ECC71] text-black rounded-2xl font-bold text-sm disabled:opacity-50 active:scale-95 transition-transform"
+                  className="w-full py-3.5 rounded-xl font-semibold text-sm text-black bg-[#aeaeb2] disabled:opacity-50 active:scale-95 transition-transform"
+                  style={{borderRadius:'12px'}}
                 >
-                  {transferLoading ? t.transferSending : t.transferBtn}
+                  {transferLoading ? 'Gönderiliyor...' : 'Para Gönder'}
                 </button>
               </div>
             </div>
-          </div>
+          </PageTransition>
         )}
         {showProviderOnboarding && (
-          <div className="fixed inset-0 z-[9000] flex items-end justify-center bg-black/70 backdrop-blur-sm" onClick={() => setShowProviderOnboarding(false)}>
-            <div
+          <motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} transition={{duration:0.2}} className="fixed inset-0 z-[9000] flex items-end justify-center bg-black/70 backdrop-blur-sm" onClick={() => setShowProviderOnboarding(false)}>
+            <motion.div
+              initial={{y:'100%'}} animate={{y:0}} exit={{y:'100%'}}
+              transition={{type:'spring',stiffness:340,damping:32}}
               onClick={e => e.stopPropagation()}
               className={`w-full max-w-md rounded-t-3xl p-6 pb-10 space-y-5 ${isDarkMode ? 'bg-[#111]' : 'bg-white'}`}
             >
@@ -5454,11 +6268,11 @@ function Home() {
                   ⚡ {t.onboardingCta}
                 </button>
               )}
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
         )}
         {aktifPage === 'provider' && (
-          <div className={`fixed inset-0 z-[6000] flex flex-col ${isDarkMode ? 'bg-[#0F0F0F]' : 'bg-white'}`}>
+          <PageTransition className={`fixed inset-0 z-[6000] flex flex-col ${isDarkMode ? 'bg-[#0F0F0F]' : 'bg-white'}`}>
             <div className="flex items-center gap-4 p-6 pt-12">
               <button onClick={() => setAktifPage('account')} className={`text-2xl ${isDarkMode ? 'text-white' : 'text-black'}`}>←</button>
               <h2 className={`font-black text-xl uppercase ${isDarkMode ? 'text-white' : 'text-black'}`}>{t.providerPanel}</h2>
@@ -5636,24 +6450,28 @@ function Home() {
                 </div>
               )}
             </div>
-          </div>
+          </PageTransition>
         )}
         {aktifPage === 'admin' && user?.is_admin && (
           <AdminPanel
             isDarkMode={isDarkMode}
             onClose={() => setAktifPage('menu')}
             supabase={supabase}
+            t={t}
           />
         )}
+        {aktifPage === 'roles' && <RolesPage isDarkMode={isDarkMode} onBack={() => setAktifPage('menu')} t={t} />}
         {/* Marker Bottom Sheet */}
         {markerSheet && (
-          <div
+          <motion.div
+            initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} transition={{duration:0.2}}
             className="fixed inset-0 z-[8500]"
             onClick={() => setMarkerSheet(null)}
           >
-            <div
-              className={`absolute bottom-0 left-0 right-0 rounded-t-[32px] p-6 pb-10 shadow-2xl transition-transform duration-300 ease-out ${isDarkMode ? 'bg-[#141414] border-t border-white/10' : 'bg-white border-t border-black/10'}`}
-              style={{ transform: markerSheet ? 'translateY(0)' : 'translateY(100%)' }}
+            <motion.div
+              initial={{y:'100%'}} animate={{y:0}} exit={{y:'100%'}}
+              transition={{type:'spring',stiffness:340,damping:32}}
+              className={`absolute bottom-0 left-0 right-0 rounded-t-[32px] p-6 pb-10 shadow-2xl ${isDarkMode ? 'bg-[#141414] border-t border-white/10' : 'bg-white border-t border-black/10'}`}
               onClick={e => e.stopPropagation()}
             >
               {/* Drag handle */}
@@ -5745,8 +6563,8 @@ function Home() {
                   </div>
                 );
               })()}
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
         )}
 
         {showPaymentModal && aktifIs?.price && (
@@ -5768,7 +6586,7 @@ function Home() {
         <button
           onClick={konumaGit}
           className={`fixed z-[3100] w-10 h-10 rounded-xl flex items-center justify-center shadow-lg active:scale-95 transition-transform ${isDarkMode ? 'bg-white/10 border border-white/10 backdrop-blur-md' : 'bg-white border border-black/10 shadow'}`}
-          style={{ bottom: '260px', right: '16px' }}
+          style={{ bottom: '360px', right: '16px' }}
           title={t.goToLocation}
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2ECC71" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -5781,6 +6599,28 @@ function Home() {
             <div className={`w-12 h-1.5 rounded-full ${isDarkMode ? 'bg-gray-500/30' : 'bg-black/15'}`}></div>
           </div>
           <div className="px-6 pb-10">
+            {/* Referans Davet Banner'ı */}
+            {!seciliKisi && user && (
+              <div className={`mb-4 p-3 rounded-2xl flex items-center justify-between ${isDarkMode ? 'bg-[#2ECC71]/15 border border-[#2ECC71]/30' : 'bg-[#2ECC71]/10 border border-[#2ECC71]/20'}`}>
+                <p className={`text-xs font-bold flex-1 pr-3 ${isDarkMode ? 'text-white' : 'text-black'}`}>{t.inviteFriend}</p>
+                <button 
+                  onClick={async () => {
+                    const shareUrl = `${window.location.origin}?ref=${user.id}`;
+                    if (navigator.share) {
+                      await navigator.share({
+                        title: t.shareTitle,
+                        text: `${t.shareText} ${shareUrl}`,
+                        url: shareUrl
+                      });
+                    } else {
+                      await navigator.clipboard.writeText(`${t.shareText} ${shareUrl}`);
+                      showToast('Davet linki kopyalandı!');
+                    }
+                  }}
+                  className={`px-4 py-2 rounded-full text-xs font-black whitespace-nowrap ${isDarkMode ? 'bg-white text-black' : 'bg-black text-white'}`}
+                >{t.inviteBtn}</button>
+              </div>
+            )}
             {seciliKisi ? (
               <div className="animate-in fade-in slide-in-from-bottom-4">
                 <div className="flex items-center gap-4 mb-4">
@@ -5796,22 +6636,21 @@ function Home() {
               <div className="animate-in fade-in zoom-in-95">
                 <div className="grid grid-cols-2 gap-3">
                   {[
-                    { key: 'kurye', emoji: '🚗', label: t.fastCourier, desc: t.courierDesc },
-                    { key: 'emanetci', emoji: '💼', label: t.custodian, desc: t.custodianDesc },
-                    { key: 'siraci', emoji: '⏱', label: t.waitInLine, desc: t.waitDesc },
-                    { key: 'rehber', emoji: '🦭', label: t.guide, desc: t.guideDesc },
-                    { key: 'hepsi', emoji: '🌍', label: t.all, desc: t.allDesc }
-                  ].map(({ key, emoji, label, desc }) => (
+                    { key: 'kurye', icon: (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-6 h-6"><rect x="1" y="3" width="15" height="13" rx="2"/><path d="M16 8h4l3 5v4h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>), label: t.fastCourier, desc: t.courierDesc },
+                    { key: 'emanetci', icon: (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-6 h-6"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg>), label: t.custodian, desc: t.custodianDesc },
+                    { key: 'siraci', icon: (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-6 h-6"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>), label: t.waitInLine, desc: t.waitDesc },
+                    { key: 'rehber', icon: (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-6 h-6"><circle cx="12" cy="8" r="4"/><path d="M6 20v-2a6 6 0 0 1 12 0v2"/></svg>), label: t.guide, desc: t.guideDesc },
+                  ].map(({ key, icon, label, desc }) => (
                     <div
                       key={key}
                       onClick={() => setAktifFiltre(key)}
                       className={`px-4 py-3 rounded-2xl flex items-center gap-3 transition-all cursor-pointer border ${
                         aktifFiltre === key
-                          ? `border-[#2ECC71] ${isDarkMode ? 'bg-[#2ECC71]/10' : 'bg-[#2ECC71]/10'}`
-                          : `border-transparent ${isDarkMode ? 'bg-white/5' : 'bg-white border-black/8'}`
+                          ? 'border-[#2ECC71] bg-[#2ECC71]/10'
+                          : `border-white/8 ${isDarkMode ? 'bg-[#1c1c1e]' : 'bg-white border-black/8'}`
                       }`}
                     >
-                      <span className="text-2xl flex-shrink-0">{emoji}</span>
+                      <span className={`flex-shrink-0 ${aktifFiltre === key ? 'text-[#2ECC71]' : isDarkMode ? 'text-white/50' : 'text-black/40'}`}>{icon}</span>
                       <div className="min-w-0">
                         <p className={`font-black text-[11px] uppercase ${isDarkMode ? 'text-white' : 'text-black'}`}>{label}</p>
                         <p className={`text-[9px] font-medium mt-0.5 leading-tight truncate ${isDarkMode ? 'text-white/40' : 'text-black/40'}`}>{desc}</p>
@@ -5819,7 +6658,50 @@ function Home() {
                     </div>
                   ))}
                 </div>
-                <p className={`mt-4 text-center text-[10px] font-bold opacity-20 uppercase italic tracking-widest ${isDarkMode ? 'text-white' : 'text-black'}`}>{t.tagline}</p>
+
+                {/* HEPSİ — tam genişlik, kurumsal globe */}
+                <div
+                  onClick={() => setAktifFiltre('hepsi')}
+                  className={`mt-3 w-full px-5 py-3.5 rounded-2xl flex items-center gap-4 transition-all cursor-pointer border ${
+                    aktifFiltre === 'hepsi'
+                      ? 'border-white/30 bg-white/8'
+                      : `border-white/10 ${isDarkMode ? 'bg-[#1c1c1e]' : 'bg-white border-black/8'}`
+                  }`}
+                  style={aktifFiltre === 'hepsi' ? { boxShadow: '0 0 0 1px rgba(255,255,255,0.12), inset 0 1px 0 rgba(255,255,255,0.06)' } : {}}
+                >
+                  {/* Globe: dış gümüş halka + iç detaylı SVG */}
+                  <div className="relative flex-shrink-0 flex items-center justify-center" style={{ width: 36, height: 36 }}>
+                    {/* Dış gümüş halka */}
+                    <svg viewBox="0 0 40 40" width="36" height="36" className="absolute inset-0">
+                      <circle cx="20" cy="20" r="18" fill="none" stroke={aktifFiltre === 'hepsi' ? 'rgba(255,255,255,0.55)' : 'rgba(255,255,255,0.18)'} strokeWidth="1"/>
+                    </svg>
+                    {/* Globe ikonu */}
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4" width="22" height="22"
+                      style={{ color: aktifFiltre === 'hepsi' ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.4)' }}>
+                      <circle cx="12" cy="12" r="10"/>
+                      <line x1="2" y1="12" x2="22" y2="12"/>
+                      <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+                    </svg>
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className={`font-black text-[11px] uppercase tracking-wider ${aktifFiltre === 'hepsi' ? (isDarkMode ? 'text-white' : 'text-black') : isDarkMode ? 'text-white/70' : 'text-black/70'}`}>{t.all}</p>
+                    <p className={`text-[9px] font-medium mt-0.5 leading-tight ${isDarkMode ? 'text-white/35' : 'text-black/35'}`}>{t.allDesc}</p>
+                  </div>
+                  {/* Sağ ok - kurumsal detay */}
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14"
+                    style={{ color: aktifFiltre === 'hepsi' ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.15)', flexShrink: 0 }}>
+                    <path d="M9 18l6-6-6-6"/>
+                  </svg>
+                </div>
+                <div className="mt-4 flex flex-col items-center gap-0.5">
+                  <p className={`text-center text-[10px] font-bold opacity-20 uppercase italic tracking-widest ${isDarkMode ? 'text-white' : 'text-black'}`}>{t.tagline}</p>
+                  {locationName && (
+                    <p className="text-[#2ECC71]/60 text-[9px] font-semibold tracking-wide flex items-center gap-1">
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3 h-3"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                      {locationName}
+                    </p>
+                  )}
+                </div>
               </div>
             )}
           </div>
@@ -6121,7 +7003,6 @@ function Home() {
                 </button>
                 <button 
                   onClick={async () => {
-                    console.log('Kaydet butonu tıklandı');
                     if (user?.id) {
                       try {
                         let sessionUid = authSessionOk ? authUid : null;
@@ -6150,10 +7031,8 @@ function Home() {
                         const primaryRole = rolesToSave.includes('hepsi')
                           ? 'hepsi'
                           : (rolesToSave[0] || 'musteri');
-                        console.log('Kaydedilecek roller:', rolesToSave);
                         const { error } = await supabase.from('profilkisi').update({ roles: rolesToSave, role: primaryRole }).eq('user_id', user.id);
                         if (error) {
-                          console.error('Supabase hatası:', error);
                           updateDebug({
                             lastProfileUpdate: {
                               ok: false,
@@ -6182,7 +7061,6 @@ function Home() {
                         showToast(t.rolesSaved || 'Roller kaydedildi!');
                         setShowRoleModal(false);
                       } catch (err) {
-                        console.error('Kaydet hatası:', err);
                         const msg = err?.message || String(err);
                         updateDebug({
                           lastProfileUpdate: {
@@ -6194,7 +7072,6 @@ function Home() {
                         showToast(t.unknownError + msg);
                       }
                     } else {
-                      console.log('User yok!');
                       showToast(t.userNotFound);
                     }
                   }}
@@ -6398,6 +7275,599 @@ function Home() {
                   <button
                     key={star}
                     onClick={() => setReviewRating(star)}
+                    className={`text-2xl transition-transform active:scale-90 ${reviewRating >= star ? 'text-yellow-400' : isDarkMode ? 'text-white/30' : 'text-gray-300'}`}
+                  >★</button>
+                ))}
+              </div>
+              
+              {/* Yorum Alanı */}
+              <textarea
+                value={reviewComment}
+                onChange={(e) => setReviewComment(e.target.value)}
+                placeholder={t.commentPlaceholder}
+                rows={3}
+                className={`w-full p-3 rounded-xl text-sm mb-4 resize-none outline-none ${isDarkMode ? 'bg-white/5 text-white placeholder-gray-500 border border-white/10' : 'bg-gray-100 text-black border border-gray-200'}`}
+              />
+              
+              {/* Butonlar */}
+              <div className="flex gap-3">
+                <button
+                  onClick={() => { setShowReviewModal(false); setReviewRating(0); setReviewComment(''); }}
+                  className={`flex-1 py-3 rounded-2xl font-bold text-sm ${isDarkMode ? 'bg-white/10 text-white' : 'bg-gray-200 text-black'}`}
+                >{t.cancel}</button>
+                <button
+                  onClick={handleReviewSubmit}
+                  disabled={reviewRating === 0 || reviewSubmitting}
+                  className="flex-1 py-3 bg-[#2ECC71] text-white rounded-2xl font-black text-sm disabled:opacity-50"
+                >{reviewSubmitting ? '...' : t.submitReview}</button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* MARTI TARZI ÜYELİK PAKETLERİ SAYFASI */}
+        {aktifPage === 'membership' && (
+          <PageTransition className={`fixed inset-0 z-[6000] flex flex-col ${isDarkMode ? 'bg-[#0a0a0a]' : 'bg-white'}`}>
+            {/* Header - Geri Butonlu */}
+            <div className="flex items-center px-4 py-4 border-b border-gray-800/10">
+              <button 
+                onClick={() => setAktifPage('menu')} 
+                className={`p-2 rounded-full mr-4 ${isDarkMode ? 'hover:bg-white/10' : 'hover:bg-black/10'}`}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className={`w-5 h-5 ${isDarkMode ? 'text-white' : 'text-black'}`}>
+                  <path d="M15 18l-6-6 6-6"/>
+                </svg>
+              </button>
+              <h2 className={`font-bold text-lg ${isDarkMode ? 'text-white' : 'text-black'}`}>{t.membershipPackagesTitle}</h2>
+              {activeMembership && (
+                <span className="ml-auto px-3 py-1 bg-[#2ECC71] text-white text-xs rounded-full font-bold">
+                  {activeMembership.type === 'daily' ? t.dailyPackage : t.weeklyPackage}
+                </span>
+              )}
+            </div>
+
+            {/* Paket Listesi */}
+            <div className="flex-1 overflow-y-auto px-4 py-4">
+              {/* Kampanya Banner */}
+              <div className={`mb-6 p-4 rounded-2xl ${isDarkMode ? 'bg-gradient-to-r from-[#2ECC71]/30 to-[#2ECC71]/10 border border-[#2ECC71]/30' : 'bg-gradient-to-r from-[#2ECC71]/20 to-[#2ECC71]/5 border border-[#2ECC71]/20'}`}>
+                <div className="flex items-center gap-2 mb-1">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-6 h-6 text-[#2ECC71]"><rect x="3" y="8" width="18" height="13" rx="2"/><path d="M12 8v13"/><path d="M19 12H5"/><path d="M15 8V6a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v2"/></svg>
+                  <span className={`font-bold text-sm ${isDarkMode ? 'text-[#2ECC71]' : 'text-[#2ECC71]'}`}>{t.membershipCampaigns}</span>
+                </div>
+                <p className={`text-xs mt-1 ${isDarkMode ? 'text-white/60' : 'text-gray-600'}`}>{t.saveWithPackage}</p>
+              </div>
+
+              {/* Paket Kartları - Martı Tarzı */}
+              <div className="space-y-4">
+                {membershipPackages.map((pkg) => (
+                  <div
+                    key={pkg.id}
+                    className={`relative overflow-hidden rounded-2xl p-4 ${
+                      isDarkMode 
+                        ? 'bg-gradient-to-r from-[#1a1a1a] to-[#0a0a0a] border border-white/10' 
+                        : 'bg-gradient-to-r from-white to-gray-50 border border-gray-200 shadow-lg'
+                    }`}
+                  >
+                    {/* İndirim Badge */}
+                    <div className="absolute top-3 right-3 px-2 py-1 bg-red-500 text-white text-[10px] font-bold rounded">
+                      {pkg?.originalPrice && pkg?.discountedPrice ? `%${Math.round((1 - Number(pkg.discountedPrice) / Number(pkg.originalPrice)) * 100)}` : ''} {t.discountBadge}
+                    </div>
+
+                    <div className="flex items-start gap-4">
+                      {/* Paket İkonu - Renksiz SVG */}
+                      <div className={`w-16 h-16 rounded-xl flex items-center justify-center ${isDarkMode ? 'bg-white/5' : 'bg-gray-100'}`}>
+                        {pkg.id === 'daily' ? (
+                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-10 h-10 text-[#2ECC71]"><rect x="3" y="8" width="18" height="13" rx="2"/><path d="M12 8v13"/><path d="M19 12H5"/><path d="M15 8V6a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v2"/></svg>
+                        ) : (
+                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-10 h-10 text-[#2ECC71]"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                        )}
+                      </div>
+
+                      <div className="flex-1">
+                        {/* Paket Adı */}
+                        <h3 className={`font-bold text-base ${isDarkMode ? 'text-white' : 'text-black'}`}>
+                          {pkg.id === 'daily' ? t.dailyPackage : t.weeklyPackage}
+                        </h3>
+
+                        {/* Fiyat */}
+                        <div className="flex items-baseline gap-2 mt-1">
+                          <p className={`text-sm line-through ${isDarkMode ? 'text-white/40' : 'text-gray-400'}`}>
+                            ₺{pkg.originalPrice}
+                          </p>
+                          <span className={`font-black text-2xl ${isDarkMode ? 'text-white' : 'text-black'}`}>
+                            ₺{pkg.discountedPrice}
+                          </span>
+                        </div>
+
+                        {/* Periyot */}
+                        <p className={`text-xs mt-1 ${isDarkMode ? 'text-white/50' : 'text-gray-500'}`}>
+                          {pkg.id === 'daily' ? '/24 saat' : '/7 gün'}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Avantajlar Listesi */}
+                    <div className="mt-4 space-y-2">
+                      {pkg?.benefits?.slice(0, 3).map((benefit, idx) => (
+                        <div key={idx} className="flex items-center gap-2">
+                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4 text-[#2ECC71]"><path d="M20 6L9 17l-5-5"/></svg>
+                          <span className={`text-xs ${isDarkMode ? 'text-white/70' : 'text-gray-600'}`}>{benefit?.title}</span>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Paketi İncele Butonu */}
+                    <button
+                      onClick={() => { setSelectedMembershipPackage(pkg); setShowMembershipDetail(true); }}
+                      className={`w-full mt-4 py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all ${
+                        isDarkMode 
+                          ? 'bg-white/10 text-white hover:bg-white/20' 
+                          : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
+                      }`}
+                    >
+                      {t.viewDetails}
+                    </button>
+                  </div>
+                ))}
+              </div>
+
+              {/* Alt Boşluk */}
+              <div className="h-8"></div>
+            </div>
+          </PageTransition>
+        )}
+
+        {/* MARTI TARZI PAKET DETAY SAYFASI */}
+        {showMembershipDetail && selectedMembershipPackage && (
+          <div className={`fixed inset-0 z-[7000] flex flex-col ${isDarkMode ? 'bg-[#0a0a0a]' : 'bg-white'}`}>
+            {/* Header */}
+            <div className="flex items-center px-4 py-4 border-b border-gray-800/10">
+              <button 
+                onClick={() => setShowMembershipDetail(false)} 
+                className={`p-2 rounded-full mr-4 ${isDarkMode ? 'hover:bg-white/10' : 'hover:bg-black/10'}`}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className={`w-5 h-5 ${isDarkMode ? 'text-white' : 'text-black'}`}>
+                  <path d="M15 18l-6-6 6-6"/>
+                </svg>
+              </button>
+              <h2 className={`font-bold text-lg ${isDarkMode ? 'text-white' : 'text-black'}`}>
+                {selectedMembershipPackage.id === 'daily' ? t.dailyPackage : t.weeklyPackage}
+              </h2>
+            </div>
+
+            {/* Scrollable Content */}
+            <div className="flex-1 overflow-y-auto">
+                {/* Hero Image Area - Tick Logo */}
+              <div className={`relative h-48 flex items-center justify-center ${isDarkMode ? 'bg-gradient-to-b from-[#1a1a1a] to-[#0a0a0a]' : 'bg-gradient-to-b from-gray-100 to-white'}`}>
+                {/* Tick Logo - Gri ve Yeşil */}
+                <div className="relative z-10 flex flex-col items-center">
+                  <div className="text-6xl font-bold tracking-tight">
+                    <span className="text-gray-400">Ti</span>
+                    <span className="text-[#2ECC71]">c</span>
+                    <span className="text-[#2ECC71]">K</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#2ECC71" strokeWidth="3" className="w-8 h-8 inline-block ml-1"><path d="M20 6L9 17l-5-5"/></svg>
+                  </div>
+                </div>
+              </div>
+
+              {/* Paket Bilgileri */}
+              <div className="px-4 py-6">
+                {/* Fiyat ve İndirim */}
+                <div className="flex items-center gap-3 mb-6">
+                  <span className="px-3 py-1 bg-red-500 text-white text-xs font-bold rounded-full">
+                    %{selectedMembershipPackage?.originalPrice && selectedMembershipPackage?.discountedPrice ? Math.round((1 - Number(selectedMembershipPackage.discountedPrice) / Number(selectedMembershipPackage.originalPrice)) * 100) : 0} {t.discountBadge}
+                  </span>
+                  <span className={`text-xs ${isDarkMode ? 'text-white/60' : 'text-gray-600'}`}>{t.campaignBadge}</span>
+                </div>
+                <div className="mb-6">
+                  <p className={`text-sm line-through ${isDarkMode ? 'text-white/40' : 'text-gray-400'}`}>
+                    ₺{selectedMembershipPackage.originalPrice}
+                  </p>
+                  <p className={`text-4xl font-black ${isDarkMode ? 'text-white' : 'text-black'}`}>
+                    ₺{selectedMembershipPackage.discountedPrice}
+                  </p>
+                  <p className={`text-sm ${isDarkMode ? 'text-white/60' : 'text-gray-600'}`}>
+                    {selectedMembershipPackage.id === 'daily' ? '/24 saat' : '/7 gün'}
+                  </p>
+                </div>
+
+                {/* Avantajlar Başlık */}
+                <h3 className={`font-bold text-base mb-3 ${isDarkMode ? 'text-white' : 'text-black'}`}>
+                  {t.packageDetailBenefits}
+                </h3>
+
+                {/* Avantajlar Listesi - Detaylı */}
+                <div className="space-y-3 mb-6">
+                  {selectedMembershipPackage?.benefits?.map((benefit, idx) => (
+                    <div key={idx} className={`flex flex-col gap-1 p-3 rounded-xl ${isDarkMode ? 'bg-white/5' : 'bg-gray-50'}`}>
+                      <div className="flex items-start gap-3">
+                        <div className="w-6 h-6 rounded-full bg-[#2ECC71]/20 flex items-center justify-center flex-shrink-0">
+                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4 text-[#2ECC71]"><path d="M20 6L9 17l-5-5"/></svg>
+                        </div>
+                        <div className="flex-1">
+                          <p className={`text-sm font-medium ${isDarkMode ? 'text-white' : 'text-black'}`}>{benefit?.title}</p>
+                          <p className={`text-xs mt-0.5 ${isDarkMode ? 'text-white/60' : 'text-gray-500'}`}>{benefit?.desc}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Kullanım Koşulları */}
+                <h3 className={`font-bold text-base mb-3 ${isDarkMode ? 'text-white' : 'text-black'}`}>
+                  {t.packageDetailTerms}
+                </h3>
+                <div className="space-y-2 mb-6">
+                  <div className="flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-5 h-5 text-[#2ECC71]"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+                    <span className={`text-sm ${isDarkMode ? 'text-white/70' : 'text-gray-600'}`}>{t.instantActivation}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-5 h-5 text-yellow-500"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                    <span className={`text-sm ${isDarkMode ? 'text-white/70' : 'text-gray-600'}`}>{t.noRefundPolicy}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-5 h-5 text-blue-500"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                    <span className={`text-sm ${isDarkMode ? 'text-white/70' : 'text-gray-600'}`}>{t.securePayment}</span>
+                  </div>
+                </div>
+
+                {/* Otomatik Yenileme Toggle */}
+                <div className={`flex items-center justify-between p-4 rounded-xl mb-4 ${isDarkMode ? 'bg-white/5' : 'bg-gray-50'}`}>
+                  <div>
+                    <p className={`font-bold text-sm ${isDarkMode ? 'text-white' : 'text-black'}`}>{t.autoRenewal}</p>
+                    <p className={`text-xs ${isDarkMode ? 'text-white/50' : 'text-gray-500'}`}>{t.autoRenewalDesc}</p>
+                  </div>
+                  <button
+                    onClick={() => setAutoRenewal(!autoRenewal)}
+                    className={`w-12 h-6 rounded-full transition-all relative ${autoRenewal ? 'bg-[#2ECC71]' : isDarkMode ? 'bg-white/20' : 'bg-gray-300'}`}
+                  >
+                    <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${autoRenewal ? 'left-7' : 'left-1'}`} />
+                  </button>
+                </div>
+
+                {/* Sözleşme Onay Checkbox */}
+                <div className={`p-4 rounded-xl mb-4 ${isDarkMode ? 'bg-white/5' : 'bg-gray-50'}`}>
+                  <label className="flex items-start gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={membershipContractApproved}
+                      onChange={(e) => setMembershipContractApproved(e.target.checked)}
+                      className="mt-1 w-5 h-5 accent-[#2ECC71] cursor-pointer"
+                    />
+                    <div className="flex-1">
+                      <p className={`text-sm leading-relaxed ${isDarkMode ? 'text-white' : 'text-black'}`}>
+                        {t.contractApprovalText}
+                      </p>
+                      <p className="text-xs mt-2">
+                        <button 
+                          onClick={() => setShowContractModal(true)}
+                          className="text-[#2ECC71] underline font-bold"
+                        >{t.preInformationForm}</button>
+                        {' '}{t.and}{' '}
+                        <button 
+                          onClick={() => setShowContractModal(true)}
+                          className="text-[#2ECC71] underline font-bold"
+                        >{t.distanceSalesContract}</button>
+                        <span className={`ml-1 ${isDarkMode ? 'text-white/50' : 'text-gray-500'}`}>{t.clickToRead}</span>
+                      </p>
+                    </div>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            {/* Bottom Action Bar - Ödeme Butonu */}
+            <div className={`px-4 py-4 border-t ${isDarkMode ? 'border-white/10 bg-[#0a0a0a]' : 'border-gray-200 bg-white'}`}>
+              <button
+                onClick={() => {
+                  if (!membershipContractApproved) {
+                    showToast(t.acceptContractRequired);
+                    return;
+                  }
+                  setShowPaymentMethodModal(true);
+                }}
+                disabled={!membershipContractApproved}
+                className={`w-full py-4 rounded-xl font-black text-base transition-all ${
+                  membershipContractApproved
+                    ? 'bg-[#2ECC71] text-white shadow-[0_0_20px_rgba(46,204,113,0.4)]'
+                    : 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                }`}
+              >
+                {selectedMembershipPackage.id === 'daily' ? '₺99,99' : '₺599,99'} {t.payAndSubscribe}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ÖDEME YÖNTEMİ SEÇİM MODALI */}
+        {showPaymentMethodModal && selectedMembershipPackage && (
+          <div className="fixed inset-0 z-[8000] flex items-end">
+            {/* Backdrop */}
+            <div 
+              className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+              onClick={() => setShowPaymentMethodModal(false)}
+            />
+            
+            {/* Modal Content */}
+            <div 
+              className={`relative w-full max-w-lg mx-auto rounded-t-3xl p-6 animate-slide-up ${
+                isDarkMode ? 'bg-[#1a1a1a]' : 'bg-white'
+              }`}
+            >
+              {/* Handle Bar */}
+              <div className="w-12 h-1 bg-gray-400/50 rounded-full mx-auto mb-6" />
+              
+              {/* Header */}
+              <h3 className={`font-bold text-lg text-center mb-2 ${isDarkMode ? 'text-white' : 'text-black'}`}>
+                {t.selectPaymentMethod}
+              </h3>
+              <p className={`text-sm text-center mb-6 ${isDarkMode ? 'text-white/60' : 'text-gray-600'}`}>
+                {t.selectPaymentDesc}
+              </p>
+
+              {/* Ödeme Yöntemleri */}
+              <div className="space-y-3 mb-6">
+                {/* Cüzdan */}
+                <button
+                  onClick={() => setSelectedPaymentMethod('wallet')}
+                  className={`w-full p-4 rounded-xl flex items-center justify-between transition-all ${
+                    selectedPaymentMethod === 'wallet'
+                      ? 'border-2 border-[#2ECC71] ' + (isDarkMode ? 'bg-[#2ECC71]/10' : 'bg-[#2ECC71]/5')
+                      : isDarkMode ? 'bg-white/5 border border-white/10' : 'bg-gray-50 border border-gray-200'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-[#2ECC71]/20 flex items-center justify-center">
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-6 h-6 text-[#2ECC71]"><path d="M20 12V8H6a2 2 0 0 1-2-2c0-1.1.9-2 2-2h12v4"/><path d="M4 6v12c0 1.1.9 2 2 2h14v-4"/><path d="M18 12a2 2 0 0 0 0 4h2v-4h-2z"/></svg>
+                    </div>
+                    <div className="text-left">
+                      <p className={`font-bold text-sm ${isDarkMode ? 'text-white' : 'text-black'}`}>{t.payWithWallet}</p>
+                      <p className={`text-xs ${isDarkMode ? 'text-white/50' : 'text-gray-500'}`}>
+                        {t.availableBalance}: ₺{walletBalance.toFixed(2)}
+                      </p>
+                    </div>
+                  </div>
+                  {selectedPaymentMethod === 'wallet' && (
+                    <div className="w-6 h-6 rounded-full bg-[#2ECC71] flex items-center justify-center">
+                      <span className="text-white text-xs">✓</span>
+                    </div>
+                  )}
+                </button>
+
+                {/* Kredi Kartı */}
+                <button
+                  onClick={() => setSelectedPaymentMethod('card')}
+                  className={`w-full p-4 rounded-xl flex items-center justify-between transition-all ${
+                    selectedPaymentMethod === 'card'
+                      ? 'border-2 border-[#2ECC71] ' + (isDarkMode ? 'bg-[#2ECC71]/10' : 'bg-[#2ECC71]/5')
+                      : isDarkMode ? 'bg-white/5 border border-white/10' : 'bg-gray-50 border border-gray-200'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center">
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-6 h-6 text-blue-500"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+                    </div>
+                    <div className="text-left">
+                      <p className={`font-bold text-sm ${isDarkMode ? 'text-white' : 'text-black'}`}>{t.payWithCard}</p>
+                      <p className={`text-xs ${isDarkMode ? 'text-white/50' : 'text-gray-500'}`}>
+                        Kredi Kartı/Banka Kartı
+                      </p>
+                    </div>
+                  </div>
+                  {selectedPaymentMethod === 'card' && (
+                    <div className="w-6 h-6 rounded-full bg-[#2ECC71] flex items-center justify-center">
+                      <span className="text-white text-xs">✓</span>
+                    </div>
+                  )}
+                </button>
+              </div>
+
+              {/* Ödeme Butonu */}
+              <button
+                onClick={() => {
+                  if (!selectedPaymentMethod) {
+                    showToast('Lütfen ödeme yöntemi seçin');
+                    return;
+                  }
+                  handleBuyPackage(selectedMembershipPackage);
+                  setShowPaymentMethodModal(false);
+                }}
+                disabled={!selectedPaymentMethod}
+                className={`w-full py-4 rounded-xl font-black text-base transition-all ${
+                  selectedPaymentMethod
+                    ? 'bg-[#2ECC71] text-white'
+                    : 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                }`}
+              >
+                {selectedMembershipPackage.id === 'daily' ? '₺99,99' : '₺599,99'} {t.payAndSubscribe}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Paket Detay Modalı (Slide-up Animation) */}
+        {showPackageDetail && selectedPackage && (
+          <div className="fixed inset-0 z-[9000] flex flex-col justify-end">
+            {/* Backdrop */}
+            <div 
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
+              onClick={() => setShowPackageDetail(false)}
+            />
+            
+            {/* Slide-up Content */}
+            <div 
+              className={`relative w-full max-w-lg mx-auto rounded-t-3xl p-6 animate-slide-up ${
+                isDarkMode ? 'bg-[#1a1a1a]' : 'bg-white'
+              }`}
+              style={{
+                animation: 'slideUp 0.3s ease-out'
+              }}
+            >
+              {/* Handle Bar */}
+              <div className="w-12 h-1 bg-gray-400/50 rounded-full mx-auto mb-6" />
+              
+              {/* Header */}
+              <div className="flex items-center gap-4 mb-6">
+                <span className="text-5xl">{selectedPackage.icon}</span>
+                <div>
+                  <h3 className={`font-black text-xl ${isDarkMode ? 'text-white' : 'text-black'}`}>{selectedPackage.name}</h3>
+                  <p className={`text-sm ${isDarkMode ? 'text-white/60' : 'text-gray-600'}`}>{selectedPackage.duration}</p>
+                </div>
+              </div>
+
+              {/* Sözleşme Onay */}
+              <div className={`p-4 rounded-2xl mb-4 ${isDarkMode ? 'bg-white/5' : 'bg-gray-100'}`}>
+                <label className="flex items-start gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={contractApproved}
+                    onChange={(e) => setContractApproved(e.target.checked)}
+                    className="mt-1 w-5 h-5 accent-[#2ECC71]"
+                  />
+                  <div className="flex-1">
+                    <p className={`text-sm font-bold ${isDarkMode ? 'text-white' : 'text-black'}`}>{t.readAndAccept}</p>
+                    <p className={`text-xs mt-1 ${isDarkMode ? 'text-white/50' : 'text-gray-500'}`}>
+                      <button 
+                        onClick={() => setShowContractModal(true)}
+                        className="underline text-[#2ECC71] hover:no-underline"
+                      >{t.preInformationForm}</button> ve {' '}
+                      <button 
+                        onClick={() => setShowContractModal(true)}
+                        className="underline text-[#2ECC71] hover:no-underline"
+                      >{t.distanceSalesContract}</button>
+                    </p>
+                  </div>
+                </label>
+              </div>
+
+              {/* Ödeme Butonu */}
+              <button
+                onClick={() => { if (!contractApproved) { showToast(t.acceptContractRequired); return; } handleBuyPackage(selectedPackage); }}
+                disabled={!contractApproved}
+                className={`w-full py-4 rounded-2xl font-black text-lg transition-all ${
+                  contractApproved
+                    ? 'bg-[#2ECC71] text-white shadow-[0_0_30px_rgba(46,204,113,0.4)] hover:bg-[#27ae60]'
+                    : 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                }`}
+              >
+                {selectedPackage.id === 'daily' ? t.packagePriceDaily : t.packagePriceWeekly} {t.buyPackage}
+              </button>
+
+              {!contractApproved && (
+                <p className="text-center text-xs text-red-400 mt-2">{t.acceptContractRequired}</p>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Sözleşme Modalı */}
+        {showContractModal && (
+          <div className="fixed inset-0 z-[9100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+            <div className={`w-full max-w-2xl max-h-[90vh] rounded-3xl overflow-hidden flex flex-col ${isDarkMode ? 'bg-[#1a1a1a]' : 'bg-white'}`}>
+              {/* Header */}
+              <div className={`p-6 border-b ${isDarkMode ? 'border-white/10' : 'border-gray-200'}`}>
+                <h3 className={`font-black text-xl text-center ${isDarkMode ? 'text-white' : 'text-black'}`}>{t.preInformationForm} & {t.distanceSalesContract}</h3>
+              </div>
+              
+              {/* Scrollable Content */}
+              <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                {/* Satıcı Bilgileri */}
+                <section>
+                  <h4 className={`font-bold text-lg mb-3 ${isDarkMode ? 'text-[#2ECC71]' : 'text-[#27ae60]'}`}>{t.sellerInfo}</h4>
+                  <div className={`space-y-2 text-sm ${isDarkMode ? 'text-white/80' : 'text-gray-700'}`}>
+                    <p><strong>{t.sellerTitle}</strong></p>
+                    <p>{t.sellerAddress}</p>
+                    <p>{t.sellerPhone}</p>
+                    <p>{t.sellerEmail}</p>
+                    <p>{t.sellerTaxNo}</p>
+                  </div>
+                </section>
+
+                {/* Konu */}
+                <section>
+                  <h4 className={`font-bold text-lg mb-3 ${isDarkMode ? 'text-[#2ECC71]' : 'text-[#27ae60]'}`}>{t.contractSubject}</h4>
+                  <p className={`text-sm ${isDarkMode ? 'text-white/80' : 'text-gray-700'}`}>{t.contractSubjectText}</p>
+                </section>
+
+                {/* Ürün Bilgileri */}
+                <section>
+                  <h4 className={`font-bold text-lg mb-3 ${isDarkMode ? 'text-[#2ECC71]' : 'text-[#27ae60]'}`}>{t.productInfo}</h4>
+                  <div className={`space-y-2 text-sm ${isDarkMode ? 'text-white/80' : 'text-gray-700'}`}>
+                    <p>{t.productService}</p>
+                    <p>{t.productPrice}</p>
+                    <p>{t.productPayment}</p>
+                  </div>
+                </section>
+
+                {/* Cayma Hakkı */}
+                <section>
+                  <h4 className={`font-bold text-lg mb-3 ${isDarkMode ? 'text-[#2ECC71]' : 'text-[#27ae60]'}`}>{t.withdrawalRight}</h4>
+                  <p className={`text-sm ${isDarkMode ? 'text-white/80' : 'text-gray-700'}`}>{t.withdrawalRightText}</p>
+                </section>
+
+                {/* Taraflar */}
+                <section>
+                  <h4 className={`font-bold text-lg mb-3 ${isDarkMode ? 'text-[#2ECC71]' : 'text-[#27ae60]'}`}>{t.parties}</h4>
+                  <div className={`space-y-2 text-sm ${isDarkMode ? 'text-white/80' : 'text-gray-700'}`}>
+                    <p><strong>{t.seller}:</strong> {t.sellerTitle}</p>
+                    <p><strong>{t.buyer}:</strong> TICK uygulaması üzerinden dijital paket satın alan kullanıcı</p>
+                  </div>
+                </section>
+
+                {/* Teslim ve Kullanım */}
+                <section>
+                  <h4 className={`font-bold text-lg mb-3 ${isDarkMode ? 'text-[#2ECC71]' : 'text-[#27ae60]'}`}>{t.deliveryUsage}</h4>
+                  <p className={`text-sm ${isDarkMode ? 'text-white/80' : 'text-gray-700'}`}>{t.deliveryText}</p>
+                </section>
+
+                {/* Ödeme ve İade */}
+                <section>
+                  <h4 className={`font-bold text-lg mb-3 ${isDarkMode ? 'text-[#2ECC71]' : 'text-[#27ae60]'}`}>{t.paymentRefund}</h4>
+                  <div className={`space-y-2 text-sm ${isDarkMode ? 'text-white/80' : 'text-gray-700'}`}>
+                    <p>{t.paymentAccept}</p>
+                    <p className="text-red-400">{t.noRefund}</p>
+                    <p>{t.autoRenewal}</p>
+                  </div>
+                </section>
+
+                {/* Genel Hükümler */}
+                <section>
+                  <h4 className={`font-bold text-lg mb-3 ${isDarkMode ? 'text-[#2ECC71]' : 'text-[#27ae60]'}`}>{t.generalTerms}</h4>
+                  <div className={`space-y-2 text-sm ${isDarkMode ? 'text-white/80' : 'text-gray-700'}`}>
+                    <p>{t.technicalIssues}</p>
+                    <p className={`font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{t.jurisdiction}</p>
+                    <p>{t.effectiveDateText}</p>
+                  </div>
+                </section>
+              </div>
+              
+              {/* Footer */}
+              <div className={`p-6 border-t ${isDarkMode ? 'border-white/10' : 'border-gray-200'}`}>
+                <button
+                  onClick={() => setShowContractModal(false)}
+                  className={`w-full py-3 rounded-2xl font-bold text-sm ${isDarkMode ? 'bg-white/10 text-white' : 'bg-gray-200 text-black'}`}
+                >{t.back}</button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Değerlendirme Modalı */}
+        {showReviewModal && aktifIs && (
+          <div className="fixed inset-0 z-[9500] flex items-center justify-center p-6 bg-black/70 backdrop-blur-md">
+            <div className={`w-full max-w-sm rounded-3xl p-6 ${isDarkMode ? 'bg-[#1a1a1a]' : 'bg-white'}`}>
+              <h3 className={`font-black text-xl text-center mb-2 ${isDarkMode ? 'text-white' : 'text-black'}`}>{t.rateTitle}</h3>
+              <p className={`text-center text-sm mb-4 opacity-60 ${isDarkMode ? 'text-white' : 'text-black'}`}>
+                {aktifIs.sender_id === user.id ? aktifIs.receiver_name : aktifIs.sender_name}
+              </p>
+              
+              {/* Yıldız Puanlama */}
+              <div className="flex justify-center gap-2 mb-4">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <button
+                    key={star}
+                    onClick={() => setReviewRating(star)}
                     className={`text-3xl transition-transform hover:scale-125 ${star <= reviewRating ? 'text-yellow-400' : 'text-gray-400'}`}
                   >
                     ⭐
@@ -6456,7 +7926,8 @@ function Home() {
 
         {toast && <Toast msg={toast} onClose={() => setToast(null)} dark={isDarkMode} />}
       </div>
-    </main>
+      </main>
+    </>
   );
 }
 

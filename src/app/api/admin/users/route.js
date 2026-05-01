@@ -4,6 +4,11 @@ import { createHash } from 'crypto';
 
 const ADMIN_PANEL_KEY = createHash('sha256').update('Uguryigit35x.' + 'tick_admin_salt_2025').digest('hex');
 
+// === EVRENSEL ROL SABITLERI ===
+// Tüm hizmet veren (provider) rolleri - finansal işlemlerde kullanılır
+const PROVIDER_ROLES = ['kurye', 'emanetci', 'siraci', 'rehber', 'hepsi'];
+const CUSTOMER_ROLES = ['musteri'];
+
 const getClients = async (req) => {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -73,10 +78,10 @@ export async function GET(req) {
         adminClient.from('requests').select('amount, receiver_id, sender_id').eq('status', 'completed').eq('payment_status', 'held').limit(100),
       ]);
 
-      // Talep/Arz oranı
+      // Talep/Arz oranı - tüm hizmet veren rolleri
       const seekers = (roleData || []).filter(u => {
         const r = Array.isArray(u.roles) ? u.roles : [];
-        return r.some(x => ['kurye','emanetci','siraci','rehber','hepsi'].includes(x));
+        return r.some(x => PROVIDER_ROLES.includes(x));
       }).length;
       const givers = (totalUsers || 0) - seekers;
 
@@ -271,13 +276,52 @@ export async function GET(req) {
     }
 
     // ── users (default) ───────────────────────────────────────
-    const { data: users, error: usersErr } = await adminClient
-      .from('profilkisi')
-      .select('user_id, name, email, phone, birth_date, is_admin, is_banned, is_verified, created_at, rating, roles, average_rating, total_completed_jobs, stripe_account_id, ip_address, registered_ip, address_line1, address_line2, city, district, neighborhood, postal_code, country')
-      .order('created_at', { ascending: false });
+    // auth.users tablosundan tüm kullanıcıları çek (hayalet kullanıcıları da görmek için)
+    const { data: authUsers, error: authErr } = await adminClient.auth.admin.listUsers();
+    if (authErr) return NextResponse.json({ error: 'Auth users fetch failed', detail: authErr.message }, { status: 500 });
 
-    if (usersErr) return NextResponse.json({ error: usersErr.message, code: usersErr.code }, { status: 500 });
-    return NextResponse.json({ users: users || [], count: users?.length ?? 0 });
+    // profilkisi tablosundaki profilleri çek
+    const { data: profiles, error: profilesErr } = await adminClient
+      .from('profilkisi')
+      .select('user_id, name, email, phone, birth_date, is_admin, is_banned, is_verified, created_at, rating, roles, average_rating, total_completed_jobs, stripe_account_id, ip_address, registered_ip, address_line1, address_line2, city, district, neighborhood, postal_code, country');
+
+    if (profilesErr) return NextResponse.json({ error: profilesErr.message, code: profilesErr.code }, { status: 500 });
+
+    // Birleştir: Tüm auth.users + profilkisi bilgileri (LEFT JOIN mantığı)
+    const profileMap = new Map((profiles || []).map(p => [p.user_id, p]));
+    
+    const mergedUsers = (authUsers?.users || []).map(authUser => {
+      const profile = profileMap.get(authUser.id);
+      return {
+        user_id: authUser.id,
+        email: authUser.email || profile?.email || '',
+        name: profile?.name || authUser.user_metadata?.name || 'İsimsiz Kullanıcı',
+        phone: profile?.phone || authUser.user_metadata?.phone || '',
+        birth_date: profile?.birth_date || null,
+        is_admin: profile?.is_admin || false,
+        is_banned: profile?.is_banned || false,
+        is_verified: profile?.is_verified || false,
+        created_at: authUser.created_at || profile?.created_at,
+        rating: profile?.rating || 0,
+        roles: profile?.roles || ['musteri'],
+        average_rating: profile?.average_rating || 0,
+        total_completed_jobs: profile?.total_completed_jobs || 0,
+        stripe_account_id: profile?.stripe_account_id || null,
+        ip_address: profile?.ip_address || authUser.last_sign_in_at || '',
+        registered_ip: profile?.registered_ip || '',
+        address_line1: profile?.address_line1 || '',
+        address_line2: profile?.address_line2 || '',
+        city: profile?.city || '',
+        district: profile?.district || '',
+        neighborhood: profile?.neighborhood || '',
+        postal_code: profile?.postal_code || '',
+        country: profile?.country || '',
+        // Profil durumu
+        is_profile_complete: !!profile?.name && !!profile?.phone
+      };
+    }).sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+    return NextResponse.json({ users: mergedUsers, count: mergedUsers.length });
   } catch (e) {
     return NextResponse.json({ error: 'Server error', detail: e?.message }, { status: 500 });
   }
@@ -322,7 +366,7 @@ export async function POST(req) {
       const targetUsers = (allUsers || []).filter(u => {
         if (target === 'providers') {
           const r = Array.isArray(u.roles) ? u.roles : [];
-          return r.some(x => ['kurye','emanetci','siraci','rehber'].includes(x));
+          return r.some(x => PROVIDER_ROLES.includes(x));
         }
         if (target === 'customers') {
           const r = Array.isArray(u.roles) ? u.roles : [];

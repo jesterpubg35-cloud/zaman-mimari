@@ -24,6 +24,23 @@ export async function verifyAuth(request) {
 
 export function rateLimit() {
   const map = new Map();
+  const CLEANUP_INTERVAL = 300000; // 5 dakikada bir temizlik
+  
+  // Bellek sızıntısını önlemek için düzenli temizlik
+  if (typeof setInterval !== 'undefined') {
+    setInterval(() => {
+      const now = Date.now();
+      let cleaned = 0;
+      for (const [ip, entry] of map.entries()) {
+        if (now - entry.start > CLEANUP_INTERVAL * 2) { // 10dk eski kayıtları sil
+          map.delete(ip);
+          cleaned++;
+        }
+      }
+      if (cleaned > 0) console.log(`[RateLimit] ${cleaned} eski kayıt temizlendi`);
+    }, CLEANUP_INTERVAL);
+  }
+  
   return function check(ip, limit = 20, windowMs = 60000) {
     const now = Date.now();
     const entry = map.get(ip) || { count: 0, start: now };

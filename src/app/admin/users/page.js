@@ -4,13 +4,17 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FileDown, Search, RefreshCw, Users } from 'lucide-react';
 import jsPDF from 'jspdf';
-import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
 
 const fadeSlide = {
   initial: { opacity: 0, y: 16 },
   animate: { opacity: 1, y: 0, transition: { duration: 0.5 } },
   exit: { opacity: 0, y: 12, transition: { duration: 0.2 } },
 };
+
+// === EVRENSEL ROL SABITLERI ===
+const PROVIDER_ROLES = ['kurye', 'emanetci', 'siraci', 'rehber', 'hepsi'];
+const CUSTOMER_ROLE = 'musteri';
 
 function normalizeRolesValue(val) {
   if (!val) return null;
@@ -34,8 +38,8 @@ function normalizeRolesValue(val) {
 }
 
 function getGroupKey(u) {
-  const roles = normalizeRolesValue(u?.roles) || (u?.role ? [u.role] : ['musteri']);
-  const primary = roles.includes('hepsi') ? 'hepsi' : (roles.find(r => r && r !== 'musteri') || 'musteri');
+  const roles = normalizeRolesValue(u?.roles) || (u?.role ? [u.role] : [CUSTOMER_ROLE]);
+  const primary = roles.includes('hepsi') ? 'hepsi' : (roles.find(r => r && r !== CUSTOMER_ROLE) || CUSTOMER_ROLE);
   return primary;
 }
 
@@ -212,22 +216,47 @@ export default function AdminUsersPage() {
     }
   }, [locationHistory, locationLoading, getSupabase]);
 
-  const exportXlsx = useCallback(() => {
-    const rows = filtered.map(u => ({
-      'Ad Soyad': u?.name || '',
-      'Telefon': u?.phone || '',
-      'IP Adresi': u?.ip_address || '',
-      'E-posta': u?.email || '',
-      'Ev Adresi': getDisplayAddress(u),
-      'Rol': u?.role || '',
-      'Roller': (normalizeRolesValue(u?.roles) || []).join(', '),
-      'User ID': u?.user_id || '',
-    }));
+  const exportXlsx = useCallback(async () => {
+    const wb = new ExcelJS.Workbook();
+    const ws = wb.addWorksheet('Kullanicilar');
 
-    const ws = XLSX.utils.json_to_sheet(rows);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Kullanicilar');
-    XLSX.writeFile(wb, `kullanicilar-${new Date().toISOString().slice(0, 10)}.xlsx`);
+    // Başlıklar
+    ws.columns = [
+      { header: 'Ad Soyad', key: 'name', width: 25 },
+      { header: 'Telefon', key: 'phone', width: 15 },
+      { header: 'IP Adresi', key: 'ip_address', width: 15 },
+      { header: 'E-posta', key: 'email', width: 30 },
+      { header: 'Ev Adresi', key: 'address', width: 40 },
+      { header: 'Rol', key: 'role', width: 15 },
+      { header: 'Roller', key: 'roles', width: 25 },
+      { header: 'User ID', key: 'user_id', width: 40 },
+    ];
+
+    // Veriler
+    filtered.forEach(u => {
+      ws.addRow({
+        name: u?.name || '',
+        phone: u?.phone || '',
+        ip_address: u?.ip_address || '',
+        email: u?.email || '',
+        address: getDisplayAddress(u),
+        role: u?.role || '',
+        roles: (normalizeRolesValue(u?.roles) || []).join(', '),
+        user_id: u?.user_id || '',
+      });
+    });
+
+    // Excel dosyasını indir
+    const buffer = await wb.xlsx.writeBuffer();
+    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `kullanicilar-${new Date().toISOString().slice(0, 10)}.xlsx`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
   }, [filtered]);
 
   const exportPdf = useCallback(() => {
